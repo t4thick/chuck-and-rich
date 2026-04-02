@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand */
+  --brand-forest:  #1a4731;
+  --brand-green:   #236641;
+  --brand-gold:    #c8811a;
+  --brand-amber:   #e8a020;
+
+  /* Neutrals */
+  --ink-900: #111827;
+  --ink-700: #374151;
+  --ink-500: #6b7280;
+  --ink-300: #d1d5db;
+  --ink-100: #f3f4f6;
+  --ink-50:  #f9fafb;
+
+  /* Semantic */
+  --background: #ffffff;
+  --surface:    #f9fafb;
+  --border:     #e5e7eb;
+
+  /* Type */
+  --font-display: var(--font-geist-sans);
+  --font-body:    var(--font-geist-sans);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--ink-900);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Reset dark mode — store should always be light */
+body {
+  background: var(--background);
+  color: var(--ink-900);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Focus ring — consistent across all interactive elements */
+:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Image performance */
+img { display: block; max-width: 100%; }
+
+/* Remove default button appearance */
+button { font-family: inherit; }
+
+/* Selection color */
+::selection {
+  background: #d1fae5;
+  color: var(--brand-forest);
+}
+
+/* Shared layout primitives */
+.page-shell {
+  min-height: 100vh;
+  background: var(--surface);
+  padding: 2.25rem 1.25rem;
+}
+
+.page-container {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.03);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink-900);
+}
+
+.section-subtitle {
+  font-size: 0.925rem;
+  color: var(--ink-500);
+}
+
+/* Home hero — atmosphere + motion (reduced-motion safe) */
+@keyframes home-hero-glow {
+  0%, 100% { opacity: 0.35; transform: scale(1) translate(0, 0); }
+  50% { opacity: 0.55; transform: scale(1.08) translate(2%, -1%); }
+}
+
+@keyframes home-hero-float {
+  0%, 100% { transform: translateY(0) rotate(-2.5deg); }
+  50% { transform: translateY(-10px) rotate(-1.5deg); }
+}
+
+@keyframes home-hero-float-delayed {
+  0%, 100% { transform: translateY(0) rotate(5deg); }
+  50% { transform: translateY(8px) rotate(4deg); }
+}
+
+@keyframes home-hero-shimmer {
+  0% { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+  15% { opacity: 0.35; }
+  100% { transform: translateX(220%) skewX(-12deg); opacity: 0; }
+}
+
+.home-hero-glow {
+  animation: home-hero-glow 10s ease-in-out infinite;
+}
+
+.home-hero-kente-primary {
+  animation: home-hero-float 7s ease-in-out infinite;
+}
+
+.home-hero-kente-secondary {
+  animation: home-hero-float-delayed 8s ease-in-out infinite;
+}
+
+.home-hero-shimmer {
+  animation: home-hero-shimmer 14s ease-in-out infinite;
+}
+
+@keyframes home-hero-slide {
+  0%, 26% {
+    opacity: 1;
+    transform: translateX(0) scale(1.02);
+  }
+  31%, 100% {
+    opacity: 0;
+    transform: translateX(-8%) scale(1);
+  }
+}
+
+@keyframes home-hero-slide-delayed {
+  0%, 26% {
+    opacity: 1;
+    transform: translateX(4%) scale(1.03);
+  }
+  31%, 100% {
+    opacity: 0;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.home-hero-slide {
+  opacity: 0;
+  animation: home-hero-slide 15s ease-in-out infinite;
+}
+
+@keyframes home-hero-ken {
+  0%, 100% { transform: scale(1.06) translate(0, 0); }
+  50% { transform: scale(1.14) translate(-1.2%, 0.8%); }
+}
+
+.home-hero-ken {
+  animation: home-hero-ken 28s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-glow,
+  .home-hero-kente-primary,
+  .home-hero-kente-secondary,
+  .home-hero-slide,
+  .home-hero-shimmer,
+  .home-hero-ken {
+    animation: none;
+  }
+}
