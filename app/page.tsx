@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { HomeHero } from '@/components/HomeHero'
 import { ProductCard } from '@/components/ProductCard'
 import type { Product } from '@/types'
 
@@ -82,72 +82,23 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#fcfbf7] text-neutral-900">
-      {/* Hero */}
-      <section className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-24">
-        <div>
-          <p className="mb-4 inline-flex rounded-full bg-emerald-100 px-4 py-1 text-sm font-medium text-emerald-800">
-            Your online African grocery store
-          </p>
-          <h1 className="max-w-xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-            <span className="block">Authentic African groceries</span>
-            <span className="block text-emerald-800">African staples &amp; pantry favorites —</span>
-            <span className="block">delivered with convenience and care.</span>
-          </h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-neutral-600">
-            Discover pantry staples, rich seasonings, cooking oils, snacks, and household essentials for your favorite
-            African meals.
-          </p>
+      <HomeHero />
 
-          <div className="mt-8 flex flex-wrap gap-4">
-            <a
-              href="#products"
-              className="rounded-full bg-emerald-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800"
-            >
-              Shop Best Sellers
-            </a>
-            <a
-              href="#categories"
-              className="rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold transition hover:border-emerald-700 hover:text-emerald-700"
-            >
-              Browse Categories
-            </a>
-            <Link
-              href="/shop"
-              className="rounded-full border border-emerald-700 bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
-            >
-              Shop All Products
-            </Link>
-          </div>
-
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-              <p className="text-2xl font-bold">100+</p>
-              <p className="text-sm text-neutral-600">Grocery essentials</p>
-            </div>
-            <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-              <p className="text-2xl font-bold">Fast</p>
-              <p className="text-sm text-neutral-600">Simple ordering</p>
-            </div>
-            <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-              <p className="text-2xl font-bold">Trusted</p>
-              <p className="text-sm text-neutral-600">Secure checkout</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative">
-          <div className="absolute -left-6 -top-6 h-24 w-24 rounded-full bg-amber-200 blur-2xl" aria-hidden />
-          <div className="absolute -bottom-8 right-8 h-28 w-28 rounded-full bg-emerald-200 blur-2xl" aria-hidden />
-          <div className="relative aspect-[4/5] w-full max-h-[520px] overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl lg:max-h-none lg:min-h-[420px]">
-            <Image
-              src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80"
-              alt="African grocery assortment"
-              fill
-              className="object-cover"
-              sizes="(min-width: 1024px) 50vw, 100vw"
-              priority
-            />
-          </div>
+      {/* Quick jump — complements hero CTAs */}
+      <section className="border-b border-neutral-200/80 bg-[#fcfbf7]">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-3 px-6 py-6 lg:px-8">
+          <a
+            href="#products"
+            className="rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+          >
+            Shop Best Sellers
+          </a>
+          <a
+            href="#categories"
+            className="rounded-full border border-neutral-300 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-emerald-600 hover:text-emerald-800"
+          >
+            Browse Categories
+          </a>
         </div>
       </section>
 
