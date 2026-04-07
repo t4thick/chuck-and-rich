@@ -9,10 +9,8 @@ test.describe('Homepage', () => {
     await expect(page).toHaveTitle(/Lovely Queen African Market/i)
   })
 
-  test('shows main hero heading', async ({ page }) => {
-    await expect(
-      page.getByRole('heading', { name: /African staples/i })
-    ).toBeVisible()
+  test('shows page title heading', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: /Lovely Queen African Market/i })).toBeVisible()
   })
 
   test('shows Shop by Category section', async ({ page }) => {
