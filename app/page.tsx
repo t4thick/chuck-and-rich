@@ -4,34 +4,23 @@ import { createClient } from '@/lib/supabase/server'
 import { ProductCard } from '@/components/ProductCard'
 import type { Product } from '@/types'
 
-const MARKETING_CATEGORIES = [
-  {
-    title: 'Rice & Grains',
-    description:
-      'Stock up on rice, beans, garri, and pantry staples for everyday meals.',
-    image:
-      'https://images.unsplash.com/photo-1515543904379-3d757afe72e4?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    title: 'Spices & Seasonings',
-    description:
-      'Bring bold flavor home with blends, seasoning cubes, dried peppers, and more.',
-    image:
-      'https://images.unsplash.com/photo-1532336414038-cf19250c5757?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    title: 'Oils & Sauces',
-    description: 'Essential cooking oils, tomato mixes, sauces, and soup bases.',
-    image:
-      'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    title: 'Snacks & Drinks',
-    description: 'Enjoy favorite treats, beverages, and everyday grocery extras.',
-    image:
-      'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80',
-  },
-] as const
+/** Category hero images — same store photography as before */
+const CATEGORY_IMAGE_BY_NAME: Record<string, string> = {
+  Beverages:           'https://asafointernational.com/wp-content/uploads/2025/01/Beverages-2-min.jpg',
+  Bread:               'https://asafointernational.com/wp-content/uploads/2025/01/Bread-Display-1.png',
+  Canned:              'https://asafointernational.com/wp-content/uploads/2025/01/Motherland-canned-images.jpeg',
+  'Caribbean product': 'https://asafointernational.com/wp-content/uploads/2025/01/Carribean-Display-min.png',
+  Cosmetics:           'https://asafointernational.com/wp-content/uploads/2025/01/cosmetics.jpeg',
+  'Dairy And Tea':     'https://asafointernational.com/wp-content/uploads/2025/01/asafo-international-Diary.jpeg',
+  'Flours & Rice':     'https://asafointernational.com/wp-content/uploads/2025/01/Rice-and-Flour-Display.png',
+  'Fresh Produce':     'https://asafointernational.com/wp-content/uploads/2025/01/yam-display.jpg',
+  'Frozen foods':      'https://asafointernational.com/wp-content/uploads/2025/01/Frozen-Foods-min.jpg',
+  'Meat and Seafood':  'https://asafointernational.com/wp-content/uploads/2025/01/meat.jpeg',
+  Motherland:          'https://asafointernational.com/wp-content/uploads/2025/01/Motherland-Product-display.jpg',
+  'Non food':          'https://asafointernational.com/wp-content/uploads/2025/02/Non-Food.jpg',
+  Snack:               'https://asafointernational.com/wp-content/uploads/2024/10/Asafo-International-Snacks.jpg',
+  Spices:              'https://asafointernational.com/wp-content/uploads/2024/11/42-tm_home_default.png',
+}
 
 const BENEFITS = [
   {
@@ -70,6 +59,26 @@ export default async function Home() {
     .select('*')
     .eq('in_stock', true)
     .limit(8)
+
+  const { data: productCategories } = await supabase
+    .from('products')
+    .select('category')
+    .eq('in_stock', true)
+
+  const categoryCount = (productCategories ?? []).reduce<Record<string, number>>((acc, row) => {
+    const name = row.category?.trim()
+    if (!name) return acc
+    acc[name] = (acc[name] ?? 0) + 1
+    return acc
+  }, {})
+
+  const categoryCards = Object.keys(CATEGORY_IMAGE_BY_NAME)
+    .filter((name) => categoryCount[name] > 0)
+    .map((name) => ({
+      name,
+      count: categoryCount[name],
+      image: CATEGORY_IMAGE_BY_NAME[name],
+    }))
 
   return (
     <main className="min-h-screen bg-[#fcfbf7] text-neutral-900">
@@ -158,34 +167,36 @@ export default async function Home() {
           </Link>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {MARKETING_CATEGORIES.map((category) => (
-            <div
-              key={category.title}
-              className="group overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden">
-                <Image
-                  src={category.image}
-                  alt={category.title}
-                  fill
-                  className="object-cover transition duration-500 group-hover:scale-105"
-                  sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
+        {categoryCards.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {categoryCards.map((cat) => (
+              <Link
+                key={cat.name}
+                href={`/shop?category=${encodeURIComponent(cat.name)}`}
+                className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shadow-sm transition-shadow hover:shadow-lg"
+              >
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
                 />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold">{category.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-neutral-600">{category.description}</p>
-                <Link
-                  href="/shop"
-                  className="mt-5 inline-block text-sm font-semibold text-emerald-700 transition hover:text-emerald-800"
-                >
-                  Explore Category →
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <p className="font-semibold leading-tight text-white">{cat.name}</p>
+                  <p className="mt-1 text-sm text-white/85">{cat.count} products</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-dashed border-neutral-300 bg-white/80 px-6 py-10 text-center text-neutral-600">
+            Categories will appear here once products are in stock.{' '}
+            <Link href="/shop" className="font-semibold text-emerald-700 hover:text-emerald-800">
+              Browse the shop
+            </Link>
+          </p>
+        )}
       </section>
 
       {/* Best Sellers — live products */}
