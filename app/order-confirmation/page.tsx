@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, getStatusStepIndex, normalizeOrderStatus } from '@/lib/order-status'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 
+export const dynamic = 'force-dynamic'
+
 export default async function OrderConfirmationPage({
   searchParams,
 }: {
