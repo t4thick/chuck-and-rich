@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { HomeHero } from '@/components/HomeHero'
 import { ProductCard } from '@/components/ProductCard'
 import { SearchBar } from '@/components/SearchBar'
 import type { Product } from '@/types'
@@ -83,24 +82,31 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#fcfbf7] text-neutral-900">
-      <HomeHero />
-
-      {/* Working search from homepage */}
+      {/* Search — no hero banner */}
       <section className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
-          <div className="mb-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">Search the store</p>
+        <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
+            Lovely Queen African Market
+          </h1>
+          <p className="mt-2 text-sm text-neutral-600">Search the store or jump to a section below.</p>
+          <div className="mt-6">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">Search</p>
+            <SearchBar />
           </div>
-          <SearchBar />
         </div>
       </section>
 
-      {/* Quick jump — complements hero CTAs */}
       <section className="border-b border-neutral-200/80 bg-[#fcfbf7]">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-3 px-6 py-6 lg:px-8">
+          <Link
+            href="/shop"
+            className="rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+          >
+            Shop All Products
+          </Link>
           <a
             href="#products"
-            className="rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+            className="rounded-full border border-neutral-300 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-emerald-600 hover:text-emerald-800"
           >
             Shop Best Sellers
           </a>
