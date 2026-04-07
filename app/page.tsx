@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { HomeHero } from '@/components/HomeHero'
 import { ProductCard } from '@/components/ProductCard'
+import { SearchBar } from '@/components/SearchBar'
 import type { Product } from '@/types'
 
 /** Category hero images — same store photography as before */
@@ -83,6 +84,16 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-[#fcfbf7] text-neutral-900">
       <HomeHero />
+
+      {/* Working search from homepage */}
+      <section className="border-b border-neutral-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
+          <div className="mb-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">Search the store</p>
+          </div>
+          <SearchBar />
+        </div>
+      </section>
 
       {/* Quick jump — complements hero CTAs */}
       <section className="border-b border-neutral-200/80 bg-[#fcfbf7]">

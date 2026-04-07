@@ -83,21 +83,30 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[#236641] font-bold text-base">${product.price.toFixed(2)}</span>
-            <label className="flex items-center gap-2 text-[11px] font-semibold text-gray-400 uppercase tracking-[0.11em]">
-              Qty
-              <select
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700"
-                aria-label={`Select quantity for ${product.name}`}
-              >
-                {Array.from({ length: 6 }, (_, index) => index + 1).map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.11em]">
+                Qty
+              </span>
+              <div className="inline-flex items-center overflow-hidden rounded-lg border border-gray-200 bg-white">
+                <button
+                  type="button"
+                  aria-label={`Decrease quantity for ${product.name}`}
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="h-7 w-7 text-gray-600 transition hover:bg-gray-50"
+                >
+                  -
+                </button>
+                <span className="min-w-7 px-1 text-center text-xs font-semibold text-gray-800">{quantity}</span>
+                <button
+                  type="button"
+                  aria-label={`Increase quantity for ${product.name}`}
+                  onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                  className="h-7 w-7 text-gray-600 transition hover:bg-gray-50"
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
 
           <button
