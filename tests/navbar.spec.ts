@@ -13,25 +13,23 @@ test.describe('Navbar', () => {
     await expect(logo).toHaveAttribute('href', '/')
   })
 
-  test('desktop nav has Home, Shop, key category links, and cart', async ({ page }) => {
-    const nav = page.locator('nav').first()
-    await expect(nav.getByRole('link', { name: 'Home', exact: true })).toBeVisible()
-    await expect(nav.getByRole('link', { name: 'Shop', exact: true })).toBeVisible()
-    await expect(nav.getByRole('link', { name: 'Beverages', exact: true })).toBeVisible()
-    await expect(nav.getByRole('link', { name: 'Flours & Rice', exact: true })).toBeVisible()
-    await expect(nav.getByRole('link', { name: 'Track Order', exact: true })).toBeVisible()
+  test('desktop header has search, Shop, and cart', async ({ page }) => {
+    const header = page.locator('header').first()
+    await expect(header.getByPlaceholder(/Search groceries/i)).toBeVisible()
+    await expect(header.getByRole('link', { name: 'Shop', exact: true })).toBeVisible()
+    await expect(header.getByRole('link', { name: /Cart/i })).toBeVisible()
   })
 
   test('Shop navigates to shop page', async ({ page }) => {
-    await page.getByRole('link', { name: 'Shop', exact: true }).click()
+    await page.locator('header').getByRole('link', { name: 'Shop', exact: true }).click()
     await expect(page).toHaveURL(/\/shop/)
     await expect(page.getByRole('heading', { name: 'Shop', exact: true })).toBeVisible()
   })
 
   test('cart icon links to cart page', async ({ page }) => {
-    const cartLinks = page.locator('nav a[href="/cart"]')
-    await expect(cartLinks.first()).toBeVisible()
-    await cartLinks.first().click()
+    const cartLink = page.locator('header').getByRole('link', { name: /Cart/i }).first()
+    await expect(cartLink).toBeVisible()
+    await cartLink.click()
     await expect(page).toHaveURL(/\/cart/)
   })
 })

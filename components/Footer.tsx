@@ -50,7 +50,7 @@ export function Footer() {
               href={STORE_MAP_URL}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex text-sm font-semibold text-[#236641] hover:text-[#1a4731] transition-colors"
+              className="inline-flex text-sm font-semibold text-[#0f3d2e] hover:text-[#0c3024] transition-colors"
             >
               Get directions
             </a>
@@ -65,7 +65,7 @@ export function Footer() {
               <li key={cat}>
                 <Link
                   href={`/shop?category=${encodeURIComponent(cat)}`}
-                  className="text-sm hover:text-[#236641] transition-colors"
+                  className="text-sm transition-colors hover:text-[#0f3d2e]"
                 >
                   {cat}
                 </Link>
@@ -80,7 +80,7 @@ export function Footer() {
           <ul className="space-y-2.5">
             {QUICK_LINKS.map(({ label, href }) => (
               <li key={href}>
-                <Link href={href} className="text-sm hover:text-[#236641] transition-colors">
+                <Link href={href} className="text-sm transition-colors hover:text-[#0f3d2e]">
                   {label}
                 </Link>
               </li>

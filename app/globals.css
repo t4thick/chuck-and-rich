@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand */
-  --brand-forest:  #1a4731;
-  --brand-green:   #236641;
-  --brand-gold:    #c8811a;
-  --brand-amber:   #e8a020;
+  /* Brand — deep green + warm gold */
+  --brand-primary: #0f3d2e;
+  --brand-forest:  #0f3d2e;
+  --brand-green:   #0f3d2e;
+  --brand-gold:    #f4b400;
+  --brand-amber:   #f4b400;
 
   /* Neutrals */
   --ink-900: #111827;
@@ -16,20 +17,18 @@
   --ink-50:  #f9fafb;
 
   /* Semantic */
-  --background: #ffffff;
-  --surface:    #f9fafb;
+  --background: #f9f9f9;
+  --surface:    #f9f9f9;
   --border:     #e5e7eb;
 
-  /* Type */
-  --font-display: var(--font-geist-sans);
-  --font-body:    var(--font-geist-sans);
+  /* Type — body font set via next/font on <html> */
+  --font-display: ui-sans-serif, system-ui, sans-serif;
+  --font-body:    ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--ink-900);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 /* Reset dark mode — store should always be light */
@@ -48,7 +47,7 @@ html { scroll-behavior: smooth; }
 
 /* Focus ring — consistent across all interactive elements */
 :focus-visible {
-  outline: 2px solid var(--brand-green);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -61,8 +60,8 @@ button { font-family: inherit; }
 
 /* Selection color */
 ::selection {
-  background: #d1fae5;
-  color: var(--brand-forest);
+  background: rgba(15, 61, 46, 0.12);
+  color: var(--ink-900);
 }
 
 /* Shared layout primitives */
