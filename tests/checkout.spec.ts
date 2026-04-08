@@ -25,7 +25,7 @@ test.describe('Checkout', () => {
     })
   })
 
-  test('order creation API rejects unauthenticated checkout attempts', async ({ page }) => {
+  test('direct order creation API is disabled (use Stripe Checkout)', async ({ page }) => {
     const response = await page.request.post('/api/orders', {
       data: {
         name: 'Test Customer',
@@ -37,9 +37,9 @@ test.describe('Checkout', () => {
       },
     })
 
-    expect(response.status()).toBe(401)
+    expect(response.status()).toBe(410)
     await expect(await response.json()).toMatchObject({
-      error: expect.stringMatching(/sign in/i),
+      error: expect.stringMatching(/stripe checkout|payment/i),
     })
   })
 })

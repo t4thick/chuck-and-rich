@@ -2,23 +2,7 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-
-const CATEGORIES = [
-  'Beverages',
-  'Bread',
-  'Canned',
-  'Caribbean product',
-  'Cosmetics',
-  'Dairy And Tea',
-  'Flours & Rice',
-  'Fresh Produce',
-  'Frozen foods',
-  'Meat and Seafood',
-  'Motherland',
-  'Non food',
-  'Snack',
-  'Spices',
-]
+import { SHOP_CATEGORIES } from '@/lib/shop-categories'
 
 export function CategoryFilter({ active }: { active?: string }) {
   const searchParams = useSearchParams()
@@ -44,7 +28,7 @@ export function CategoryFilter({ active }: { active?: string }) {
       >
         All
       </Link>
-      {CATEGORIES.map((name) => (
+      {SHOP_CATEGORIES.map((name) => (
         <Link
           key={name}
           href={buildUrl(name)}

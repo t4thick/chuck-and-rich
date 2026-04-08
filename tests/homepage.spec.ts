@@ -9,22 +9,22 @@ test.describe('Homepage', () => {
     await expect(page).toHaveTitle(/Lovely Queen African Market/i)
   })
 
-  test('shows page title heading', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: /Lovely Queen African Market/i })).toBeVisible()
-  })
-
-  test('shows Shop by Category section', async ({ page }) => {
+  test('shows hero heading', async ({ page }) => {
     await expect(
-      page.getByRole('main').getByRole('heading', { name: 'Shop by Category' })
+      page.getByRole('heading', { name: /Authentic African Groceries Delivered to Your Door/i })
     ).toBeVisible()
   })
 
-  test('shows Best Sellers section', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Best Sellers' })).toBeVisible()
+  test('shows Shop by category section', async ({ page }) => {
+    await expect(page.getByRole('main').getByRole('heading', { name: 'Shop by category' })).toBeVisible()
+  })
+
+  test('shows Best sellers section', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Best sellers' })).toBeVisible()
   })
 
   test('Shop Now links to shop', async ({ page }) => {
-    const shopNow = page.getByRole('link', { name: /Shop All Products/i })
+    const shopNow = page.getByRole('link', { name: 'Shop Now' }).first()
     await expect(shopNow).toBeVisible()
     await expect(shopNow).toHaveAttribute('href', '/shop')
   })

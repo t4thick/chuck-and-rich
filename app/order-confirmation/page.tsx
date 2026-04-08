@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, getStatusStepIndex, normalizeOrderStatus } from '@/lib/order-status'
+import { normalizePaymentMethod } from '@/lib/payment-methods'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 
 export const dynamic = 'force-dynamic'
@@ -31,12 +32,15 @@ export default async function OrderConfirmationPage({
     total_amount: number | null
     subtotal_amount: number | null
     tracking_number: string | null
+    payment_method: string | null
   } | null = null
 
   if (id) {
     const { data } = await supabaseAdmin
       .from('orders')
-      .select('id,status,shipping_method,shipping_fee,total_amount,subtotal_amount,tracking_number')
+      .select(
+        'id,status,shipping_method,shipping_fee,total_amount,subtotal_amount,tracking_number,payment_method'
+      )
       .eq('id', id)
       .eq('user_id', user.id)
       .maybeSingle()
@@ -46,6 +50,7 @@ export default async function OrderConfirmationPage({
   const normalizedStatus = normalizeOrderStatus(order?.status)
   const statusIndex = getStatusStepIndex(order?.status)
   const shippingMethod = (order?.shipping_method as ShippingMethod | null | undefined) ?? 'standard'
+  const paymentMethod = order ? normalizePaymentMethod(order.payment_method) : null
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
@@ -65,13 +70,28 @@ export default async function OrderConfirmationPage({
           We&apos;ve received your order and will keep you updated as it moves through delivery.
         </p>
 
-        <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-5 text-left text-sm text-amber-950">
-          <p className="font-semibold text-amber-900 mb-1">Cash on delivery</p>
-          <p className="text-amber-900/90 leading-snug">
-            Pay with cash when your order arrives. Keep your phone handy — we&apos;ll call or text to confirm your
-            delivery.
-          </p>
-        </div>
+        {paymentMethod === 'stripe' ? (
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-5 text-left text-sm text-emerald-950">
+            <p className="font-semibold text-emerald-900 mb-1">Payment received</p>
+            <p className="text-emerald-900/90 leading-snug">
+              Your card payment was processed securely through Stripe. You should also receive a confirmation email
+              shortly.
+            </p>
+          </div>
+        ) : paymentMethod === 'cod' ? (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-5 text-left text-sm text-amber-950">
+            <p className="font-semibold text-amber-900 mb-1">Cash on delivery</p>
+            <p className="text-amber-900/90 leading-snug">
+              Pay with cash when your order arrives. Keep your phone handy — we&apos;ll call or text to confirm your
+              delivery.
+            </p>
+          </div>
+        ) : paymentMethod ? (
+          <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 mb-5 text-left text-sm text-gray-800">
+            <p className="font-semibold text-gray-900 mb-1">Payment</p>
+            <p className="text-gray-700 leading-snug">We&apos;ll follow up if we need anything else for this order.</p>
+          </div>
+        ) : null}
 
         {id && (
           <div className="bg-gray-50 rounded-xl px-4 py-3 mb-6 inline-block">

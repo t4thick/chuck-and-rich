@@ -143,7 +143,7 @@ function StepBadge({ children }: { children: React.ReactNode }) {
 }
 
 export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAccount }) {
-  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart } = useCart()
+  const { items, totalPrice, totalItems, updateQuantity, removeItem } = useCart()
   const router = useRouter()
 
   const [form, setForm] = useState<CheckoutForm>({
@@ -183,15 +183,18 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
     setError('')
 
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch('/api/checkout/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...form,
+          name: form.name,
+          phone: form.phone,
           address: [form.address1.trim(), form.address2.trim()].filter(Boolean).join(', '),
+          city: form.city,
+          state: form.state,
+          country: form.country,
+          postalCode: form.postalCode,
           items,
-          total: grandTotal,
-          paymentMethod: 'cod',
           shippingMethod,
         }),
       })
@@ -203,12 +206,16 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
           router.push('/login?next=/checkout')
           return
         }
-        setError(data.error || 'Something went wrong. Please try again.')
+        setError(typeof data.error === 'string' ? data.error : 'Could not start checkout. Please try again.')
         return
       }
 
-      clearCart()
-      router.push(`/order-confirmation?id=${encodeURIComponent(data.orderId)}`)
+      if (typeof data.url === 'string' && data.url) {
+        window.location.href = data.url
+        return
+      }
+
+      setError('No payment link returned. Please try again.')
     } catch {
       setError('Network error. Please check your connection and try again.')
     } finally {
@@ -421,10 +428,15 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
                 Payment
               </h2>
               <div className="rounded-xl border-2 border-[#236641] bg-emerald-50/40 p-4">
-                <p className="font-semibold text-gray-900">Cash on delivery</p>
+                <p className="font-semibold text-gray-900">Pay securely with Stripe</p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Pay when your order arrives. We&apos;ll call or text the phone number on your account if we need to
-                  confirm delivery details.
+                  You&apos;ll be redirected to Stripe Checkout to pay by card. Orders are only placed after your payment
+                  succeeds — we never store your card details on our servers.
+                </p>
+                <p className="text-xs text-gray-500 mt-3">
+                  <strong className="text-gray-700">Test mode:</strong> use card{' '}
+                  <span className="font-mono">4242 4242 4242 4242</span>, any future expiry, any CVC, and any postal
+                  code.
                 </p>
               </div>
               <div className="mt-4 rounded-xl bg-amber-50 border border-amber-100 p-4 text-sm text-amber-950">
@@ -518,7 +530,7 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
                   <span className="text-[#1a4731]">${grandTotal.toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-gray-500 pt-2">
-                  Payment: <span className="font-semibold text-gray-700">Cash on delivery</span>
+                  Payment: <span className="font-semibold text-gray-700">Card via Stripe Checkout</span>
                 </p>
               </div>
 
@@ -531,7 +543,7 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
                     : 'bg-[#c8811a] hover:bg-[#b5731a] text-white shadow-lg shadow-amber-900/20 active:scale-95'
                 }`}
               >
-                {loading ? 'Placing Order...' : 'Place Order'}
+                {loading ? 'Redirecting…' : 'Continue to payment'}
               </button>
 
               <Link
