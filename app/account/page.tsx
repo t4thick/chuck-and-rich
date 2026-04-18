@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AccountSignOut } from '@/components/AccountSignOut'
+import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner'
 import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
 
 export default async function AccountPage() {
@@ -34,6 +35,8 @@ export default async function AccountPage() {
           </div>
           <AccountSignOut />
         </div>
+
+        {!user.email_confirmed_at && <EmailVerificationBanner email={user.email} />}
 
         <section className="panel p-6 mb-6">
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Profile</h2>

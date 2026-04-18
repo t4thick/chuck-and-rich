@@ -6,6 +6,7 @@ import { HomeHero } from '@/components/home/HomeHero'
 import { ShopByCountry } from '@/components/home/ShopByCountry'
 import { DealsSection } from '@/components/home/DealsSection'
 import { TrustSection } from '@/components/home/TrustSection'
+import { AccountCtaSection } from '@/components/home/AccountCtaSection'
 import type { Product } from '@/types'
 
 /** Store photography keyed by DB category name */
@@ -65,6 +66,8 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-[#f9f9f9] text-neutral-900">
       <HomeHero />
+
+      <AccountCtaSection />
 
       <section id="categories" className="border-t border-neutral-200 bg-white py-14 md:py-16">
         <div className="mx-auto max-w-7xl px-5">

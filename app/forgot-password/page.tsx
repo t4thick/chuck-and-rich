@@ -1,14 +1,25 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { mapPasswordResetError } from '@/lib/auth/map-auth-error'
+import { AuthTrustFooter } from '@/components/auth/AuthTrustFooter'
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordInner() {
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next')?.startsWith('/') ? searchParams.get('next')! : '/account'
+  const emailRef = useRef<HTMLInputElement>(null)
+
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
+
+  useEffect(() => {
+    emailRef.current?.focus()
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -17,13 +28,18 @@ export default function ForgotPasswordPage() {
     const supabase = createClient()
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${origin}/auth/callback?next=/account`,
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
     })
     setLoading(false)
+
     if (resetError) {
-      setError(resetError.message)
-      return
+      const mapped = mapPasswordResetError(resetError.message)
+      if (mapped) {
+        setError(mapped)
+        return
+      }
     }
+
     setSent(true)
   }
 
@@ -32,10 +48,17 @@ export default function ForgotPasswordPage() {
       <div className="panel w-full max-w-md p-8">
         <p className="text-xs uppercase tracking-[0.14em] text-[#c8811a] font-semibold mb-2">Account recovery</p>
         <h1 className="section-title mb-1">Reset password</h1>
-        <p className="section-subtitle mb-6">We will email you a secure reset link.</p>
+        <p className="section-subtitle mb-6">We’ll email you a secure link to choose a new password.</p>
 
         {sent ? (
-          <p className="text-sm text-gray-700">If that email is registered, you will receive a reset link shortly.</p>
+          <div className="space-y-3" role="status">
+            <p className="text-sm text-gray-700">
+              If an account exists for that email, we sent a reset link. Check your inbox and spam folder.
+            </p>
+            <p className="text-xs text-gray-500">
+              For your security, we don’t confirm whether an email is registered.
+            </p>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -43,8 +66,10 @@ export default function ForgotPasswordPage() {
                 Email
               </label>
               <input
+                ref={emailRef}
                 id="email"
                 type="email"
+                inputMode="email"
                 autoComplete="email"
                 required
                 value={email}
@@ -52,7 +77,11 @@ export default function ForgotPasswordPage() {
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1a4731]/30"
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <p className="text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
             <button
               type="submit"
               disabled={loading}
@@ -64,11 +93,27 @@ export default function ForgotPasswordPage() {
         )}
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          <Link href="/login" className="text-[#236641] font-medium hover:underline">
+          <Link href={`/login?next=${encodeURIComponent(next)}`} className="text-[#236641] font-medium hover:underline">
             Back to sign in
           </Link>
         </p>
+
+        <AuthTrustFooter className="mt-8 pt-6 border-t border-gray-100" />
       </div>
     </main>
+  )
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-[70vh] flex items-center justify-center px-5 py-16">
+          <p className="text-sm text-gray-500">Loading…</p>
+        </main>
+      }
+    >
+      <ForgotPasswordInner />
+    </Suspense>
   )
 }
