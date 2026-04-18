@@ -93,7 +93,7 @@ export async function middleware(request: NextRequest) {
 
     if (user && (pathname === '/login' || pathname === '/signup')) {
       const requestedNext = request.nextUrl.searchParams.get('next')
-      const safeNext = requestedNext?.startsWith('/') ? requestedNext : '/account'
+      const safeNext = requestedNext?.startsWith('/') ? requestedNext : '/'
       return NextResponse.redirect(new URL(safeNext, request.url))
     }
 

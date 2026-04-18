@@ -7,6 +7,9 @@ import { useCart } from '@/context/CartContext'
 import { NavbarAuth } from '@/components/NavbarAuth'
 import { SearchBar } from '@/components/SearchBar'
 
+const navLinkClass =
+  'rounded-lg px-2.5 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-[#0f3d2e] whitespace-nowrap'
+
 function SearchFallback() {
   return <div className="h-10 w-full max-w-2xl rounded-xl border border-neutral-200 bg-neutral-100 animate-pulse" aria-hidden />
 }
@@ -18,16 +21,40 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200/90 bg-white/95 shadow-sm backdrop-blur-md">
       <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 px-4 py-2 md:h-16 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-4 md:py-0">
-        <Link href="/" className="col-start-1 row-start-1 flex shrink-0 items-center rounded-lg py-1">
-          <Image
-            src="/logo.png"
-            alt="Lovely Queen African Market"
-            width={160}
-            height={48}
-            className="h-8 w-auto object-contain md:h-9"
-            priority
-          />
-        </Link>
+        <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1 sm:gap-2">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center rounded-lg py-1 outline-offset-2"
+            aria-label="Lovely Queen African Market — Home"
+          >
+            <Image
+              src="/logo.png"
+              alt=""
+              width={160}
+              height={48}
+              className="h-8 w-auto object-contain md:h-9"
+              priority
+            />
+          </Link>
+
+          <nav
+            className="hidden min-w-0 items-center gap-0.5 md:flex lg:gap-1"
+            aria-label="Main store"
+          >
+            <Link href="/" className={navLinkClass}>
+              Home
+            </Link>
+            <Link href="/shop" className={navLinkClass}>
+              Shop
+            </Link>
+            <Link href="/#categories" className={`${navLinkClass} hidden lg:inline-flex`}>
+              Categories
+            </Link>
+            <Link href="/#deals" className={`${navLinkClass} hidden lg:inline-flex`}>
+              Deals
+            </Link>
+          </nav>
+        </div>
 
         <div className="col-span-2 col-start-1 row-start-2 min-w-0 md:col-span-1 md:col-start-2 md:row-start-1 md:px-2">
           <Suspense fallback={<SearchFallback />}>
@@ -36,12 +63,6 @@ export function Navbar() {
         </div>
 
         <div className="col-start-2 row-start-1 flex items-center justify-end gap-1 sm:gap-2">
-          <Link
-            href="/shop"
-            className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-[#0f3d2e] lg:inline-flex"
-          >
-            Shop
-          </Link>
           <NavbarAuth variant="light" />
           <Link
             href="/cart"
@@ -90,13 +111,15 @@ export function Navbar() {
       </div>
 
       {open && (
-        <nav className="border-t border-neutral-100 bg-white px-4 py-3 md:hidden">
+        <nav className="border-t border-neutral-100 bg-white px-4 py-3 md:hidden" aria-label="Mobile">
           <div className="flex flex-col gap-0.5">
             {[
               { label: 'Home', href: '/' },
-              { label: 'Shop all', href: '/shop' },
+              { label: 'Shop', href: '/shop' },
               { label: 'Categories', href: '/#categories' },
+              { label: 'Deals', href: '/#deals' },
               { label: 'Track order', href: '/track-order' },
+              { label: 'Account', href: '/account' },
               { label: `Cart${totalItems > 0 ? ` (${totalItems})` : ''}`, href: '/cart' },
             ].map(({ label, href }) => (
               <Link
