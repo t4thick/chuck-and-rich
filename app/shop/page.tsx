@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { ProductCard } from '@/components/ProductCard'
@@ -63,6 +64,22 @@ export default async function ShopPage({
       </div>
 
       <div className="mx-auto max-w-7xl px-5 py-8 lg:py-10">
+        <nav aria-label="Breadcrumb" className="mb-6">
+          <ol className="flex flex-wrap items-center gap-1.5 text-sm text-neutral-600">
+            <li>
+              <Link href="/" className="font-semibold text-[#0f3d2e] hover:underline">
+                Home
+              </Link>
+            </li>
+            <li className="text-neutral-400" aria-hidden>
+              /
+            </li>
+            <li className="font-medium text-neutral-900" aria-current="page">
+              Shop
+            </li>
+          </ol>
+        </nav>
+
         <div className="mb-8 max-w-2xl">
           <Suspense
             fallback={<div className="h-11 max-w-xl animate-pulse rounded-xl border border-neutral-200 bg-white" />}

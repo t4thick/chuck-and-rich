@@ -13,8 +13,8 @@ const REMEMBER_EMAIL_KEY = 'lq_remember_email'
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextRaw = searchParams.get('next') ?? '/account'
-  const next = nextRaw.startsWith('/') ? nextRaw : '/account'
+  const nextRaw = searchParams.get('next') ?? '/'
+  const next = nextRaw.startsWith('/') ? nextRaw : '/'
   const err = searchParams.get('error')
   const emailRef = useRef<HTMLInputElement>(null)
 

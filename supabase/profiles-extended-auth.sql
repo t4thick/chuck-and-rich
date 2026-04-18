@@ -3,7 +3,7 @@
 -- Run in Supabase SQL Editor after auth-profiles.sql (safe to re-run).
 --
 -- Signup sends user metadata: first_name, last_name, full_name, phone,
--- marketing_opt_in, terms_accepted_at, referral_code (optional).
+-- marketing_opt_in, terms_accepted_at.
 -- ============================================================
 
 alter table public.profiles add column if not exists marketing_email_opt_in boolean not null default false;

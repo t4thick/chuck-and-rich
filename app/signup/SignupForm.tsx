@@ -24,8 +24,8 @@ function isValidOptionalPhone(phone: string): boolean {
 export function SignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextRaw = searchParams.get('next') ?? '/account'
-  const next = nextRaw.startsWith('/') ? nextRaw : '/account'
+  const nextRaw = searchParams.get('next') ?? '/'
+  const next = nextRaw.startsWith('/') ? nextRaw : '/'
   const firstRef = useRef<HTMLInputElement>(null)
 
   const [firstName, setFirstName] = useState('')
@@ -36,7 +36,6 @@ export function SignupForm() {
   const [honeypot, setHoneypot] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [marketingOptIn, setMarketingOptIn] = useState(false)
-  const [referralCode, setReferralCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -108,7 +107,6 @@ export function SignupForm() {
           phone: phoneTrim || null,
           marketing_opt_in: marketingOptIn,
           terms_accepted_at: termsAt,
-          referral_code: referralCode.trim() || null,
         },
       },
     })
@@ -256,20 +254,6 @@ export function SignupForm() {
               placeholder="For delivery updates"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1a4731]/30"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="referral" className="block text-sm font-medium text-gray-700 mb-1">
-              Referral code <span className="text-gray-400 font-normal">(optional)</span>
-            </label>
-            <input
-              id="referral"
-              type="text"
-              autoComplete="off"
-              value={referralCode}
-              onChange={(e) => setReferralCode(e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1a4731]/30"
             />
           </div>
