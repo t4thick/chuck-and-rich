@@ -42,8 +42,13 @@ export function NavbarAuth({ variant = 'light' }: { variant?: 'light' | 'dark' }
   }
 
   return (
-    <Link href="/login" className={linkClass}>
-      Sign in
-    </Link>
+    <span className="flex items-center gap-0.5 sm:gap-1">
+      <Link href="/login" className={linkClass}>
+        Sign in
+      </Link>
+      <Link href="/signup" className={`${linkClass} text-[#0f3d2e] font-semibold`}>
+        Sign up
+      </Link>
+    </span>
   )
 }
