@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getAuthSiteOrigin } from '@/lib/site-url-client'
 
 type Props = {
   email: string | null | undefined
@@ -17,7 +18,7 @@ export function EmailVerificationBanner({ email }: Props) {
     setStatus('sending')
     setMessage('')
     const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const origin = getAuthSiteOrigin()
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,

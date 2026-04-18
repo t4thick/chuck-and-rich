@@ -8,6 +8,7 @@ import { mapSignInError, mapSignUpError } from '@/lib/auth/map-auth-error'
 import { isPasswordAcceptableForSignup } from '@/lib/auth/password-strength'
 import { PasswordField } from '@/components/auth/PasswordField'
 import { AuthTrustFooter } from '@/components/auth/AuthTrustFooter'
+import { getAuthSiteOrigin } from '@/lib/site-url-client'
 
 const HONEYPOT_NAME = 'website'
 
@@ -49,7 +50,7 @@ export function SignupForm() {
   async function handleGoogle() {
     setError('')
     const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const origin = getAuthSiteOrigin()
     const { error: oAuthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -91,7 +92,7 @@ export function SignupForm() {
     }
 
     const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const origin = getAuthSiteOrigin()
     const termsAt = new Date().toISOString()
     const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
 

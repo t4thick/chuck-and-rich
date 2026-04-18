@@ -1,14 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
+import { CheckoutStripePayment } from './CheckoutStripePayment'
 import {
   calculateShipping,
   SHIPPING_METHOD_LABEL,
   type ShippingMethod,
 } from '@/lib/shipping'
+import { getAuthSiteOrigin } from '@/lib/site-url-client'
 
 type CheckoutAccount = {
   email: string
@@ -145,6 +147,7 @@ function StepBadge({ children }: { children: React.ReactNode }) {
 export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAccount }) {
   const { items, totalPrice, totalItems, updateQuantity, removeItem } = useCart()
   const router = useRouter()
+  const detailsFormRef = useRef<HTMLFormElement>(null)
 
   const [form, setForm] = useState<CheckoutForm>({
     name: initialAccount.fullName,
@@ -160,6 +163,21 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('standard')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [returnUrl, setReturnUrl] = useState('')
+
+  useEffect(() => {
+    setReturnUrl(`${getAuthSiteOrigin()}/checkout/success`)
+  }, [])
+
+  const cartFingerprint = useMemo(
+    () => items.map((i) => `${i.product.id}:${i.quantity}`).join('|'),
+    [items]
+  )
+
+  useEffect(() => {
+    setClientSecret(null)
+  }, [cartFingerprint, totalPrice, shippingMethod])
 
   const shipping = useMemo(
     () =>
@@ -177,13 +195,18 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function preparePayment() {
+    const el = detailsFormRef.current
+    if (el && !el.checkValidity()) {
+      el.reportValidity()
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
-      const res = await fetch('/api/checkout/session', {
+      const res = await fetch('/api/checkout/payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -210,12 +233,12 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
         return
       }
 
-      if (typeof data.url === 'string' && data.url) {
-        window.location.href = data.url
+      if (typeof data.clientSecret === 'string' && data.clientSecret) {
+        setClientSecret(data.clientSecret)
         return
       }
 
-      setError('No payment link returned. Please try again.')
+      setError('Could not initialize payment. Please try again.')
     } catch {
       setError('Network error. Please check your connection and try again.')
     } finally {
@@ -256,9 +279,9 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
         </p>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="page-container max-w-6xl grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
-          <div className="space-y-6">
+      <div className="page-container max-w-6xl grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
+        <div className="space-y-6">
+          <form ref={detailsFormRef} onSubmit={(e) => e.preventDefault()} className="space-y-6">
             <section className="panel p-6">
               <h2 className="font-bold text-lg text-gray-900 mb-5 flex items-center gap-2">
                 <StepBadge>1</StepBadge>
@@ -421,40 +444,56 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
                 </p>
               </div>
             </section>
+          </form>
 
-            <section className="panel p-6">
-              <h2 className="font-bold text-lg text-gray-900 mb-5 flex items-center gap-2">
-                <StepBadge>4</StepBadge>
-                Payment
-              </h2>
-              <div className="rounded-xl border-2 border-[#236641] bg-emerald-50/40 p-4">
-                <p className="font-semibold text-gray-900">Pay securely with Stripe</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  You&apos;ll be redirected to Stripe Checkout to pay by card. Orders are only placed after your payment
-                  succeeds — we never store your card details on our servers.
-                </p>
-                <p className="text-xs text-gray-500 mt-3">
-                  <strong className="text-gray-700">Test mode:</strong> use card{' '}
-                  <span className="font-mono">4242 4242 4242 4242</span>, any future expiry, any CVC, and any postal
-                  code.
-                </p>
-              </div>
-              <div className="mt-4 rounded-xl bg-amber-50 border border-amber-100 p-4 text-sm text-amber-950">
-                <p className="font-semibold text-amber-900">Lovely Queen African Market</p>
-                <p className="mt-1">Located in Karl Plaza</p>
-                <p>1668 E Dublin Granville Rd, Columbus, OH 43229</p>
-                <p>(614) 446-0893</p>
-              </div>
-            </section>
+          <section className="panel p-6">
+            <h2 className="font-bold text-lg text-gray-900 mb-5 flex items-center gap-2">
+              <StepBadge>4</StepBadge>
+              Payment
+            </h2>
+            <div className="rounded-xl border-2 border-[#236641] bg-emerald-50/40 p-4 mb-4">
+              <p className="font-semibold text-gray-900">Pay securely on this page</p>
+              <p className="text-sm text-gray-600 mt-1">
+                Card details are collected by Stripe (embedded form below). Your order is recorded only after payment
+                succeeds — we never store your full card number on our servers.
+              </p>
+              <p className="text-xs text-gray-500 mt-3">
+                <strong className="text-gray-700">Test mode:</strong> use{' '}
+                <span className="font-mono">4242 4242 4242 4242</span>, any future expiry, any CVC, and any postal
+                code.
+              </p>
+            </div>
+            <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 text-sm text-amber-950 mb-6">
+              <p className="font-semibold text-amber-900">Lovely Queen African Market</p>
+              <p className="mt-1">Located in Karl Plaza</p>
+              <p>1668 E Dublin Granville Rd, Columbus, OH 43229</p>
+              <p>(614) 446-0893</p>
+            </div>
 
-            {error && (
+            {!clientSecret && (
+              <p className="text-sm text-gray-600 mb-4">
+                Fill in your details above, then click <strong>Continue to payment</strong> in the order summary to load
+                the card form.
+              </p>
+            )}
+
+            {clientSecret && returnUrl && (
+              <CheckoutStripePayment
+                clientSecret={clientSecret}
+                returnUrl={returnUrl}
+                totalLabel={`$${grandTotal.toFixed(2)}`}
+              />
+            )}
+          </section>
+
+          {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
                 <strong>Error:</strong> {error}
               </div>
             )}
-          </div>
+        </div>
 
-          <aside className="lg:col-span-1">
+        <aside className="lg:col-span-1">
             <div className="panel p-6 sticky top-24">
               <h2 className="font-bold text-lg text-gray-900 mb-5 flex items-center gap-2">
                 <StepBadge>5</StepBadge>
@@ -530,21 +569,28 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
                   <span className="text-[#1a4731]">${grandTotal.toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-gray-500 pt-2">
-                  Payment: <span className="font-semibold text-gray-700">Card via Stripe Checkout</span>
+                  Payment: <span className="font-semibold text-gray-700">Card on this page (Stripe)</span>
                 </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full font-bold py-4 rounded-xl text-base transition-all ${
-                  loading
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-[#c8811a] hover:bg-[#b5731a] text-white shadow-lg shadow-amber-900/20 active:scale-95'
-                }`}
-              >
-                {loading ? 'Redirecting…' : 'Continue to payment'}
-              </button>
+              {!clientSecret ? (
+                <button
+                  type="button"
+                  onClick={() => void preparePayment()}
+                  disabled={loading}
+                  className={`w-full font-bold py-4 rounded-xl text-base transition-all ${
+                    loading
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-[#c8811a] hover:bg-[#b5731a] text-white shadow-lg shadow-amber-900/20 active:scale-95'
+                  }`}
+                >
+                  {loading ? 'Preparing…' : 'Continue to payment'}
+                </button>
+              ) : (
+                <p className="text-center text-sm text-gray-600 py-3">
+                  Enter your card in the payment section, then click <strong>Pay</strong>.
+                </p>
+              )}
 
               <Link
                 href="/cart"
@@ -553,9 +599,8 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
                 Back to Cart
               </Link>
             </div>
-          </aside>
-        </div>
-      </form>
+        </aside>
+      </div>
     </main>
   )
 }
