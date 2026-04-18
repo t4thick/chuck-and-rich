@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { mapSignInError } from '@/lib/auth/map-auth-error'
 import { PasswordField } from '@/components/auth/PasswordField'
 import { AuthTrustFooter } from '@/components/auth/AuthTrustFooter'
+import { getAuthSiteOrigin } from '@/lib/site-url-client'
 
 const REMEMBER_EMAIL_KEY = 'lq_remember_email'
 
@@ -78,7 +79,7 @@ export function LoginForm() {
     setMagicMessage('')
     setError('')
     const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const origin = getAuthSiteOrigin()
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: trimmed,
       options: {
@@ -96,7 +97,7 @@ export function LoginForm() {
   async function handleGoogle() {
     setError('')
     const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const origin = getAuthSiteOrigin()
     const { error: oAuthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

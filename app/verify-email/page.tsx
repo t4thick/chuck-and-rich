@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthTrustFooter } from '@/components/auth/AuthTrustFooter'
+import { getAuthSiteOrigin } from '@/lib/site-url-client'
 
 export default function VerifyEmailPage() {
   const router = useRouter()
@@ -31,7 +32,7 @@ export default function VerifyEmailPage() {
     if (!email) return
     setStatus('sending')
     const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const origin = getAuthSiteOrigin()
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,

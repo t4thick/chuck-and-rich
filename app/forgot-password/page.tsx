@@ -5,11 +5,12 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { mapPasswordResetError } from '@/lib/auth/map-auth-error'
+import { getAuthSiteOrigin } from '@/lib/site-url-client'
 import { AuthTrustFooter } from '@/components/auth/AuthTrustFooter'
 
 function ForgotPasswordInner() {
   const searchParams = useSearchParams()
-  const next = searchParams.get('next')?.startsWith('/') ? searchParams.get('next')! : '/account'
+  const next = searchParams.get('next')?.startsWith('/') ? searchParams.get('next')! : '/'
   const emailRef = useRef<HTMLInputElement>(null)
 
   const [email, setEmail] = useState('')
@@ -26,7 +27,7 @@ function ForgotPasswordInner() {
     setLoading(true)
     setError('')
     const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const origin = getAuthSiteOrigin()
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
     })
