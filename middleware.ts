@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/auth/admin-session'
 
 const CUSTOMER_AUTH_PATHS = ['/account', '/checkout', '/order-confirmation', '/track-order']
 
@@ -52,9 +53,8 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    const adminPassword = process.env.ADMIN_PASSWORD
-    const legacyAdmin =
-      adminPassword && request.cookies.get('admin_session')?.value === adminPassword
+    const adminToken = request.cookies.get(ADMIN_COOKIE_NAME)?.value
+    const adminSessionValid = await verifyAdminSessionToken(adminToken)
 
     if (CUSTOMER_AUTH_PATHS.some((prefix) => pathname.startsWith(prefix))) {
       if (!user) {
@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-      if (legacyAdmin) {
+      if (adminSessionValid) {
         return supabaseResponse
       }
       if (!user) {
@@ -105,7 +105,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Only run the middleware on routes that actually need auth gating.
+  // This avoids running supabase.auth.getUser() on every product / static page request.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/account/:path*',
+    '/checkout/:path*',
+    '/order-confirmation/:path*',
+    '/track-order/:path*',
+    '/admin/:path*',
+    '/login',
+    '/signup',
   ],
 }
