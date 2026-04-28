@@ -4,18 +4,18 @@ import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/auth/admin-ses
 
 const CUSTOMER_AUTH_PATHS = ['/account', '/checkout', '/order-confirmation', '/track-order']
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   const { pathname } = request.nextUrl
   const nextTarget = `${pathname}${request.nextUrl.search}`
 
-  // createServerClient throws if URL/key are empty — avoid MIDDLEWARE_INVOCATION_FAILED on Vercel
+  // createServerClient throws if URL/key are empty — avoid PROXY_INVOCATION_FAILED on Vercel
   // when env vars are missing or not available to the Edge bundle.
   if (!supabaseUrl?.trim() || !supabaseAnonKey?.trim()) {
     console.error(
-      '[middleware] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY — add them in Vercel → Environment Variables and redeploy.'
+      '[proxy] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY — add them in Vercel → Environment Variables and redeploy.'
     )
     if (CUSTOMER_AUTH_PATHS.some((prefix) => pathname.startsWith(prefix))) {
       const url = request.nextUrl.clone()
@@ -81,7 +81,7 @@ export async function middleware(request: NextRequest) {
         .maybeSingle()
 
       if (profileError) {
-        console.error('[middleware] profiles lookup:', profileError.message)
+        console.error('[proxy] profiles lookup:', profileError.message)
         return NextResponse.redirect(new URL('/admin/login?error=forbidden', request.url))
       }
 
@@ -99,13 +99,13 @@ export async function middleware(request: NextRequest) {
 
     return supabaseResponse
   } catch (e) {
-    console.error('[middleware]', e)
+    console.error('[proxy]', e)
     return NextResponse.next({ request })
   }
 }
 
 export const config = {
-  // Only run the middleware on routes that actually need auth gating.
+  // Only run the proxy on routes that actually need auth gating.
   // This avoids running supabase.auth.getUser() on every product / static page request.
   matcher: [
     '/account/:path*',

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/auth/admin-session'
 
 /**
- * Server-side admin check for /api/admin routes (defense in depth; middleware also gates these paths).
+ * Server-side admin check for /api/admin routes (defense in depth; the proxy also gates these paths).
  * Allows (1) signed admin session cookie set by /api/admin/login, or
  *        (2) Supabase user with profiles.role === 'admin'.
  */
