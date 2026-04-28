@@ -10,19 +10,25 @@ export function CheckoutSuccessClient() {
   const searchParams = useSearchParams()
   const { clearCart } = useCart()
   const sessionId = searchParams.get('session_id')
+  const paymentIntentId = searchParams.get('payment_intent')
 
   const [message, setMessage] = useState('Confirming your payment…')
   const [error, setError] = useState('')
 
   const finalize = useCallback(async () => {
-    if (!sessionId) {
-      setError('Missing payment session. Return to checkout and try again.')
+    const idParam = paymentIntentId || sessionId
+    if (!idParam) {
+      setError('Missing payment confirmation. Return to checkout and try again.')
       return
     }
 
     const started = Date.now()
+    const qs = paymentIntentId
+      ? `payment_intent=${encodeURIComponent(paymentIntentId)}`
+      : `session_id=${encodeURIComponent(sessionId!)}`
+
     const poll = async () => {
-      const res = await fetch(`/api/checkout/status?session_id=${encodeURIComponent(sessionId)}`)
+      const res = await fetch(`/api/checkout/status?${qs}`)
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
@@ -53,10 +59,13 @@ export function CheckoutSuccessClient() {
     }
 
     await poll()
-  }, [sessionId, clearCart, router])
+  }, [sessionId, paymentIntentId, clearCart, router])
 
   useEffect(() => {
-    void finalize()
+    const t = window.setTimeout(() => {
+      void finalize()
+    }, 0)
+    return () => window.clearTimeout(t)
   }, [finalize])
 
   return (

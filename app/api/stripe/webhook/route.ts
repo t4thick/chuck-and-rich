@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
+import { fulfillOrderFromPaymentIntent } from '@/lib/orders/fulfill-payment-intent'
 import { fulfillOrderFromStripeSession } from '@/lib/orders/fulfill-stripe-checkout'
 
 export const runtime = 'nodejs'
@@ -34,6 +35,18 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error('[stripe] fulfillment failed', e)
       return NextResponse.json({ error: 'Fulfillment failed' }, { status: 500 })
+    }
+  }
+
+  if (event.type === 'payment_intent.succeeded') {
+    const pi = event.data.object as Stripe.PaymentIntent
+    if (pi.metadata?.checkout_snapshot_id) {
+      try {
+        await fulfillOrderFromPaymentIntent(pi.id)
+      } catch (e) {
+        console.error('[stripe] PI fulfillment failed', e)
+        return NextResponse.json({ error: 'Fulfillment failed' }, { status: 500 })
+      }
     }
   }
 

@@ -4,25 +4,27 @@ import type { Page } from '@playwright/test'
  * Seeds `lqam-cart` with a deterministic item.
  */
 export async function seedCartFromFirstShopProduct(page: Page, target = '/cart') {
-  await page.goto('/')
-  await page.evaluate(() => {
-    const seededCart = [
-      {
-        product: {
-          id: 'test-product-1',
-          name: 'Test Product',
-          description: 'Seeded for cart tests',
-          price: 9.99,
-          category: 'Beverages',
-          image_url: null,
-          in_stock: true,
-          created_at: new Date().toISOString(),
-        },
-        quantity: 1,
+  const seededCart = [
+    {
+      product: {
+        id: 'test-product-1',
+        name: 'Test Product',
+        description: 'Seeded for cart tests',
+        price: 9.99,
+        category: 'Beverages',
+        image_url: null,
+        in_stock: true,
+        created_at: new Date().toISOString(),
       },
-    ]
-    window.localStorage.setItem('lqam-cart', JSON.stringify(seededCart))
-  })
+      quantity: 1,
+    },
+  ]
+
+  await page.goto(target, { waitUntil: 'domcontentloaded' })
+  await page.evaluate((cart) => {
+    window.localStorage.setItem('lqam-cart', JSON.stringify(cart))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'lqam-cart' }))
+  }, seededCart)
   await page.waitForFunction(() => {
     const raw = window.localStorage.getItem('lqam-cart')
     if (!raw) return false
@@ -32,8 +34,7 @@ export async function seedCartFromFirstShopProduct(page: Page, target = '/cart')
       return false
     }
   })
-
-  await page.goto(target, { waitUntil: 'domcontentloaded' })
+  await page.reload({ waitUntil: 'domcontentloaded' })
 }
 
 /** Cart icon link shows count badge (not the desktop “Cart” text link). */

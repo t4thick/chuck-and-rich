@@ -36,10 +36,13 @@ function parseCart(raw: string | null): CartItem[] {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window === 'undefined') return []
-    return parseCart(window.localStorage.getItem(STORAGE_KEY))
-  })
+  const [items, setItems] = useState<CartItem[]>([])
+
+  useEffect(() => {
+    const hydrate = () => setItems(parseCart(localStorage.getItem(STORAGE_KEY)))
+    const t = window.setTimeout(hydrate, 0)
+    return () => window.clearTimeout(t)
+  }, [])
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {

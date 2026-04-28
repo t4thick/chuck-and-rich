@@ -6,7 +6,7 @@ import { getStripe } from '@/lib/stripe'
 export const runtime = 'nodejs'
 
 /**
- * Poll after returning from Stripe: payment confirmed on Stripe + order row exists after webhook.
+ * Poll after Stripe redirect: payment confirmed + order row exists after webhook.
  */
 export async function GET(req: NextRequest) {
   const supabaseUser = await createClient()
@@ -19,13 +19,50 @@ export async function GET(req: NextRequest) {
   }
 
   const sessionId = req.nextUrl.searchParams.get('session_id')?.trim()
-  if (!sessionId) {
-    return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
+  const paymentIntentId = req.nextUrl.searchParams.get('payment_intent')?.trim()
+
+  if (!sessionId && !paymentIntentId) {
+    return NextResponse.json({ error: 'Missing session_id or payment_intent' }, { status: 400 })
   }
 
   try {
     const stripe = getStripe()
-    const session = await stripe.checkout.sessions.retrieve(sessionId)
+
+    if (paymentIntentId) {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+
+      if (pi.metadata?.user_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      if (pi.status !== 'succeeded') {
+        return NextResponse.json({
+          status: 'unpaid',
+          paymentStatus: pi.status,
+        })
+      }
+
+      const { data: order } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (order?.id) {
+        return NextResponse.json({
+          status: 'complete',
+          orderId: order.id,
+        })
+      }
+
+      return NextResponse.json({
+        status: 'processing',
+        message: 'Payment received — finalizing your order…',
+      })
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId!)
 
     if (session.metadata?.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

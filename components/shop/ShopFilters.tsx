@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, startTransition } from 'react'
 import { SHOP_CATEGORIES } from '@/lib/shop-categories'
 
 export function ShopFilters() {
@@ -14,9 +14,11 @@ export function ShopFilters() {
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') ?? '')
 
   useEffect(() => {
-    setMinPrice(searchParams.get('minPrice') ?? '')
-    setMaxPrice(searchParams.get('maxPrice') ?? '')
-  }, [spKey])
+    startTransition(() => {
+      setMinPrice(searchParams.get('minPrice') ?? '')
+      setMaxPrice(searchParams.get('maxPrice') ?? '')
+    })
+  }, [spKey, searchParams])
 
   const category = searchParams.get('category') ?? ''
   const country = searchParams.get('country') ?? 'all'
