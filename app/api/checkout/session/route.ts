@@ -17,10 +17,14 @@ import {
 import type { CartItem } from '@/types'
 import { getStripe } from '@/lib/stripe'
 import { getPublicSiteUrl } from '@/lib/site-url'
+import { assertSameOrigin } from '@/lib/security/same-origin'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
+  const originCheck = assertSameOrigin(req)
+  if (!originCheck.ok) return originCheck.response
+
   try {
     const supabaseUser = await createClient()
     const {

@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdminApi } from '@/lib/auth/require-admin-api'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeOrderStatus, ORDER_STATUS_TIMESTAMP_COLUMN } from '@/lib/order-status'
+import { assertSameOrigin } from '@/lib/security/same-origin'
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const originCheck = assertSameOrigin(req)
+  if (!originCheck.ok) return originCheck.response
+
+  const auth = await requireAdminApi()
+  if (!auth.ok) return auth.response
+
   try {
     const { id } = await params
     const { status, trackingNumber } = await req.json()

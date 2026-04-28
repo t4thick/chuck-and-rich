@@ -41,11 +41,17 @@ export async function GET(req: NextRequest) {
       .order('changed_at', { ascending: true }),
   ])
 
-  const logs =
-    logsResult.error &&
-    /relation .* does not exist|could not find the table/i.test(logsResult.error.message)
-      ? []
-      : (logsResult.data ?? [])
+  // PostgREST returns `PGRST205` when a table is missing from the schema cache, and
+  // Postgres returns SQLSTATE `42P01` for "undefined table". Treat either as "no logs".
+  const missingTable =
+    !!logsResult.error &&
+    (logsResult.error.code === 'PGRST205' || logsResult.error.code === '42P01')
+
+  if (logsResult.error && !missingTable) {
+    console.warn('[orders/track] logs query:', logsResult.error.message)
+  }
+
+  const logs = missingTable ? [] : (logsResult.data ?? [])
 
   return NextResponse.json({
     order: { ...order, status: normalizeOrderStatus(order.status) },
