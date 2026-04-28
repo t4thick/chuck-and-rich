@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
 import { NavbarAuth } from '@/components/NavbarAuth'
 import { SearchBar } from '@/components/SearchBar'
@@ -17,6 +18,25 @@ function SearchFallback() {
 export function Navbar() {
   const { totalItems } = useCart()
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+
+  // Close the mobile menu whenever the route changes (including hash-only navigation
+  // like /#categories). Syncing to an external value (the URL) is the documented
+  // React-19 use of setState-in-effect; the rule does not detect this case.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setOpen(false)
+  }, [pathname])
+
+  // Close on Escape so keyboard users can dismiss the menu without tapping the toggle.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200/90 bg-white/95 shadow-sm backdrop-blur-md">

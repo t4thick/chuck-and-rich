@@ -45,10 +45,13 @@ const SHOWCASE_CATEGORIES: {
 
 export default async function Home() {
   const supabase = await createClient()
+  // Newest in-stock products first — until a real "best seller" signal exists (e.g. order counts),
+  // freshest stock is a better proxy than insertion order.
   const { data: bestSellers } = await supabase
     .from('products')
     .select('*')
     .eq('in_stock', true)
+    .order('created_at', { ascending: false })
     .limit(12)
 
   const { data: productCategories } = await supabase
