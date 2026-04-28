@@ -1,8 +1,10 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ProductCard } from '@/components/ProductCard'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { getPublicSiteUrl } from '@/lib/site-url'
 import type { Product } from '@/types'
 
 const CATEGORY_BG: Record<string, string> = {
@@ -22,22 +24,66 @@ const CATEGORY_BG: Record<string, string> = {
   Spices:              'bg-yellow-50',
 }
 
+type ProductRow = Product
+
+async function loadProduct(id: string): Promise<ProductRow | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .single()
+  return (data as ProductRow | null) ?? null
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const product = await loadProduct(id)
+  if (!product) {
+    return { title: 'Product not found', robots: { index: false, follow: false } }
+  }
+
+  const siteUrl = getPublicSiteUrl()
+  const description =
+    product.description?.trim() ||
+    `${product.name} — authentic ${product.category.toLowerCase()} at Lovely Queen African Market.`
+  const canonical = `${siteUrl}/products/${product.id}`
+  const ogImage = product.image_url || `${siteUrl}/logo.png`
+
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: 'website',
+      title: product.name,
+      description,
+      url: canonical,
+      images: [{ url: ogImage, alt: product.name }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: product.name,
+      description,
+      images: [ogImage],
+    },
+  }
+}
+
 export default async function ProductPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-
-  const supabase = await createClient()
-  const { data: product } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
-
+  const product = await loadProduct(id)
   if (!product) notFound()
 
+  const supabase = await createClient()
   const { data: related } = await supabase
     .from('products')
     .select('*')
@@ -47,8 +93,69 @@ export default async function ProductPage({
 
   const placeholderBg = CATEGORY_BG[product.category] ?? 'bg-gray-50'
 
+  const siteUrl = getPublicSiteUrl()
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description:
+      product.description?.trim() ||
+      `${product.name} — authentic ${product.category.toLowerCase()} at Lovely Queen African Market.`,
+    image: product.image_url ? [product.image_url] : undefined,
+    sku: product.id,
+    category: product.category,
+    brand: {
+      '@type': 'Brand',
+      name: 'Lovely Queen African Market',
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `${siteUrl}/products/${product.id}`,
+      priceCurrency: 'USD',
+      price: product.price.toFixed(2),
+      availability: product.in_stock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: {
+        '@type': 'Organization',
+        name: 'Lovely Queen African Market',
+      },
+    },
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: `${siteUrl}/shop` },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: product.category,
+        item: `${siteUrl}/shop?category=${encodeURIComponent(product.category)}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: product.name,
+        item: `${siteUrl}/products/${product.id}`,
+      },
+    ],
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+
       <div className="max-w-6xl mx-auto px-5 py-8">
 
         {/* Breadcrumb */}
