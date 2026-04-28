@@ -22,7 +22,7 @@ function getSupabaseAdmin(): SupabaseClient {
 
 // Lazy proxy so the module can load during `next build` before env is read; real access still requires env.
 export const supabaseAdmin = new Proxy({} as SupabaseClient, {
-  get(_target, prop, _receiver) {
+  get(_target, prop) {
     const client = getSupabaseAdmin()
     const value = Reflect.get(client, prop as keyof SupabaseClient, client)
     if (typeof value === 'function') {
