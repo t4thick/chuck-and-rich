@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ProductCard } from '@/components/ProductCard'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { MobileProductBar } from '@/components/MobileProductBar'
 import { getPublicSiteUrl } from '@/lib/site-url'
 import type { Product } from '@/types'
 
@@ -146,7 +147,7 @@ export default async function ProductPage({
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 pb-24 md:pb-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
@@ -218,6 +219,7 @@ export default async function ProductPage({
               </div>
 
               <AddToCartButton product={product} />
+              <div id="lq-add-to-cart-sentinel" aria-hidden="true" className="h-px" />
 
               {/* Trust signals */}
               <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-2 gap-3">
@@ -239,6 +241,8 @@ export default async function ProductPage({
             </div>
           </div>
         </div>
+
+        <MobileProductBar product={product} />
 
         {/* Related products */}
         {related && related.length > 0 && (

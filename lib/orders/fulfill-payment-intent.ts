@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendOrderEmails } from '@/lib/email/send-order-emails'
+import { sendOrderSmsToMerchant } from '@/lib/notifications/send-order-sms'
 import {
   buildAuthoritativeOrderItems,
   type AuthoritativeProduct,
@@ -223,6 +224,17 @@ export async function fulfillOrderFromPaymentIntent(
     )
   } catch (e) {
     console.error('[stripe] post-order email error:', e)
+  }
+
+  try {
+    await sendOrderSmsToMerchant({
+      orderId: order.id,
+      customerName: order.customer_name,
+      totalAmount: Number(order.total_amount),
+      city: order.city,
+    })
+  } catch (e) {
+    console.error('[stripe] post-order SMS error:', e)
   }
 
   return { orderId: order.id, created: true }

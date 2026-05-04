@@ -28,8 +28,9 @@ function ForgotPasswordInner() {
     setError('')
     const supabase = createClient()
     const origin = getAuthSiteOrigin()
+    const resetTarget = `/reset-password?next=${encodeURIComponent(next)}`
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(resetTarget)}`,
     })
     setLoading(false)
 

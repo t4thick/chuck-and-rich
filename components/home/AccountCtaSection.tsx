@@ -1,6 +1,51 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 
-export function AccountCtaSection() {
+export async function AccountCtaSection() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    const firstName =
+      String(user.user_metadata?.first_name ?? user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'there')
+        .trim()
+        .split(/\s+/)[0]
+
+    return (
+      <section className="border-t border-neutral-200 bg-white py-8 md:py-12">
+        <div className="mx-auto max-w-7xl px-5">
+          <div className="flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-gradient-to-br from-[#f4ede1] to-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">Welcome back</p>
+              <h2 className="mt-1 text-lg font-bold text-neutral-900 sm:text-xl">
+                Hi {firstName} — pick up where you left off
+              </h2>
+              <p className="mt-1 text-sm text-neutral-600">
+                Your saved details and order history are ready in your account.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/account"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#0f3d2e] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#164d3b]"
+              >
+                My account
+              </Link>
+              <Link
+                href="/track-order"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#0f3d2e] shadow-sm transition hover:border-[#0f3d2e]/40 hover:bg-neutral-50"
+              >
+                Track an order
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="border-t border-neutral-200 bg-white py-12 md:py-14">
       <div className="mx-auto max-w-7xl px-5">
@@ -15,7 +60,7 @@ export function AccountCtaSection() {
             </ul>
             <Link
               href="/signup"
-              className="mt-5 inline-flex rounded-xl bg-[#0f3d2e] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#164d3b]"
+              className="mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-[#0f3d2e] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#164d3b]"
             >
               Create account
             </Link>
@@ -30,7 +75,7 @@ export function AccountCtaSection() {
             </ul>
             <Link
               href="/login"
-              className="mt-5 inline-flex rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#0f3d2e] shadow-sm transition hover:border-[#0f3d2e]/40 hover:bg-neutral-50"
+              className="mt-5 inline-flex min-h-[44px] items-center rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#0f3d2e] shadow-sm transition hover:border-[#0f3d2e]/40 hover:bg-neutral-50"
             >
               Sign in
             </Link>

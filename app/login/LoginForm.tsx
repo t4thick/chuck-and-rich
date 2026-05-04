@@ -24,9 +24,6 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [rememberDevice, setRememberDevice] = useState(true)
-  const [magicOpen, setMagicOpen] = useState(false)
-  const [magicLoading, setMagicLoading] = useState(false)
-  const [magicMessage, setMagicMessage] = useState('')
 
   const enableGoogle = process.env.NEXT_PUBLIC_ENABLE_GOOGLE_AUTH === '1'
 
@@ -68,32 +65,6 @@ export function LoginForm() {
     router.refresh()
   }
 
-  async function handleMagicLink(e: React.FormEvent) {
-    e.preventDefault()
-    const trimmed = email.trim()
-    if (!trimmed) {
-      setError('Enter your email to receive a sign-in link.')
-      return
-    }
-    setMagicLoading(true)
-    setMagicMessage('')
-    setError('')
-    const supabase = createClient()
-    const origin = getAuthSiteOrigin()
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: trimmed,
-      options: {
-        emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    })
-    setMagicLoading(false)
-    if (otpError) {
-      setError(mapSignInError(otpError.message))
-      return
-    }
-    setMagicMessage('If an account exists for that email, we sent a sign-in link. Check your inbox.')
-  }
-
   async function handleGoogle() {
     setError('')
     const supabase = createClient()
@@ -116,7 +87,7 @@ export function LoginForm() {
 
         {err === 'auth' && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4" role="alert">
-            Email link expired or invalid. Try again or sign in with your password.
+            That link expired or was already used. Sign in below or request a new password reset.
           </p>
         )}
         {err === 'configuration' && (
@@ -212,34 +183,6 @@ export function LoginForm() {
               Continue with Google
             </button>
           </>
-        )}
-
-        <p className="text-center mt-4">
-          <button
-            type="button"
-            className="text-sm text-[#236641] font-semibold hover:underline"
-            onClick={() => setMagicOpen((o) => !o)}
-            aria-expanded={magicOpen}
-          >
-            {magicOpen ? 'Hide email sign-in link' : 'Email me a sign-in link instead'}
-          </button>
-        </p>
-
-        {magicOpen && (
-          <form onSubmit={handleMagicLink} className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-3">
-            <p className="text-xs text-gray-600">We’ll send a one-time link to your email. Same address as above.</p>
-            {magicMessage ? (
-              <p className="text-sm text-[#236641]">{magicMessage}</p>
-            ) : (
-              <button
-                type="submit"
-                disabled={magicLoading}
-                className="w-full bg-white border border-gray-200 hover:bg-gray-50 font-semibold py-2.5 rounded-xl text-sm disabled:opacity-60"
-              >
-                {magicLoading ? 'Sending…' : 'Send sign-in link'}
-              </button>
-            )}
-          </form>
         )}
 
         <p className="text-center text-sm text-gray-500 mt-6">

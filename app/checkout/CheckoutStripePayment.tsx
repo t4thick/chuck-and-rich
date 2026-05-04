@@ -55,15 +55,6 @@ function PayForm({ returnUrl, totalLabel }: { returnUrl: string; totalLabel: str
 export function CheckoutStripePayment({ clientSecret, returnUrl, totalLabel }: Props) {
   const stripePromise = useMemo(() => getStripeBrowser(), [])
 
-  if (!stripePromise) {
-    return (
-      <p className="text-sm text-red-600">
-        Missing <code className="font-mono">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> — add your Stripe publishable
-        key (pk_test_…) to environment variables and redeploy.
-      </p>
-    )
-  }
-
   return (
     <Elements
       stripe={stripePromise}

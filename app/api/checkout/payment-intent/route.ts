@@ -117,7 +117,11 @@ export async function POST(req: NextRequest) {
 
     const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
     if (!stripeKey) {
-      return NextResponse.json({ error: 'Payments are not configured (STRIPE_SECRET_KEY).' }, { status: 503 })
+      console.error('[checkout] STRIPE_SECRET_KEY is not set in the deployment environment.')
+      return NextResponse.json(
+        { error: 'Online payments are temporarily unavailable. Please contact the store to complete your order.' },
+        { status: 503 },
+      )
     }
 
     const payload: CheckoutSnapshotPayload = {

@@ -1,10 +1,11 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, getStatusStepIndex, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
+import { createClient } from '@/lib/supabase/client'
 
 type TrackOrderResponse = {
   order: {
@@ -42,6 +43,8 @@ export function TrackOrderClient() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [data, setData] = useState<TrackOrderResponse | null>(null)
+  const [liveBadge, setLiveBadge] = useState(false)
+  const subscribedIdRef = useRef<string>('')
 
   const status = useMemo<OrderStatus>(
     () => normalizeOrderStatus(data?.order?.status),
@@ -50,15 +53,17 @@ export function TrackOrderClient() {
   const stepIndex = getStatusStepIndex(status)
   const shippingMethod = ((data?.order?.shipping_method as ShippingMethod | undefined) ?? 'standard')
 
-  async function fetchOrder() {
+  const fetchOrder = useCallback(async (idOverride?: string) => {
+    const id = (idOverride ?? orderId).trim()
+    if (!id) return
     setLoading(true)
     setError('')
-    setData(null)
     try {
-      const res = await fetch(`/api/orders/track?id=${encodeURIComponent(orderId.trim())}`)
+      const res = await fetch(`/api/orders/track?id=${encodeURIComponent(id)}`)
       const payload = await res.json()
       if (!res.ok) {
         setError(payload.error ?? 'Could not find this order.')
+        setData(null)
         return
       }
       setData(payload)
@@ -67,7 +72,7 @@ export function TrackOrderClient() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [orderId])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -80,6 +85,42 @@ export function TrackOrderClient() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Live updates — when the admin moves the order to the next status, refresh
+  // automatically so the customer never has to reload the page.
+  useEffect(() => {
+    const id = data?.order?.id
+    if (!id || subscribedIdRef.current === id) return
+    subscribedIdRef.current = id
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`track-order-${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` },
+        () => {
+          setLiveBadge(true)
+          void fetchOrder(id)
+          setTimeout(() => setLiveBadge(false), 1500)
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'order_status_logs', filter: `order_id=eq.${id}` },
+        () => {
+          setLiveBadge(true)
+          void fetchOrder(id)
+          setTimeout(() => setLiveBadge(false), 1500)
+        },
+      )
+      .subscribe()
+
+    return () => {
+      subscribedIdRef.current = ''
+      void supabase.removeChannel(channel)
+    }
+  }, [data?.order?.id, fetchOrder])
 
   return (
     <main className="page-shell">
@@ -128,9 +169,19 @@ export function TrackOrderClient() {
                   <p className="text-xs text-gray-400">Order</p>
                   <p className="text-xs font-mono text-gray-600 break-all">{data.order.id}</p>
                 </div>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                  {ORDER_STATUS_LABEL[status]}
-                </span>
+                <div className="flex items-center gap-2">
+                  {liveBadge && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 animate-pulse"
+                      role="status"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Updated
+                    </span>
+                  )}
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                    {ORDER_STATUS_LABEL[status]}
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-3">
