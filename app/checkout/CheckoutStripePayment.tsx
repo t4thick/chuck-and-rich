@@ -3,7 +3,7 @@
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
-import { getStripeBrowser, isUsingStripeDemoKey } from '@/lib/stripe-browser'
+import { getStripeBrowser, isStripePublishableKeyConfigured } from '@/lib/stripe-browser'
 
 type Props = {
   clientSecret: string
@@ -33,14 +33,13 @@ function PayForm({ clientSecret, returnUrl, totalLabel }: Props) {
       return
     }
     if (!returnUrlReady) {
-      setError('Checkout is still loading. Please wait a moment and try again.')
+      setError('Checkout is still loading. Please wait and try again.')
       return
     }
 
     setBusy(true)
     setError('')
 
-    // Required by Stripe Payment Element before confirmPayment
     const { error: submitError } = await elements.submit()
     if (submitError) {
       setError(submitError.message ?? 'Please check your card details.')
@@ -55,7 +54,7 @@ function PayForm({ clientSecret, returnUrl, totalLabel }: Props) {
       redirect: 'if_required',
     })
 
-    const timeoutMs = 120_000
+    const timeoutMs = 90_000
     let stripeError: { message?: string } | undefined
 
     try {
@@ -68,7 +67,7 @@ function PayForm({ clientSecret, returnUrl, totalLabel }: Props) {
       stripeError = result.error
     } catch (err) {
       const msg = err instanceof Error && err.message === 'timeout'
-        ? 'Payment is taking too long. If you were charged, check your email or Account → orders. Otherwise try again.'
+        ? 'Payment is taking too long. If your card was charged, check your email or Account → orders. Otherwise try again.'
         : 'Payment could not be completed. Please try again.'
       setError(msg)
       setBusy(false)
@@ -81,24 +80,16 @@ function PayForm({ clientSecret, returnUrl, totalLabel }: Props) {
       return
     }
 
-    // Succeeded without redirect (common for test cards with no 3DS)
     const piId = paymentIntentIdFromClientSecret(clientSecret)
     if (piId) {
       router.push(`/checkout/success?payment_intent=${encodeURIComponent(piId)}`)
       return
     }
-
     router.push('/checkout/success')
   }
 
   return (
     <form onSubmit={handleSubmit} className="stack">
-      {isUsingStripeDemoKey() && (
-        <p className="muted">
-          Demo Stripe key in use. For live payments, set matching{' '}
-          <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> and <code>STRIPE_SECRET_KEY</code> on Vercel.
-        </p>
-      )}
       <PaymentElement />
       {error && <p className="error" role="alert">{error}</p>}
       <button type="submit" disabled={!stripe || !elements || busy || !returnUrlReady}>
@@ -110,6 +101,21 @@ function PayForm({ clientSecret, returnUrl, totalLabel }: Props) {
 
 export function CheckoutStripePayment({ clientSecret, returnUrl, totalLabel }: Props) {
   const stripePromise = useMemo(() => getStripeBrowser(), [])
+
+  if (!isStripePublishableKeyConfigured()) {
+    return (
+      <div className="stack">
+        <p className="error">
+          Payments are not configured: <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> is missing.
+        </p>
+        <p className="muted">
+          Set it in <code>.env.local</code> (and Vercel → Project Settings → Environment Variables)
+          using the publishable key from the same Stripe account as your <code>STRIPE_SECRET_KEY</code>.
+          Get it at <a href="https://dashboard.stripe.com/test/apikeys" target="_blank" rel="noreferrer">dashboard.stripe.com/test/apikeys</a>.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>

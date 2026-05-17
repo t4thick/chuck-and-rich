@@ -124,6 +124,33 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim()
+    if (!publishableKey) {
+      return NextResponse.json(
+        { error: 'Payments are not configured: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is missing. Set it in .env.local and on Vercel.' },
+        { status: 503 },
+      )
+    }
+
+    // Both keys must come from the same Stripe account. The account ID is the
+    // characters after `sk_test_` / `pk_test_` (or `_live_`), up to the next `_`.
+    const accountIdFrom = (key: string): string | null => {
+      const m = key.match(/^(?:sk|pk|rk)_(?:test|live)_([^_]+)_?/)
+      return m ? m[1] : null
+    }
+    const secretAcct = accountIdFrom(stripeKey)
+    const publishableAcct = accountIdFrom(publishableKey)
+    if (secretAcct && publishableAcct && secretAcct !== publishableAcct) {
+      return NextResponse.json(
+        {
+          error:
+            'Stripe key mismatch: STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY are from different Stripe accounts. ' +
+            'Copy both keys from the SAME account at dashboard.stripe.com/test/apikeys.',
+        },
+        { status: 503 },
+      )
+    }
+
     const payload: CheckoutSnapshotPayload = {
       items: sanitizedItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       customer_name: String(name).trim(),
