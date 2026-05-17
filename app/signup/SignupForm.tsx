@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { useClientSearchParams } from '@/lib/hooks/use-client-search-params'
 import { mapSignInError, mapSignUpError } from '@/lib/auth/map-auth-error'
 import { isPasswordAcceptableForSignup } from '@/lib/auth/password-strength'
 import { PasswordField } from '@/components/auth/PasswordField'
@@ -24,9 +25,7 @@ function isValidOptionalPhone(phone: string): boolean {
 
 export function SignupForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const nextRaw = searchParams.get('next') ?? '/'
-  const next = nextRaw.startsWith('/') ? nextRaw : '/'
+  const { next } = useClientSearchParams()
   const firstRef = useRef<HTMLInputElement>(null)
 
   const [firstName, setFirstName] = useState('')
@@ -48,6 +47,10 @@ export function SignupForm() {
   }, [])
 
   async function handleGoogle() {
+    if (!isSupabaseBrowserConfigured()) {
+      setError('Sign-up is temporarily unavailable. Please try again later.')
+      return
+    }
     setError('')
     const supabase = createClient()
     const origin = getAuthSiteOrigin()
@@ -62,6 +65,10 @@ export function SignupForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!isSupabaseBrowserConfigured()) {
+      setError('Sign-up is temporarily unavailable. Please call (614) 446-0893 for help.')
+      return
+    }
     setLoading(true)
     setError('')
     setMessage('')

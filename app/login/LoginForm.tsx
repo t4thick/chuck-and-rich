@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { useClientSearchParams } from '@/lib/hooks/use-client-search-params'
 import { mapSignInError } from '@/lib/auth/map-auth-error'
 import { PasswordField } from '@/components/auth/PasswordField'
 import { AuthTrustFooter } from '@/components/auth/AuthTrustFooter'
@@ -13,10 +14,7 @@ const REMEMBER_EMAIL_KEY = 'lq_remember_email'
 
 export function LoginForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const nextRaw = searchParams.get('next') ?? '/'
-  const next = nextRaw.startsWith('/') ? nextRaw : '/'
-  const err = searchParams.get('error')
+  const { next, error: err } = useClientSearchParams()
   const emailRef = useRef<HTMLInputElement>(null)
 
   const [email, setEmail] = useState('')
@@ -39,6 +37,10 @@ export function LoginForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!isSupabaseBrowserConfigured()) {
+      setError('Sign-in is temporarily unavailable. Please call (614) 446-0893 for help with your order.')
+      return
+    }
     setLoading(true)
     setError('')
     const supabase = createClient()
@@ -66,6 +68,10 @@ export function LoginForm() {
   }
 
   async function handleGoogle() {
+    if (!isSupabaseBrowserConfigured()) {
+      setError('Sign-in is temporarily unavailable. Please try again later.')
+      return
+    }
     setError('')
     const supabase = createClient()
     const origin = getAuthSiteOrigin()

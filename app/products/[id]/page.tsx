@@ -8,6 +8,8 @@ import { MobileProductBar } from '@/components/MobileProductBar'
 import { getPublicSiteUrl } from '@/lib/site-url'
 import type { Product } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 const CATEGORY_BG: Record<string, string> = {
   Beverages:           'bg-sky-50',
   Bread:               'bg-amber-50',

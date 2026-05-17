@@ -1,11 +1,13 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { fetchProductsForShop } from '@/lib/supabase/products'
 import { ProductCard } from '@/components/ProductCard'
 import { SearchBar } from '@/components/SearchBar'
 import { ShopFilters } from '@/components/shop/ShopFilters'
 import { getListingMeta } from '@/lib/product-derived'
 import type { Product } from '@/types'
+
+export const dynamic = 'force-dynamic'
 
 export default async function ShopPage({
   searchParams,
@@ -22,19 +24,17 @@ export default async function ShopPage({
   const p = await searchParams
   const { q, category, minPrice, maxPrice, country: countryParam, availability: availabilityParam } = p
 
-  const supabase = await createClient()
-  let query = supabase.from('products').select('*')
-  if (q) query = query.ilike('name', `%${q}%`)
-  if (category) query = query.eq('category', category)
-
   const minN = minPrice != null && minPrice !== '' ? parseFloat(minPrice) : NaN
   const maxN = maxPrice != null && maxPrice !== '' ? parseFloat(maxPrice) : NaN
-  if (!Number.isNaN(minN)) query = query.gte('price', minN)
-  if (!Number.isNaN(maxN)) query = query.lte('price', maxN)
 
-  const { data: productsRaw, error } = await query.order('name')
+  const { products: productsRaw, errorMessage } = await fetchProductsForShop({
+    q,
+    category,
+    minPrice: Number.isNaN(minN) ? undefined : minN,
+    maxPrice: Number.isNaN(maxN) ? undefined : maxN,
+  })
 
-  let products: Product[] = (productsRaw ?? []) as Product[]
+  let products: Product[] = productsRaw
 
   const countryFilter = countryParam && countryParam !== 'all' ? countryParam : null
   const availabilityFilter = availabilityParam && availabilityParam !== 'all' ? availabilityParam : null
@@ -103,13 +103,20 @@ export default async function ShopPage({
               </span>
             </div>
 
-            {error && (
-              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                <strong>Error:</strong> {error.message}
+            {errorMessage && (
+              <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                <p className="font-semibold">{errorMessage}</p>
+                <p className="mt-2 text-amber-900/90">
+                  Call{' '}
+                  <a href="tel:+16144460893" className="font-semibold underline">
+                    (614) 446-0893
+                  </a>{' '}
+                  or visit us in store — we&apos;re happy to help.
+                </p>
               </div>
             )}
 
-            {!error && products.length === 0 && (
+            {!errorMessage && products.length === 0 && (
               <div className="rounded-2xl border border-dashed border-neutral-300 bg-white py-20 text-center">
                 <p className="text-lg font-semibold text-neutral-800">No products match your filters</p>
                 <p className="mx-auto mt-2 max-w-sm text-sm text-neutral-500">

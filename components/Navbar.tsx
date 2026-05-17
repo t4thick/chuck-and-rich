@@ -67,10 +67,10 @@ export function Navbar() {
             <Link href="/shop" className={navLinkClass}>
               Shop
             </Link>
-            <Link href="/#categories" className={`${navLinkClass} hidden lg:inline-flex`}>
+            <Link href="/categories" className={`${navLinkClass} hidden lg:inline-flex`}>
               Categories
             </Link>
-            <Link href="/#deals" className={`${navLinkClass} hidden lg:inline-flex`}>
+            <Link href="/deals" className={`${navLinkClass} hidden lg:inline-flex`}>
               Deals
             </Link>
           </nav>
@@ -136,8 +136,8 @@ export function Navbar() {
             {[
               { label: 'Home', href: '/' },
               { label: 'Shop', href: '/shop' },
-              { label: 'Categories', href: '/#categories' },
-              { label: 'Deals', href: '/#deals' },
+              { label: 'Categories', href: '/categories' },
+              { label: 'Deals', href: '/deals' },
               { label: 'Track order', href: '/track-order' },
               { label: 'Account', href: '/account' },
               { label: `Cart${totalItems > 0 ? ` (${totalItems})` : ''}`, href: '/cart' },

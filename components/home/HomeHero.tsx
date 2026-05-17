@@ -63,12 +63,12 @@ export async function HomeHero() {
             >
               Shop now
             </Link>
-            <a
-              href="#categories"
+            <Link
+              href="/categories"
               className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-neutral-300 bg-white px-7 py-3 text-sm font-semibold text-neutral-800 shadow-sm transition hover:border-[#0f3d2e]/40 hover:text-[#0f3d2e]"
             >
               Browse categories
-            </a>
+            </Link>
           </div>
 
           {trending.length > 0 && (

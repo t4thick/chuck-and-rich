@@ -5,6 +5,7 @@ import { CartProvider } from '@/context/CartContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
+import { CatalogConfigBanner } from '@/components/CatalogConfigBanner'
 import { getPublicSiteUrl } from '@/lib/site-url'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
@@ -105,7 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <ToastProvider>
             <Navbar />
-            <div className="flex-1">{children}</div>
+            <CatalogConfigBanner />
             <Footer />
           </ToastProvider>
         </CartProvider>

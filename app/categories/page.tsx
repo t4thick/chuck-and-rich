@@ -1,15 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { fetchHomepageProducts } from '@/lib/supabase/products'
-import { ProductCard } from '@/components/ProductCard'
-import { HomeHero } from '@/components/home/HomeHero'
-import { ShopByCountry } from '@/components/home/ShopByCountry'
-import { DealsSection } from '@/components/home/DealsSection'
-import { TrustSection } from '@/components/home/TrustSection'
-import { AccountCtaSection } from '@/components/home/AccountCtaSection'
-import type { Product } from '@/types'
 
-/** Store photography keyed by DB category name */
 const CATEGORY_IMAGE_BY_NAME: Record<string, string> = {
   Beverages: 'https://asafointernational.com/wp-content/uploads/2025/01/Beverages-2-min.jpg',
   Bread: 'https://asafointernational.com/wp-content/uploads/2025/01/Bread-Display-1.png',
@@ -27,7 +19,6 @@ const CATEGORY_IMAGE_BY_NAME: Record<string, string> = {
   Spices: 'https://asafointernational.com/wp-content/uploads/2024/11/42-tm_home_default.png',
 }
 
-/** Homepage labels → shop URLs (display names may differ from DB category strings) */
 const SHOWCASE_CATEGORIES: {
   label: string
   href: string
@@ -45,33 +36,27 @@ const SHOWCASE_CATEGORIES: {
 
 export const dynamic = 'force-dynamic'
 
-export default async function Home() {
-  const { bestSellers, categoryCount, errorMessage } = await fetchHomepageProducts()
+export default async function CategoriesPage() {
+  const { categoryCount } = await fetchHomepageProducts()
 
   return (
-    <main className="min-h-screen bg-[#f9f9f9] text-neutral-900">
-      {errorMessage && (
-        <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-center text-sm text-amber-950">
-          <p>{errorMessage}</p>
+    <main className="min-h-screen bg-[#f9f9f9]">
+      <div className="border-b border-[#0f3d2e]/20 bg-[#0f3d2e]">
+        <div className="mx-auto max-w-7xl px-5 py-10">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#f4b400]">Browse</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Categories</h1>
+          <p className="mt-1 text-sm text-white/85">Pantry staples, proteins, produce, and more.</p>
         </div>
-      )}
-      <HomeHero />
+      </div>
 
-      <AccountCtaSection />
-
-      <section id="categories" className="border-t border-neutral-200 bg-white py-14 md:py-16">
+      <section className="py-14 md:py-16">
         <div className="mx-auto max-w-7xl px-5">
-          <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">Browse</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Shop by category</h2>
-              <p className="mt-2 max-w-xl text-neutral-600">Pantry staples, proteins, produce, and more.</p>
-            </div>
+          <div className="mb-8">
             <Link
               href="/shop"
-              className="hidden rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#0f3d2e] shadow-sm transition hover:border-[#0f3d2e]/30 hover:shadow-md sm:inline-flex"
+              className="inline-flex rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#0f3d2e] shadow-sm transition hover:border-[#0f3d2e]/30 hover:shadow-md"
             >
-              View all
+              View all products
             </Link>
           </div>
 
@@ -103,42 +88,6 @@ export default async function Home() {
           </div>
         </div>
       </section>
-
-      <section id="best-sellers" className="border-t border-neutral-200 bg-[#f9f9f9] py-14 md:py-16">
-        <div className="mx-auto max-w-7xl px-5">
-          <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f3d2e]">Popular now</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Best sellers</h2>
-            </div>
-            <Link
-              href="/shop"
-              className="rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#0f3d2e] shadow-sm transition hover:shadow-md"
-            >
-              View all products
-            </Link>
-          </div>
-
-          {bestSellers.length > 0 ? (
-            <div className="grid grid-cols-2 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-6">
-              {bestSellers.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <p className="rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-12 text-center text-neutral-600">
-              In-stock favorites will show here soon.{' '}
-              <Link href="/shop" className="font-semibold text-[#0f3d2e] hover:underline">
-                Browse the shop
-              </Link>
-            </p>
-          )}
-        </div>
-      </section>
-
-      <ShopByCountry />
-      <DealsSection />
-      <TrustSection />
     </main>
   )
 }

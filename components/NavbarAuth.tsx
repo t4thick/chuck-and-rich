@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 
 const linkClassLight =
   'px-3 py-2 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors text-sm font-medium text-gray-600'
@@ -16,7 +16,17 @@ export function NavbarAuth({ variant = 'light' }: { variant?: 'light' | 'dark' }
   const [signedIn, setSignedIn] = useState(false)
 
   useEffect(() => {
-    const supabase = createClient()
+    if (!isSupabaseBrowserConfigured()) {
+      setReady(true)
+      return
+    }
+    let supabase: ReturnType<typeof createClient>
+    try {
+      supabase = createClient()
+    } catch {
+      setReady(true)
+      return
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSignedIn(!!session?.user)
       setReady(true)
