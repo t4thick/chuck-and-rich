@@ -2,16 +2,15 @@ import type { ReactNode } from 'react'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { AdminOrderNotifier } from '@/components/admin/AdminOrderNotifier'
 
-export const metadata = { title: 'Admin — Lovely Queen African Market' }
-
+export const metadata = { title: 'Admin' }
 export const dynamic = 'force-dynamic'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div>
       <AdminSidebar />
-      <main className="flex-1 min-w-0 overflow-auto">{children}</main>
       <AdminOrderNotifier />
+      {children}
     </div>
   )
 }

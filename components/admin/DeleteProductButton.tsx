@@ -16,11 +16,7 @@ export function DeleteProductButton({ id, name }: { id: string; name: string }) 
   }
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={loading}
-      className="text-red-500 font-semibold hover:underline text-xs disabled:opacity-50"
-    >
+    <button type="button" onClick={handleDelete} disabled={loading}>
       {loading ? '…' : 'Delete'}
     </button>
   )

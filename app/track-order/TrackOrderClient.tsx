@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, getStatusStepIndex, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 
 type TrackOrderResponse = {
   order: {
@@ -43,13 +43,9 @@ export function TrackOrderClient() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [data, setData] = useState<TrackOrderResponse | null>(null)
-  const [liveBadge, setLiveBadge] = useState(false)
   const subscribedIdRef = useRef<string>('')
 
-  const status = useMemo<OrderStatus>(
-    () => normalizeOrderStatus(data?.order?.status),
-    [data?.order?.status]
-  )
+  const status = useMemo<OrderStatus>(() => normalizeOrderStatus(data?.order?.status), [data?.order?.status])
   const stepIndex = getStatusStepIndex(status)
   const shippingMethod = ((data?.order?.shipping_method as ShippingMethod | undefined) ?? 'standard')
 
@@ -68,7 +64,7 @@ export function TrackOrderClient() {
       }
       setData(payload)
     } catch {
-      setError('Network error. Please try again.')
+      setError('Network error.')
     } finally {
       setLoading(false)
     }
@@ -80,40 +76,21 @@ export function TrackOrderClient() {
   }
 
   useEffect(() => {
-    if (orderId.trim()) {
-      void fetchOrder()
-    }
+    if (orderId.trim()) void fetchOrder()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Live updates — when the admin moves the order to the next status, refresh
-  // automatically so the customer never has to reload the page.
   useEffect(() => {
     const id = data?.order?.id
     if (!id || subscribedIdRef.current === id) return
+    if (!isSupabaseBrowserConfigured()) return
     subscribedIdRef.current = id
 
     const supabase = createClient()
     const channel = supabase
       .channel(`track-order-${id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` },
-        () => {
-          setLiveBadge(true)
-          void fetchOrder(id)
-          setTimeout(() => setLiveBadge(false), 1500)
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'order_status_logs', filter: `order_id=eq.${id}` },
-        () => {
-          setLiveBadge(true)
-          void fetchOrder(id)
-          setTimeout(() => setLiveBadge(false), 1500)
-        },
-      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, () => void fetchOrder(id))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'order_status_logs', filter: `order_id=eq.${id}` }, () => void fetchOrder(id))
       .subscribe()
 
     return () => {
@@ -123,118 +100,95 @@ export function TrackOrderClient() {
   }, [data?.order?.id, fetchOrder])
 
   return (
-    <main className="page-shell">
-      <div className="page-container max-w-3xl">
-        <div className="mb-8 text-center">
-          <p className="text-xs uppercase tracking-[0.14em] text-[#c8811a] font-semibold mb-2">Order tracking</p>
-          <h1 className="section-title">Track your order</h1>
-          <p className="section-subtitle mt-2">
-            Signed-in customers can look up any order linked to their account.
+    <div className="stack">
+      <h2>Track order</h2>
+
+      <form onSubmit={handleSubmit} className="row">
+        <label>
+          Order ID:{' '}
+          <input
+            value={orderId}
+            onChange={(e) => setOrderId(e.target.value)}
+            required
+            placeholder="57534587-9fea-…"
+            style={{ width: '20em' }}
+          />
+        </label>
+        <button type="submit" disabled={loading}>{loading ? 'Checking…' : 'Track'}</button>
+      </form>
+
+      <p className="muted">For privacy, order details are only available while signed in to the account that placed the order.</p>
+
+      {error && <p className="error">{error}</p>}
+
+      {data && (
+        <div className="stack">
+          <hr />
+          <h3>Order {data.order.id}</h3>
+          <p>
+            <strong>Status:</strong> {ORDER_STATUS_LABEL[status]}
           </p>
-        </div>
 
-        <form onSubmit={handleSubmit} className="panel p-6 mb-6">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Order ID</label>
-              <input
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                required
-                placeholder="e.g. 57534587-9fea-..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a4731]/30"
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-4 w-full sm:w-auto min-h-[44px] px-6 bg-[#1a4731] hover:bg-[#236641] text-white font-bold rounded-xl disabled:opacity-50"
-          >
-            {loading ? 'Checking…' : 'Track Order'}
-          </button>
-          <p className="mt-3 text-xs text-gray-500">
-            For privacy, order details are only available while signed in to the account that placed the order.
-          </p>
-          {error && (
-            <p className="mt-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
-          )}
-        </form>
+          <ol>
+            {ORDER_STATUS_FLOW.map((step, index) => {
+              const done = stepIndex >= index
+              return (
+                <li key={step}>
+                  {done ? '✓ ' : '○ '}
+                  {done ? <strong>{ORDER_STATUS_LABEL[step]}</strong> : ORDER_STATUS_LABEL[step]}
+                </li>
+              )
+            })}
+          </ol>
 
-        {data && (
-          <div className="space-y-6">
-            <section className="panel p-6">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div>
-                  <p className="text-xs text-gray-400">Order</p>
-                  <p className="text-xs font-mono text-gray-600 break-all">{data.order.id}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {liveBadge && (
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 animate-pulse"
-                      role="status"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Updated
-                    </span>
-                  )}
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                    {ORDER_STATUS_LABEL[status]}
-                  </span>
-                </div>
-              </div>
+          <table>
+            <tbody>
+              <tr><th>Shipping method</th><td>{SHIPPING_METHOD_LABEL[shippingMethod]}</td></tr>
+              <tr><th>Tracking number</th><td>{data.order.tracking_number ?? '— not assigned yet'}</td></tr>
+              <tr><th>Destination</th><td>{data.order.city ?? '-'}, {data.order.country ?? '-'}</td></tr>
+              <tr><th>Total</th><td>${Number(data.order.total_amount ?? 0).toFixed(2)}</td></tr>
+            </tbody>
+          </table>
 
-              <div className="space-y-3">
-                {ORDER_STATUS_FLOW.map((step, index) => {
-                  const done = stepIndex >= index
-                  return (
-                    <div key={step} className="flex items-center gap-3">
-                      <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${done ? 'bg-[#1a4731] text-white' : 'bg-gray-200 text-gray-500'}`}>
-                        {done ? '✓' : index + 1}
-                      </span>
-                      <p className={done ? 'text-sm font-semibold text-gray-900' : 'text-sm text-gray-500'}>
-                        {ORDER_STATUS_LABEL[step]}
-                      </p>
-                    </div>
-                  )
-                })}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5 text-sm text-gray-600">
-                <p>Shipping: <span className="font-semibold text-gray-900">{SHIPPING_METHOD_LABEL[shippingMethod]}</span></p>
-                <p>Tracking: <span className="font-semibold text-gray-900">{data.order.tracking_number ?? 'Not assigned yet'}</span></p>
-                <p>Destination: <span className="font-semibold text-gray-900">{data.order.city ?? '-'}, {data.order.country ?? '-'}</span></p>
-                <p>Total: <span className="font-semibold text-gray-900">${Number(data.order.total_amount ?? 0).toFixed(2)}</span></p>
-              </div>
-            </section>
-
-            {data.logs.length > 0 && (
-              <section className="panel p-6">
-                <h2 className="font-bold text-gray-900 mb-3">Status Log</h2>
-                <div className="space-y-3">
-                  {data.logs.map((log) => (
-                    <div key={log.id} className="text-sm border-l-2 border-emerald-200 pl-3">
-                      <p className="font-semibold text-gray-800">
-                        {ORDER_STATUS_LABEL[normalizeOrderStatus(log.to_status)]}
-                      </p>
-                      <p className="text-gray-500 text-xs">
-                        {new Date(log.changed_at).toLocaleString()}
-                        {log.changed_by ? ` · ${log.changed_by}` : ''}
-                      </p>
-                    </div>
+          {data.items.length > 0 && (
+            <>
+              <h4>Items</h4>
+              <table>
+                <thead><tr><th>Product</th><th>Qty</th><th>Subtotal</th></tr></thead>
+                <tbody>
+                  {data.items.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.product_name}</td>
+                      <td>{item.quantity}</td>
+                      <td>${item.subtotal.toFixed(2)}</td>
+                    </tr>
                   ))}
-                </div>
-              </section>
-            )}
-          </div>
-        )}
+                </tbody>
+              </table>
+            </>
+          )}
 
-        <div className="text-center mt-8">
-          <Link href="/shop" className="text-[#236641] hover:underline text-sm font-semibold">
-            Continue Shopping
-          </Link>
+          {data.logs.length > 0 && (
+            <>
+              <h4>Status log</h4>
+              <table>
+                <thead><tr><th>When</th><th>Status</th><th>Note</th></tr></thead>
+                <tbody>
+                  {data.logs.map((log) => (
+                    <tr key={log.id}>
+                      <td>{new Date(log.changed_at).toLocaleString()}</td>
+                      <td>{ORDER_STATUS_LABEL[normalizeOrderStatus(log.to_status)]}</td>
+                      <td>{log.note ?? ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
-      </div>
-    </main>
+      )}
+
+      <p><Link href="/shop">← Continue shopping</Link></p>
+    </div>
   )
 }

@@ -1,96 +1,47 @@
-@import "tailwindcss";
+/* MVP mode: browser defaults only. No Tailwind, no theming. */
+/* Design will be reintroduced after all features are working. */
 
-:root {
-  /* Brand — deep green + warm gold */
-  --brand-primary: #0f3d2e;
-  --brand-forest:  #0f3d2e;
-  --brand-green:   #0f3d2e;
-  --brand-gold:    #f4b400;
-  --brand-amber:   #f4b400;
-
-  /* Neutrals */
-  --ink-900: #111827;
-  --ink-700: #374151;
-  --ink-500: #6b7280;
-  --ink-300: #d1d5db;
-  --ink-100: #f3f4f6;
-  --ink-50:  #f9fafb;
-
-  /* Semantic */
-  --background: #f9f9f9;
-  --surface:    #f9f9f9;
-  --border:     #e5e7eb;
-
-  /* Type — body font set via next/font on <html> */
-  --font-display: ui-sans-serif, system-ui, sans-serif;
-  --font-body:    ui-sans-serif, system-ui, sans-serif;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--ink-900);
-}
-
-/* Reset dark mode — store should always be light */
 body {
-  background: var(--background);
-  color: var(--ink-900);
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-feature-settings: "kern" 1, "liga" 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
+  font-family: system-ui, sans-serif;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+  line-height: 1.5;
 }
 
-/* Smooth scroll */
-html { scroll-behavior: smooth; }
-
-/* Focus ring — consistent across all interactive elements */
-:focus-visible {
-  outline: 2px solid var(--brand-primary);
-  outline-offset: 2px;
-  border-radius: 4px;
+main {
+  margin-top: 1rem;
 }
 
-/* Image performance */
-img { display: block; max-width: 100%; }
-
-/* Remove default button appearance */
-button { font-family: inherit; }
-
-/* Selection color */
-::selection {
-  background: rgba(15, 61, 46, 0.12);
-  color: var(--ink-900);
+table {
+  border-collapse: collapse;
+  width: 100%;
 }
 
-/* Shared layout primitives */
-.page-shell {
-  min-height: 100vh;
-  background: var(--surface);
-  padding: 2.25rem 1.25rem;
+th, td {
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
 }
 
-.page-container {
-  max-width: 72rem;
-  margin-inline: auto;
+input, select, textarea {
+  font: inherit;
+  padding: 4px;
 }
 
-.panel {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.03);
+button {
+  font: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
 }
 
-.section-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  color: var(--ink-900);
+fieldset {
+  margin-bottom: 1rem;
 }
 
-.section-subtitle {
-  font-size: 0.925rem;
-  color: var(--ink-500);
-}
+.error { color: #b00020; }
+.success { color: #006400; }
+.muted { color: #555; font-size: 0.9em; }
+.row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.stack > * + * { margin-top: 0.75rem; }

@@ -1,159 +1,27 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
-import { Suspense, useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
 import { NavbarAuth } from '@/components/NavbarAuth'
-import { SearchBar } from '@/components/SearchBar'
-
-const navLinkClass =
-  'rounded-lg px-2.5 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-[#0f3d2e] whitespace-nowrap'
-
-function SearchFallback() {
-  return <div className="h-10 w-full max-w-2xl rounded-xl border border-neutral-200 bg-neutral-100 animate-pulse" aria-hidden />
-}
 
 export function Navbar() {
   const { totalItems } = useCart()
-  const [open, setOpen] = useState(false)
-  const pathname = usePathname()
-
-  // Close the mobile menu whenever the route changes (including hash-only navigation
-  // like /#categories). Syncing to an external value (the URL) is the documented
-  // React-19 use of setState-in-effect; the rule does not detect this case.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOpen(false)
-  }, [pathname])
-
-  // Close on Escape so keyboard users can dismiss the menu without tapping the toggle.
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [open])
 
   return (
-    <header className="sticky top-0 z-50 border-b border-neutral-200/90 bg-white/95 shadow-sm backdrop-blur-md">
-      <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 px-4 py-2 md:h-16 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-4 md:py-0">
-        <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1 sm:gap-2">
-          <Link
-            href="/"
-            className="flex shrink-0 items-center rounded-lg py-1 outline-offset-2"
-            aria-label="Lovely Queen African Market — Home"
-          >
-            <Image
-              src="/logo.png"
-              alt=""
-              width={160}
-              height={48}
-              className="h-8 w-auto object-contain md:h-9"
-              priority
-            />
-          </Link>
-
-          <nav
-            className="hidden min-w-0 items-center gap-0.5 md:flex lg:gap-1"
-            aria-label="Main store"
-          >
-            <Link href="/" className={navLinkClass}>
-              Home
-            </Link>
-            <Link href="/shop" className={navLinkClass}>
-              Shop
-            </Link>
-            <Link href="/categories" className={`${navLinkClass} hidden lg:inline-flex`}>
-              Categories
-            </Link>
-            <Link href="/deals" className={`${navLinkClass} hidden lg:inline-flex`}>
-              Deals
-            </Link>
-          </nav>
-        </div>
-
-        <div className="col-span-2 col-start-1 row-start-2 min-w-0 md:col-span-1 md:col-start-2 md:row-start-1 md:px-2">
-          <Suspense fallback={<SearchFallback />}>
-            <SearchBar variant="compact" />
-          </Suspense>
-        </div>
-
-        <div className="col-start-2 row-start-1 flex items-center justify-end gap-1 sm:gap-2">
-          <NavbarAuth variant="light" />
-          <Link
-            href="/cart"
-            className="relative flex h-11 min-w-[44px] items-center justify-center rounded-xl text-neutral-800 transition hover:bg-neutral-100"
-            aria-label={`Cart${totalItems > 0 ? `, ${totalItems} items` : ''}`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.8}
-              stroke="currentColor"
-              className="h-6 w-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
-              />
-            </svg>
-            {totalItems > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#f4b400] px-1 text-[10px] font-bold text-neutral-900">
-                {totalItems > 9 ? '9+' : totalItems}
-              </span>
-            )}
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl text-neutral-800 transition hover:bg-neutral-100 md:hidden"
-            aria-expanded={open}
-            aria-label="Toggle menu"
-          >
-            {open ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {open && (
-        <nav className="border-t border-neutral-100 bg-white px-4 py-3 md:hidden" aria-label="Mobile">
-          <div className="flex flex-col gap-0.5">
-            {[
-              { label: 'Home', href: '/' },
-              { label: 'Shop', href: '/shop' },
-              { label: 'Categories', href: '/categories' },
-              { label: 'Deals', href: '/deals' },
-              { label: 'Track order', href: '/track-order' },
-              { label: 'Account', href: '/account' },
-              { label: `Cart${totalItems > 0 ? ` (${totalItems})` : ''}`, href: '/cart' },
-            ].map(({ label, href }) => (
-              <Link
-                key={href + label}
-                href={href}
-                onClick={() => setOpen(false)}
-                className="min-h-[44px] rounded-xl px-3 py-3 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-        </nav>
-      )}
+    <header>
+      <h1 style={{ margin: 0 }}>
+        <Link href="/">Lovely Queen Market</Link>
+      </h1>
+      <nav className="row">
+        <Link href="/">Home</Link>
+        <Link href="/shop">Shop</Link>
+        <Link href="/cart">Cart ({totalItems})</Link>
+        <Link href="/track-order">Track order</Link>
+        <Link href="/account">Account</Link>
+        <Link href="/admin">Admin</Link>
+        <NavbarAuth />
+      </nav>
+      <hr />
     </header>
   )
 }

@@ -1,109 +1,95 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { ORDER_STATUS_COLORS, ORDER_STATUS_LABEL, ORDER_STATUSES, normalizeOrderStatus } from '@/lib/order-status'
+import { ORDER_STATUS_LABEL, ORDER_STATUSES, normalizeOrderStatus } from '@/lib/order-status'
 
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; q?: string }>
 }) {
-  const { status: rawStatus } = await searchParams
+  const { status: rawStatus, q } = await searchParams
   const activeStatus = rawStatus ? normalizeOrderStatus(rawStatus) : undefined
 
-  const { data: orders } = await supabaseAdmin
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false })
+  let query = supabaseAdmin.from('orders').select('*').order('created_at', { ascending: false })
+  if (q?.trim()) {
+    const term = q.trim()
+    query = query.or(`customer_name.ilike.%${term}%,customer_email.ilike.%${term}%,id.eq.${term}`)
+  }
+  const { data: orders } = await query
 
-  const filteredOrders = activeStatus
+  const filtered = activeStatus
     ? (orders ?? []).filter((o) => normalizeOrderStatus(o.status) === activeStatus)
     : (orders ?? [])
+
   const counts = ORDER_STATUSES.reduce<Record<string, number>>((acc, status) => {
     acc[status] = (orders ?? []).filter((o) => normalizeOrderStatus(o.status) === status).length
     return acc
   }, {})
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-gray-900">Orders</h1>
-        <p className="text-gray-400 text-sm mt-1">
-          {filteredOrders.length} shown · {orders?.length ?? 0} total orders
-        </p>
-      </div>
+    <div className="stack">
+      <h2>Orders</h2>
+      <p className="muted">{filtered.length} shown · {orders?.length ?? 0} total</p>
 
-      <div className="flex flex-wrap gap-2 mb-5">
-        <Link
-          href="/admin/orders"
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
-            !activeStatus ? 'bg-green-700 text-white border-green-700' : 'bg-white text-gray-600 border-gray-200'
-          }`}
-        >
-          All ({orders?.length ?? 0})
+      <form method="GET" className="row">
+        <label>
+          Search:{' '}
+          <input type="search" name="q" defaultValue={q ?? ''} placeholder="Name, email, or order ID" style={{ width: '20em' }} />
+        </label>
+        {activeStatus && <input type="hidden" name="status" value={activeStatus} />}
+        <button type="submit">Search</button>
+      </form>
+
+      <p>
+        Filter:{' '}
+        <Link href={q ? `/admin/orders?q=${encodeURIComponent(q)}` : '/admin/orders'}>
+          {!activeStatus ? <strong>All ({orders?.length ?? 0})</strong> : `All (${orders?.length ?? 0})`}
         </Link>
-        {ORDER_STATUSES.map((status) => (
-          <Link
-            key={status}
-            href={`/admin/orders?status=${status}`}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
-              activeStatus === status
-                ? 'bg-green-700 text-white border-green-700'
-                : 'bg-white text-gray-600 border-gray-200'
-            }`}
-          >
-            {ORDER_STATUS_LABEL[status]} ({counts[status] ?? 0})
-          </Link>
-        ))}
-      </div>
+        {ORDER_STATUSES.map((status) => {
+          const href = `/admin/orders?status=${status}${q ? `&q=${encodeURIComponent(q)}` : ''}`
+          return (
+            <span key={status}>
+              {' · '}
+              <Link href={href}>
+                {activeStatus === status
+                  ? <strong>{ORDER_STATUS_LABEL[status]} ({counts[status] ?? 0})</strong>
+                  : `${ORDER_STATUS_LABEL[status]} (${counts[status] ?? 0})`}
+              </Link>
+            </span>
+          )
+        })}
+      </p>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {filteredOrders.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <div className="text-5xl mb-3">📭</div>
-            <p className="font-semibold">No orders in this status yet.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3 text-left">Customer</th>
-                  <th className="px-6 py-3 text-left">Contact</th>
-                  <th className="px-6 py-3 text-left">City</th>
-                  <th className="px-6 py-3 text-left">Total</th>
-                  <th className="px-6 py-3 text-left">Status</th>
-                  <th className="px-6 py-3 text-left">Date</th>
-                  <th className="px-6 py-3 text-left"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredOrders.map(order => (
-                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-gray-900">{order.customer_name}</td>
-                    <td className="px-6 py-4 text-gray-400 text-xs">{order.customer_email}</td>
-                    <td className="px-6 py-4 text-gray-500">{order.city}</td>
-                    <td className="px-6 py-4 font-bold text-green-700">${order.total_amount?.toFixed(2)}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${ORDER_STATUS_COLORS[normalizeOrderStatus(order.status)] ?? 'bg-gray-100 text-gray-600'}`}>
-                        {ORDER_STATUS_LABEL[normalizeOrderStatus(order.status)]}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-400 text-xs">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <Link href={`/admin/orders/${order.id}`}
-                        className="text-green-700 font-semibold hover:underline text-xs">
-                        View →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {filtered.length === 0 ? (
+        <p>No orders in this view.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Email</th>
+              <th>City</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((order) => (
+              <tr key={order.id}>
+                <td>{order.customer_name}</td>
+                <td>{order.customer_email}</td>
+                <td>{order.city ?? '—'}</td>
+                <td>${Number(order.total_amount ?? 0).toFixed(2)}</td>
+                <td>{ORDER_STATUS_LABEL[normalizeOrderStatus(order.status)]}</td>
+                <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                <td><Link href={`/admin/orders/${order.id}`}>View</Link></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 }

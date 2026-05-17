@@ -4,14 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 
-const linkClassLight =
-  'px-3 py-2 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors text-sm font-medium text-gray-600'
-
-const linkClassDark =
-  'px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white transition-colors text-sm font-medium text-white/85'
-
-export function NavbarAuth({ variant = 'light' }: { variant?: 'light' | 'dark' }) {
-  const linkClass = variant === 'dark' ? linkClassDark : linkClassLight
+export function NavbarAuth() {
   const [ready, setReady] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
 
@@ -20,45 +13,26 @@ export function NavbarAuth({ variant = 'light' }: { variant?: 'light' | 'dark' }
       setReady(true)
       return
     }
-    let supabase: ReturnType<typeof createClient>
-    try {
-      supabase = createClient()
-    } catch {
-      setReady(true)
-      return
-    }
+    const supabase = createClient()
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSignedIn(!!session?.user)
       setReady(true)
     })
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_e, session) => {
       setSignedIn(!!session?.user)
     })
     return () => subscription.unsubscribe()
   }, [])
 
-  if (!ready) {
-    return <span className={`${linkClass} opacity-0 pointer-events-none select-none`}>Sign in</span>
-  }
-
-  if (signedIn) {
-    return (
-      <Link href="/account" className={linkClass}>
-        Account
-      </Link>
-    )
-  }
+  if (!ready) return <span>—</span>
+  if (signedIn) return null
 
   return (
-    <span className="flex items-center gap-0.5 sm:gap-1">
-      <Link href="/login" className={linkClass}>
-        Sign in
-      </Link>
-      <Link href="/signup" className={`${linkClass} text-[#0f3d2e] font-semibold`}>
-        Sign up
-      </Link>
-    </span>
+    <>
+      <Link href="/login">Sign in</Link>
+      <Link href="/signup">Sign up</Link>
+    </>
   )
 }

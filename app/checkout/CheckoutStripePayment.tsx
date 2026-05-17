@@ -23,9 +23,7 @@ function PayForm({ returnUrl, totalLabel }: { returnUrl: string; totalLabel: str
     setError('')
     const { error: stripeError } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        return_url: returnUrl,
-      },
+      confirmParams: { return_url: returnUrl },
     })
     if (stripeError) {
       setError(stripeError.message ?? 'Payment could not be completed.')
@@ -34,18 +32,10 @@ function PayForm({ returnUrl, totalLabel }: { returnUrl: string; totalLabel: str
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="stack">
       <PaymentElement />
-      {error && (
-        <p className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={!stripe || busy}
-        className="w-full font-bold py-4 rounded-xl text-base bg-[#c8811a] hover:bg-[#b5731a] text-white shadow-lg shadow-amber-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      {error && <p className="error" role="alert">{error}</p>}
+      <button type="submit" disabled={!stripe || busy}>
         {busy ? 'Processing…' : `Pay ${totalLabel}`}
       </button>
     </form>
@@ -56,19 +46,7 @@ export function CheckoutStripePayment({ clientSecret, returnUrl, totalLabel }: P
   const stripePromise = useMemo(() => getStripeBrowser(), [])
 
   return (
-    <Elements
-      stripe={stripePromise}
-      options={{
-        clientSecret,
-        appearance: {
-          theme: 'stripe',
-          variables: {
-            colorPrimary: '#1a4731',
-            borderRadius: '12px',
-          },
-        },
-      }}
-    >
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
       <PayForm returnUrl={returnUrl} totalLabel={totalLabel} />
     </Elements>
   )

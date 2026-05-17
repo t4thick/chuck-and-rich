@@ -2,13 +2,14 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 
 export function AccountSignOut() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   async function signOut() {
+    if (!isSupabaseBrowserConfigured()) return
     setLoading(true)
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -17,12 +18,7 @@ export function AccountSignOut() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={signOut}
-      disabled={loading}
-      className="text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
-    >
+    <button type="button" onClick={signOut} disabled={loading}>
       {loading ? 'Signing out…' : 'Sign out'}
     </button>
   )

@@ -18,7 +18,7 @@ export function CheckoutSuccessClient() {
   const finalize = useCallback(async () => {
     const idParam = paymentIntentId || sessionId
     if (!idParam) {
-      setError('Missing payment confirmation. Return to checkout and try again.')
+      setError('Missing payment confirmation.')
       return
     }
 
@@ -48,9 +48,7 @@ export function CheckoutSuccessClient() {
       }
 
       if (Date.now() - started > 60_000) {
-        setMessage(
-          'Your payment was received. Your order may take a moment to appear — check your email or account orders.'
-        )
+        setMessage('Payment received. Check your email or account orders.')
         return
       }
 
@@ -62,30 +60,17 @@ export function CheckoutSuccessClient() {
   }, [sessionId, paymentIntentId, clearCart, router])
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
-      void finalize()
-    }, 0)
+    const t = window.setTimeout(() => { void finalize() }, 0)
     return () => window.clearTimeout(t)
   }, [finalize])
 
   return (
-    <main className="page-shell flex min-h-[50vh] items-center justify-center">
-      <div className="max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">Payment</h1>
-        {error ? (
-          <p className="mt-4 text-sm text-red-600">{error}</p>
-        ) : (
-          <p className="mt-4 text-sm text-gray-600">{message}</p>
-        )}
-        <div className="mt-6 flex flex-col gap-2 text-sm">
-          <Link href="/account" className="font-semibold text-[#0f3d2e] hover:underline">
-            Account &amp; orders
-          </Link>
-          <Link href="/shop" className="text-gray-500 hover:text-gray-800">
-            Continue shopping
-          </Link>
-        </div>
-      </div>
-    </main>
+    <div className="stack">
+      <h2>Payment</h2>
+      {error ? <p className="error">{error}</p> : <p>{message}</p>}
+      <p>
+        <Link href="/account">Account &amp; orders</Link> · <Link href="/shop">Continue shopping</Link>
+      </p>
+    </div>
   )
 }

@@ -1,42 +1,17 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { ProductCard } from '@/components/ProductCard'
+import { createClientOptional } from '@/lib/supabase/server'
 import { AddToCartButton } from '@/components/AddToCartButton'
-import { MobileProductBar } from '@/components/MobileProductBar'
-import { getPublicSiteUrl } from '@/lib/site-url'
 import type { Product } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
-const CATEGORY_BG: Record<string, string> = {
-  Beverages:           'bg-sky-50',
-  Bread:               'bg-amber-50',
-  Canned:              'bg-red-50',
-  'Caribbean product': 'bg-lime-50',
-  Cosmetics:           'bg-pink-50',
-  'Dairy And Tea':     'bg-indigo-50',
-  'Flours & Rice':     'bg-orange-50',
-  'Fresh Produce':     'bg-emerald-50',
-  'Frozen foods':      'bg-cyan-50',
-  'Meat and Seafood':  'bg-rose-50',
-  Motherland:          'bg-yellow-50',
-  'Non food':          'bg-purple-50',
-  Snack:               'bg-fuchsia-50',
-  Spices:              'bg-yellow-50',
-}
-
-type ProductRow = Product
-
-async function loadProduct(id: string): Promise<ProductRow | null> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
-  return (data as ProductRow | null) ?? null
+async function loadProduct(id: string): Promise<Product | null> {
+  const supabase = await createClientOptional()
+  if (!supabase) return null
+  const { data } = await supabase.from('products').select('*').eq('id', id).single()
+  return (data as Product | null) ?? null
 }
 
 export async function generateMetadata({
@@ -46,35 +21,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params
   const product = await loadProduct(id)
-  if (!product) {
-    return { title: 'Product not found', robots: { index: false, follow: false } }
-  }
-
-  const siteUrl = getPublicSiteUrl()
-  const description =
-    product.description?.trim() ||
-    `${product.name} — authentic ${product.category.toLowerCase()} at Lovely Queen African Market.`
-  const canonical = `${siteUrl}/products/${product.id}`
-  const ogImage = product.image_url || `${siteUrl}/logo.png`
-
-  return {
-    title: product.name,
-    description,
-    alternates: { canonical },
-    openGraph: {
-      type: 'website',
-      title: product.name,
-      description,
-      url: canonical,
-      images: [{ url: ogImage, alt: product.name }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: product.name,
-      description,
-      images: [ogImage],
-    },
-  }
+  if (!product) return { title: 'Product not found', robots: { index: false } }
+  return { title: product.name }
 }
 
 export default async function ProductPage({
@@ -86,180 +34,25 @@ export default async function ProductPage({
   const product = await loadProduct(id)
   if (!product) notFound()
 
-  const supabase = await createClient()
-  const { data: related } = await supabase
-    .from('products')
-    .select('*')
-    .eq('category', product.category)
-    .neq('id', product.id)
-    .limit(4)
-
-  const placeholderBg = CATEGORY_BG[product.category] ?? 'bg-gray-50'
-
-  const siteUrl = getPublicSiteUrl()
-  const productJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.name,
-    description:
-      product.description?.trim() ||
-      `${product.name} — authentic ${product.category.toLowerCase()} at Lovely Queen African Market.`,
-    image: product.image_url ? [product.image_url] : undefined,
-    sku: product.id,
-    category: product.category,
-    brand: {
-      '@type': 'Brand',
-      name: 'Lovely Queen African Market',
-    },
-    offers: {
-      '@type': 'Offer',
-      url: `${siteUrl}/products/${product.id}`,
-      priceCurrency: 'USD',
-      price: product.price.toFixed(2),
-      availability: product.in_stock
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
-      itemCondition: 'https://schema.org/NewCondition',
-      seller: {
-        '@type': 'Organization',
-        name: 'Lovely Queen African Market',
-      },
-    },
-  }
-
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
-      { '@type': 'ListItem', position: 2, name: 'Shop', item: `${siteUrl}/shop` },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: product.category,
-        item: `${siteUrl}/shop?category=${encodeURIComponent(product.category)}`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 4,
-        name: product.name,
-        item: `${siteUrl}/products/${product.id}`,
-      },
-    ],
-  }
-
   return (
-    <main className="min-h-screen bg-gray-50 pb-24 md:pb-0">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+    <div className="stack">
+      <p className="muted">
+        <Link href="/shop">← Back to shop</Link>
+      </p>
 
-      <div className="max-w-6xl mx-auto px-5 py-8">
+      <h2>{product.name}</h2>
+      <p className="muted">Category: {product.category}</p>
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-8 flex-wrap">
-          <Link href="/" className="hover:text-[#236641] transition-colors">Home</Link>
-          <span className="text-gray-300">/</span>
-          <Link href="/shop" className="hover:text-[#236641] transition-colors">Shop</Link>
-          <span className="text-gray-300">/</span>
-          <Link href={`/shop?category=${encodeURIComponent(product.category)}`} className="hover:text-[#236641] transition-colors">
-            {product.category}
-          </Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-gray-700 font-medium truncate max-w-[200px]">{product.name}</span>
-        </nav>
+      {product.description && <p>{product.description}</p>}
 
-        {/* Product detail */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-14">
-          <div className="grid grid-cols-1 md:grid-cols-2">
+      <p>
+        <strong>Price:</strong> ${product.price.toFixed(2)}
+      </p>
+      <p>
+        <strong>Status:</strong> {product.in_stock ? 'In stock' : 'Out of stock'}
+      </p>
 
-            {/* Image */}
-            <div className={`aspect-square md:aspect-auto md:min-h-96 ${placeholderBg} flex items-center justify-center overflow-hidden`}>
-              {product.image_url ? (
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} className="w-24 h-24 text-gray-200">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                </svg>
-              )}
-            </div>
-
-            {/* Info */}
-            <div className="p-8 lg:p-10 flex flex-col">
-              <span className="inline-block border border-[#1a4731]/20 text-[#236641] text-xs font-semibold px-3 py-1 rounded-full self-start mb-5 tracking-wide uppercase">
-                {product.category}
-              </span>
-
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4 leading-tight tracking-tight">
-                {product.name}
-              </h1>
-
-              {product.description && (
-                <p className="text-gray-500 text-sm leading-relaxed mb-6 flex-1">
-                  {product.description}
-                </p>
-              )}
-
-              <div className="text-3xl font-extrabold text-[#1a4731] mb-3">
-                ${product.price.toFixed(2)}
-              </div>
-
-              <div className="flex items-center gap-2 mb-8">
-                <div className={`w-2 h-2 rounded-full ${product.in_stock ? 'bg-emerald-500' : 'bg-red-400'}`} />
-                <span className={`text-sm font-medium ${product.in_stock ? 'text-emerald-700' : 'text-red-500'}`}>
-                  {product.in_stock ? 'In Stock — Ready to Ship' : 'Currently Out of Stock'}
-                </span>
-              </div>
-
-              <AddToCartButton product={product} />
-              <div id="lq-add-to-cart-sentinel" aria-hidden="true" className="h-px" />
-
-              {/* Trust signals */}
-              <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-2 gap-3">
-                {[
-                  { label: 'Tracked Delivery', sub: 'Updates from order to door' },
-                  { label: 'Secure Checkout', sub: 'Clear total, safe payment' },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-start gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-[#236641] mt-0.5 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                    </svg>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-800">{item.label}</p>
-                      <p className="text-[11px] text-gray-400">{item.sub}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <MobileProductBar product={product} />
-
-        {/* Related products */}
-        {related && related.length > 0 && (
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-6 tracking-tight">
-              More in {product.category}
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {related.map((p: Product) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
-    </main>
+      <AddToCartButton product={product} />
+    </div>
   )
 }

@@ -16,7 +16,7 @@ export async function PATCH(
 
   try {
     const { id } = await params
-    const { status, trackingNumber } = await req.json()
+    const { status, trackingNumber, note } = await req.json()
     const normalized = normalizeOrderStatus(status)
     const nowIso = new Date().toISOString()
 
@@ -62,7 +62,10 @@ export async function PATCH(
 
     if (updateResult.error) return NextResponse.json({ error: updateResult.error.message }, { status: 500 })
 
-    if (fromStatus !== normalized) {
+    const trackingNote = updatePayload.tracking_number ? `Tracking: ${String(updatePayload.tracking_number)}` : null
+    const combinedNote = [typeof note === 'string' ? note.trim() : '', trackingNote].filter(Boolean).join(' · ') || null
+
+    if (fromStatus !== normalized || combinedNote) {
       const { error: logError } = await supabaseAdmin
         .from('order_status_logs')
         .insert({
@@ -70,7 +73,7 @@ export async function PATCH(
           from_status: fromStatus,
           to_status: normalized,
           changed_by: 'admin',
-          note: updatePayload.tracking_number ? `Tracking: ${String(updatePayload.tracking_number)}` : null,
+          note: combinedNote,
         })
 
       if (
