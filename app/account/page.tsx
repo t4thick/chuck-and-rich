@@ -1,12 +1,25 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClientOptional } from '@/lib/supabase/server'
 import { AccountSignOut } from '@/components/AccountSignOut'
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner'
 import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
 
+type AccountOrderRow = {
+  id: string
+  total_amount: number
+  status: string
+  created_at: string
+  customer_email: string | null
+}
+
+export const dynamic = 'force-dynamic'
+
 export default async function AccountPage() {
-  const supabase = await createClient()
+  const supabase = await createClientOptional()
+  if (!supabase) {
+    redirect('/login?next=/account&error=configuration')
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -61,7 +74,7 @@ export default async function AccountPage() {
             <p className="text-sm text-gray-500">No orders linked to this account yet. Orders placed while signed in appear here.</p>
           ) : (
             <ul className="divide-y divide-gray-100">
-              {orders.map((o) => {
+              {orders.map((o: AccountOrderRow) => {
                 const st = normalizeOrderStatus(o.status)
                 return (
                   <li key={o.id} className="py-4 flex flex-wrap items-center justify-between gap-3">

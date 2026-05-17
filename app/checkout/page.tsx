@@ -1,9 +1,14 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClientOptional } from '@/lib/supabase/server'
 import { CheckoutClient } from './CheckoutClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CheckoutPage() {
-  const supabase = await createClient()
+  const supabase = await createClientOptional()
+  if (!supabase) {
+    redirect('/login?next=/checkout&error=configuration')
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser()

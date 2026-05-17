@@ -1,13 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { getSupabasePublicConfig, SupabaseConfigError } from '@/lib/supabase/config'
 
-export async function createClient() {
+/** Returns null when public Supabase env vars are missing (safe during static build). */
+export async function createClientOptional(): Promise<SupabaseClient | null> {
   const { url, anonKey, configured } = getSupabasePublicConfig()
-
-  if (!configured) {
-    throw new SupabaseConfigError()
-  }
+  if (!configured) return null
 
   const cookieStore = await cookies()
 
@@ -27,4 +26,10 @@ export async function createClient() {
       },
     },
   })
+}
+
+export async function createClient(): Promise<SupabaseClient> {
+  const client = await createClientOptional()
+  if (!client) throw new SupabaseConfigError()
+  return client
 }

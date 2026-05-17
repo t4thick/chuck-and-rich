@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createClientOptional } from '@/lib/supabase/server'
 import { getPublicSiteUrl } from '@/lib/site-url'
 
 /**
@@ -26,14 +26,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let productEntries: MetadataRoute.Sitemap = []
   try {
-    const supabase = await createClient()
+    const supabase = await createClientOptional()
+    if (!supabase) return staticEntries
+
     const { data: products } = await supabase
       .from('products')
       .select('id, category, created_at')
       .order('created_at', { ascending: false })
 
+    type ProductSitemapRow = { id: string; category: string | null; created_at: string | null }
+
     productEntries =
-      products?.map((p) => ({
+      (products as ProductSitemapRow[] | null)?.map((p) => ({
         url: `${baseUrl}/products/${p.id}`,
         lastModified: p.created_at ? new Date(p.created_at) : now,
         changeFrequency: 'weekly' as const,
@@ -42,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // De-duplicate category landing pages so /shop?category=Spices etc. get crawled.
     const categories = new Set<string>()
-    products?.forEach((p) => {
+    ;(products as ProductSitemapRow[] | null)?.forEach((p) => {
       if (p.category) categories.add(p.category)
     })
     for (const category of categories) {

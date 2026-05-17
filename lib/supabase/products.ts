@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClientOptional } from '@/lib/supabase/server'
 import { getSupabasePublicConfig, formatCatalogError, SupabaseConfigError } from '@/lib/supabase/config'
 import type { Product } from '@/types'
 
@@ -24,7 +24,14 @@ export async function fetchProductsForShop(options?: {
   }
 
   try {
-    const supabase = await createClient()
+    const supabase = await createClientOptional()
+    if (!supabase) {
+      return {
+        products: [],
+        errorMessage: formatCatalogError(null, false),
+        configured: false,
+      }
+    }
     let query = supabase.from('products').select('*')
     if (options?.q) query = query.ilike('name', `%${options.q}%`)
     if (options?.category) query = query.eq('category', options.category)
@@ -75,7 +82,10 @@ export async function fetchHomepageProducts(): Promise<{
   }
 
   try {
-    const supabase = await createClient()
+    const supabase = await createClientOptional()
+    if (!supabase) {
+      return { bestSellers: [], categoryCount: {}, configured: false, errorMessage: formatCatalogError(null, false) }
+    }
     const [bestRes, catRes] = await Promise.all([
       supabase
         .from('products')
@@ -95,7 +105,9 @@ export async function fetchHomepageProducts(): Promise<{
       }
     }
 
-    const categoryCount = (catRes.data ?? []).reduce<Record<string, number>>((acc, row) => {
+    const categoryCount = ((catRes.data ?? []) as { category: string | null }[]).reduce<
+      Record<string, number>
+    >((acc, row) => {
       const name = row.category?.trim()
       if (!name) return acc
       acc[name] = (acc[name] ?? 0) + 1

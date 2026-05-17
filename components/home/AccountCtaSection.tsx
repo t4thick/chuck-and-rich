@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClientOptional } from '@/lib/supabase/server'
 
 export async function AccountCtaSection() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const supabase = await createClientOptional()
+  const user = supabase
+    ? (await supabase.auth.getUser()).data.user
+    : null
 
   if (user) {
     const firstName =

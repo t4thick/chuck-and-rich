@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClientOptional } from '@/lib/supabase/server'
 import type { Product } from '@/types'
 
 /**
@@ -10,7 +10,8 @@ import type { Product } from '@/types'
  */
 async function loadHeroProducts(): Promise<{ featured: Product | null; trending: Product[] }> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClientOptional()
+    if (!supabase) return { featured: null, trending: [] }
     const { data } = await supabase
       .from('products')
       .select('id, name, category, price, image_url, in_stock')
