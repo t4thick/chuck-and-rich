@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { fulfillOrderFromPaymentIntent } from '@/lib/orders/fulfill-payment-intent'
 import { getStripe } from '@/lib/stripe'
 
 export const runtime = 'nodejs'
@@ -42,12 +43,30 @@ export async function GET(req: NextRequest) {
         })
       }
 
-      const { data: order } = await supabaseAdmin
+      let { data: order } = await supabaseAdmin
         .from('orders')
         .select('id')
         .eq('stripe_payment_intent_id', paymentIntentId)
         .eq('user_id', user.id)
         .maybeSingle()
+
+      // Webhook may be missing locally or delayed — fulfill on poll as fallback
+      if (!order?.id) {
+        try {
+          const result = await fulfillOrderFromPaymentIntent(paymentIntentId)
+          if (result.orderId) {
+            const { data: created } = await supabaseAdmin
+              .from('orders')
+              .select('id')
+              .eq('id', result.orderId)
+              .eq('user_id', user.id)
+              .maybeSingle()
+            order = created
+          }
+        } catch (e) {
+          console.error('[checkout/status] fulfill fallback', e)
+        }
+      }
 
       if (order?.id) {
         return NextResponse.json({
