@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer'
 import postmark from 'postmark'
 import type { AuthoritativeOrderItem } from '@/lib/order-pricing'
 import { PAYMENT_LABEL, normalizePaymentMethod } from '@/lib/payment-methods'
@@ -173,57 +174,147 @@ function merchantText(order: OrderRowForEmail, items: AuthoritativeOrderItem[]):
   ].join('\n')
 }
 
+type EmailPayload = {
+  to: string
+  subject: string
+  html: string
+  text: string
+}
+
 /**
- * Sends (1) receipt to the customer and (2) alert to the store inbox when configured.
+ * Pick an email transport based on what's configured:
+ *
+ *   1. Gmail SMTP — if GMAIL_USER + GMAIL_APP_PASSWORD are set.
+ *      Get an App Password at https://myaccount.google.com/apppasswords
+ *      (2-Step Verification must be on). This is the simplest path: no DNS,
+ *      no domain verification, just a free Gmail address.
+ *
+ *   2. Generic SMTP — if SMTP_HOST + SMTP_USER + SMTP_PASS are set.
+ *      Useful for any other SMTP provider (SendGrid SMTP, Mailgun SMTP, etc.).
+ *
+ *   3. Postmark HTTP API — if POSTMARK_SERVER_TOKEN is set.
+ *      Production-grade transactional email; requires verified sender or domain.
+ *
+ *   4. None — log a warning and skip emails (order is still persisted).
+ */
+type Sender = (payload: EmailPayload) => Promise<void>
+
+function pickSender(): { sender: Sender; from: string; label: string } | null {
+  const explicitFrom = process.env.EMAIL_FROM?.trim()
+
+  const gmailUser = process.env.GMAIL_USER?.trim()
+  const gmailPass = process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s+/g, '')
+  if (gmailUser && gmailPass) {
+    const from = explicitFrom || `${STORE_NAME} <${gmailUser}>`
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: gmailUser, pass: gmailPass },
+    })
+    const sender: Sender = async ({ to, subject, html, text }) => {
+      await transporter.sendMail({ from, to, subject, html, text })
+    }
+    return { sender, from, label: 'gmail-smtp' }
+  }
+
+  const smtpHost = process.env.SMTP_HOST?.trim()
+  const smtpUser = process.env.SMTP_USER?.trim()
+  const smtpPass = process.env.SMTP_PASS?.trim()
+  if (smtpHost && smtpUser && smtpPass) {
+    const from = explicitFrom || smtpUser
+    const port = Number(process.env.SMTP_PORT?.trim() || '587')
+    const secure = process.env.SMTP_SECURE?.trim() === 'true' || port === 465
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port,
+      secure,
+      auth: { user: smtpUser, pass: smtpPass },
+    })
+    const sender: Sender = async ({ to, subject, html, text }) => {
+      await transporter.sendMail({ from, to, subject, html, text })
+    }
+    return { sender, from, label: `smtp:${smtpHost}` }
+  }
+
+  const postmarkToken = process.env.POSTMARK_SERVER_TOKEN?.trim()
+  if (postmarkToken && explicitFrom) {
+    const client = new postmark.ServerClient(postmarkToken)
+    const stream = process.env.POSTMARK_MESSAGE_STREAM?.trim() || 'outbound'
+    const sender: Sender = async ({ to, subject, html, text }) => {
+      await client.sendEmail({
+        From: explicitFrom,
+        To: to,
+        Subject: subject,
+        HtmlBody: html,
+        TextBody: text,
+        MessageStream: stream,
+      })
+    }
+    return { sender, from: explicitFrom, label: 'postmark' }
+  }
+
+  return null
+}
+
+/**
+ * Sends (1) a receipt to the customer, (2) an alert to the store inbox, and
+ * (3) optionally a tiny email to a carrier SMS gateway (e.g.
+ * `6142904260@vtext.com`) so the merchant's phone buzzes with a text — all
+ * without paying for Twilio.
+ *
  * Safe to call after the order is persisted; failures are logged and do not throw.
  */
 export async function sendOrderEmails(order: OrderRowForEmail, items: AuthoritativeOrderItem[]): Promise<void> {
-  const serverToken = process.env.POSTMARK_SERVER_TOKEN?.trim()
-  if (!serverToken) {
-    console.warn('[email] POSTMARK_SERVER_TOKEN is not set — skipping order emails.')
+  const picked = pickSender()
+  if (!picked) {
+    console.warn('[email] No email transport configured — set GMAIL_USER + GMAIL_APP_PASSWORD (easiest), SMTP_*, or POSTMARK_SERVER_TOKEN + EMAIL_FROM. Skipping.')
     return
   }
+  const { sender, label } = picked
+  const shortId = order.id.slice(0, 8)
 
-  const from = process.env.EMAIL_FROM?.trim()
-  if (!from) {
-    console.warn('[email] EMAIL_FROM is not set — skipping order emails (use a Postmark-verified sender).')
-    return
+  try {
+    await sender({
+      to: order.customer_email,
+      subject: `Your order #${shortId} — ${STORE_NAME}`,
+      html: receiptHtml(order, items),
+      text: receiptText(order, items),
+    })
+  } catch (error) {
+    console.error(`[email:${label}] Customer receipt failed:`, error)
   }
 
   const merchantTo = process.env.MERCHANT_ORDER_EMAIL?.trim()
-
-  const client = new postmark.ServerClient(serverToken)
-  const shortId = order.id.slice(0, 8)
-
-  const stream = process.env.POSTMARK_MESSAGE_STREAM?.trim() || 'outbound'
-
-  try {
-    await client.sendEmail({
-      From: from,
-      To: order.customer_email,
-      Subject: `Your order #${shortId} — ${STORE_NAME}`,
-      HtmlBody: receiptHtml(order, items),
-      TextBody: receiptText(order, items),
-      MessageStream: stream,
-    })
-  } catch (error) {
-    console.error('[email] Customer receipt failed:', error)
-  }
-
   if (merchantTo) {
     try {
-      await client.sendEmail({
-        From: from,
-        To: merchantTo,
-        Subject: `New order #${shortId} — ${money(order.total_amount)} — ${order.customer_name}`,
-        HtmlBody: merchantHtml(order, items),
-        TextBody: merchantText(order, items),
-        MessageStream: stream,
+      await sender({
+        to: merchantTo,
+        subject: `New order #${shortId} — ${money(order.total_amount)} — ${order.customer_name}`,
+        html: merchantHtml(order, items),
+        text: merchantText(order, items),
       })
     } catch (error) {
-      console.error('[email] Merchant notification failed:', error)
+      console.error(`[email:${label}] Merchant notification failed:`, error)
     }
   } else {
     console.warn('[email] MERCHANT_ORDER_EMAIL not set — skipping store notification.')
+  }
+
+  // Optional: email-to-SMS gateway (free SMS via your phone carrier).
+  // Format: <10-digit-number>@<carrier-gateway> e.g. 6142904260@vtext.com
+  //   Verizon: vtext.com         AT&T:   txt.att.net
+  //   T-Mobile: tmomail.net      Sprint: messaging.sprintpcs.com
+  const smsGateway = process.env.MERCHANT_SMS_GATEWAY_EMAIL?.trim()
+  if (smsGateway) {
+    const shortBody = `New order #${shortId} — ${money(order.total_amount)} from ${order.customer_name}${order.city ? ` (${order.city})` : ''}`
+    try {
+      await sender({
+        to: smsGateway,
+        subject: '', // most carrier gateways prepend subject to the SMS body, so leave blank
+        html: shortBody,
+        text: shortBody,
+      })
+    } catch (error) {
+      console.error(`[email:${label}] SMS gateway failed:`, error)
+    }
   }
 }
