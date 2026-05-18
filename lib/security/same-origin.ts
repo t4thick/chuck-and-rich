@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+/** Treat `example.com` and `www.example.com` as the same host (common apex/www split on Vercel). */
+function canonicalComparableHost(host: string): string {
+  const h = host.toLowerCase()
+  return h.startsWith('www.') ? h.slice(4) : h
+}
+
+function hostsMatch(requestHost: string, candidateHost: string): boolean {
+  const a = canonicalComparableHost(requestHost)
+  const b = canonicalComparableHost(candidateHost)
+  return a === b
+}
+
 /**
  * Lightweight CSRF defense: ensure the request originates from this site.
  *
- * Browsers always send `Origin` (or at least `Referer`) on state-changing requests
- * from real pages. A cross-site CSRF will either omit `Origin` for a different host
- * or set it explicitly. We compare the request's host (from `Host` header) to the
- * Origin/Referer URL hostname — that works on Vercel without needing extra config.
+ * Browsers usually send `Origin` or `Referer` on state-changing requests from real pages.
+ * Some environments omit both (extensions, privacy settings); modern browsers send
+ * `Sec-Fetch-Site: same-origin` for same-origin fetch, which cross-site attackers cannot spoof.
  */
 export function assertSameOrigin(
   req: NextRequest
@@ -22,29 +33,35 @@ export function assertSameOrigin(
   const origin = req.headers.get('origin')
   const referer = req.headers.get('referer')
   const candidate = origin ?? referer
-  if (!candidate) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Cross-site request blocked.' }, { status: 403 }),
+
+  if (candidate) {
+    let candidateHost: string
+    try {
+      candidateHost = new URL(candidate).host
+    } catch {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: 'Invalid origin header.' }, { status: 400 }),
+      }
     }
+
+    if (!hostsMatch(host, candidateHost)) {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: 'Cross-site request blocked.' }, { status: 403 }),
+      }
+    }
+
+    return { ok: true }
   }
 
-  let candidateHost: string
-  try {
-    candidateHost = new URL(candidate).host
-  } catch {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Invalid origin header.' }, { status: 400 }),
-    }
+  const secFetchSite = req.headers.get('sec-fetch-site')
+  if (secFetchSite === 'same-origin') {
+    return { ok: true }
   }
 
-  if (candidateHost.toLowerCase() !== host.toLowerCase()) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Cross-site request blocked.' }, { status: 403 }),
-    }
+  return {
+    ok: false,
+    response: NextResponse.json({ error: 'Cross-site request blocked.' }, { status: 403 }),
   }
-
-  return { ok: true }
 }

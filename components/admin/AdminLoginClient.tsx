@@ -49,6 +49,7 @@ export function AdminLoginClient({
     const res = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({ password: staffPassword }),
     })
     setLoading(false)
@@ -57,7 +58,15 @@ export function AdminLoginClient({
       router.refresh()
     } else {
       const data = await res.json().catch(() => ({}))
-      setError(typeof data.error === 'string' ? data.error : 'Invalid password.')
+      const msg =
+        res.status === 503
+          ? typeof data.error === 'string'
+            ? `${data.error} If this is a Preview deployment, add ADMIN_PASSWORD for the Preview environment in Vercel (Production-only vars are invisible there).`
+            : 'Admin login is not configured on this deployment. Preview URLs need ADMIN_PASSWORD under Vercel → Settings → Environment Variables → Preview.'
+          : typeof data.error === 'string'
+            ? data.error
+            : 'Invalid password.'
+      setError(msg)
     }
   }
 

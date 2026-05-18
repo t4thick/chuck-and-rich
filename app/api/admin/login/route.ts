@@ -19,15 +19,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Admin login is not configured.' }, { status: 503 })
   }
 
-  let supplied: unknown
+  let suppliedRaw: unknown
   try {
     const body = await req.json()
-    supplied = body?.password
+    suppliedRaw = body?.password
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  if (typeof supplied !== 'string' || supplied.length === 0 || !constantTimeEquals(supplied, expected)) {
+  const supplied =
+    typeof suppliedRaw === 'string' ? suppliedRaw.trim().normalize('NFKC') : ''
+  const expectedNorm = expected.normalize('NFKC')
+
+  if (
+    supplied.length === 0 ||
+    !constantTimeEquals(supplied, expectedNorm)
+  ) {
     return NextResponse.json({ error: 'Invalid password.' }, { status: 401 })
   }
 
