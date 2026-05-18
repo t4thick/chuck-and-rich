@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { DeleteProductButton } from '@/components/admin/DeleteProductButton'
+import { requireAdminPage } from '@/lib/auth/require-admin-page'
 
 export default async function AdminProductsPage() {
+  await requireAdminPage()
   const { data: products } = await supabaseAdmin
     .from('products')
     .select('*')

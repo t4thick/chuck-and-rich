@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useCart } from '@/context/CartContext'
 import { NavbarAuth } from '@/components/NavbarAuth'
 
-export function Navbar() {
+export function Navbar({ isAdmin }: { isAdmin: boolean }) {
   const { totalItems } = useCart()
 
   return (
@@ -18,7 +18,7 @@ export function Navbar() {
         <Link href="/cart">Cart ({totalItems})</Link>
         <Link href="/track-order">Track order</Link>
         <Link href="/account">Account</Link>
-        <Link href="/admin">Admin</Link>
+        {isAdmin && <Link href="/admin">Admin</Link>}
         <NavbarAuth />
       </nav>
       <hr />

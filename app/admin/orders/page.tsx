@@ -1,12 +1,14 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { ORDER_STATUS_LABEL, ORDER_STATUSES, normalizeOrderStatus } from '@/lib/order-status'
+import { requireAdminPage } from '@/lib/auth/require-admin-page'
 
 export default async function AdminOrdersPage({
   searchParams,
 }: {
   searchParams: Promise<{ status?: string; q?: string }>
 }) {
+  await requireAdminPage()
   const { status: rawStatus, q } = await searchParams
   const activeStatus = rawStatus ? normalizeOrderStatus(rawStatus) : undefined
 

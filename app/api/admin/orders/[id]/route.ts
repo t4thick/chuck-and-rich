@@ -3,6 +3,7 @@ import { requireAdminApi } from '@/lib/auth/require-admin-api'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeOrderStatus, ORDER_STATUS_TIMESTAMP_COLUMN } from '@/lib/order-status'
 import { assertSameOrigin } from '@/lib/security/same-origin'
+import { sendOrderStatusEmail } from '@/lib/email/send-order-emails'
 
 export async function PATCH(
   req: NextRequest,
@@ -22,7 +23,7 @@ export async function PATCH(
 
     const { data: existingOrder, error: existingError } = await supabaseAdmin
       .from('orders')
-      .select('status')
+      .select('status, customer_name, customer_email, total_amount')
       .eq('id', id)
       .single()
 
@@ -83,6 +84,29 @@ export async function PATCH(
         )
       ) {
         console.error('Status log insert warning:', logError)
+      }
+    }
+
+    // Notify the customer when the status actually changed. We intentionally do
+    // NOT notify when admin only updates a tracking number or note on the same
+    // status — that would spam customers with duplicate updates.
+    if (fromStatus !== normalized && existingOrder.customer_email) {
+      try {
+        await sendOrderStatusEmail(
+          {
+            id,
+            customer_name: existingOrder.customer_name ?? 'there',
+            customer_email: existingOrder.customer_email,
+            total_amount: Number(existingOrder.total_amount ?? 0),
+            tracking_number: updatePayload.tracking_number
+              ? String(updatePayload.tracking_number)
+              : null,
+          },
+          normalized,
+          typeof note === 'string' && note.trim() ? note.trim() : null,
+        )
+      } catch (emailErr) {
+        console.error('[admin/orders PATCH] status email failed:', emailErr)
       }
     }
 

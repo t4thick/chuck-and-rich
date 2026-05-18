@@ -6,12 +6,14 @@ import { OrderStatusUpdater } from '@/components/admin/OrderStatusUpdater'
 import { RefundButton } from '@/components/admin/RefundButton'
 import { ORDER_STATUS_LABEL, ORDER_STATUS_FLOW, getStatusStepIndex, normalizeOrderStatus } from '@/lib/order-status'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
+import { requireAdminPage } from '@/lib/auth/require-admin-page'
 
 export default async function AdminOrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  await requireAdminPage()
   const { id } = await params
 
   const [{ data: order }, { data: items }, logsResult] = await Promise.all([

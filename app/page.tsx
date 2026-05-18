@@ -12,7 +12,6 @@ export default function Home() {
         <li><Link href="/track-order">Track an order</Link></li>
         <li><Link href="/login">Sign in</Link></li>
         <li><Link href="/signup">Create account</Link></li>
-        <li><Link href="/admin">Admin</Link></li>
       </ul>
     </div>
   )

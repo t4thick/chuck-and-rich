@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdminPage } from '@/lib/auth/require-admin-page'
 
 type CustomerRow = {
   id: string
@@ -10,6 +11,7 @@ type CustomerRow = {
 }
 
 export default async function AdminCustomersPage() {
+  await requireAdminPage()
   const { data: profiles, error } = await supabaseAdmin
     .from('profiles')
     .select('id, full_name, phone, role, created_at')

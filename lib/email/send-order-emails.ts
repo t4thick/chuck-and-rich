@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer'
 import postmark from 'postmark'
 import type { AuthoritativeOrderItem } from '@/lib/order-pricing'
+import { ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-status'
 import { PAYMENT_LABEL, normalizePaymentMethod } from '@/lib/payment-methods'
 import { getPublicSiteUrl } from '@/lib/site-url'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
@@ -316,5 +317,148 @@ export async function sendOrderEmails(order: OrderRowForEmail, items: Authoritat
     } catch (error) {
       console.error(`[email:${label}] SMS gateway failed:`, error)
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Order status change notification (sent when admin updates an order status)
+// ---------------------------------------------------------------------------
+
+export type OrderForStatusEmail = {
+  id: string
+  customer_name: string
+  customer_email: string
+  total_amount: number
+  tracking_number?: string | null
+}
+
+function statusHeadline(status: OrderStatus): string {
+  switch (status) {
+    case 'ordered': return 'Order received'
+    case 'processing': return 'We are preparing your order'
+    case 'shipped': return 'Your order has shipped'
+    case 'out_for_delivery': return 'Out for delivery'
+    case 'delivered': return 'Your order was delivered'
+    case 'cancelled': return 'Your order was cancelled'
+    default: return 'Order update'
+  }
+}
+
+function statusBody(status: OrderStatus, tracking?: string | null): string {
+  switch (status) {
+    case 'ordered':
+      return 'Thanks — we have received your order and will start preparing it shortly.'
+    case 'processing':
+      return 'Good news — we have started preparing your order.'
+    case 'shipped':
+      return tracking
+        ? `Your order is on its way. Tracking number: ${tracking}.`
+        : 'Your order has shipped and is on its way.'
+    case 'out_for_delivery':
+      return tracking
+        ? `Your order is out for delivery today. Tracking number: ${tracking}.`
+        : 'Your order is out for delivery today.'
+    case 'delivered':
+      return 'Your order has been delivered. We hope you enjoy it — thanks for shopping with us!'
+    case 'cancelled':
+      return 'Your order was cancelled. If this was unexpected, please reply to this email and we will help.'
+    default:
+      return 'There is an update to your order.'
+  }
+}
+
+function statusEmailHtml(
+  order: OrderForStatusEmail,
+  status: OrderStatus,
+  note?: string | null,
+): string {
+  const base = getPublicSiteUrl()
+  const trackPath = `/track-order?id=${encodeURIComponent(order.id)}`
+  const trackUrl = base ? `${base}${trackPath}` : trackPath
+  const headline = statusHeadline(status)
+  const body = statusBody(status, order.tracking_number)
+  const noteBlock = note?.trim()
+    ? `<p style="margin:8px 0 0;font-size:14px;color:#444;"><em>${escapeHtml(note.trim())}</em></p>`
+    : ''
+
+  return `
+<!DOCTYPE html>
+<html><body style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;color:#111;background:#f9f9f9;margin:0;padding:24px;">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:28px;border:1px solid #e5e5e5;">
+    <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#0f3d2e;font-weight:600;">${escapeHtml(STORE_NAME)}</p>
+    <h1 style="margin:0 0 12px;font-size:22px;">${escapeHtml(headline)}</h1>
+    <p style="margin:0 0 8px;color:#444;font-size:15px;">Hi ${escapeHtml(order.customer_name)},</p>
+    <p style="margin:0 0 16px;color:#333;font-size:15px;">${escapeHtml(body)}</p>
+    ${noteBlock}
+    <p style="margin:16px 0 4px;font-size:13px;color:#666;"><strong>Order:</strong> #${escapeHtml(order.id.slice(0, 8))}</p>
+    <p style="margin:0 0 4px;font-size:13px;color:#666;"><strong>Status:</strong> ${escapeHtml(ORDER_STATUS_LABEL[status])}</p>
+    <p style="margin:0 0 16px;font-size:13px;color:#666;"><strong>Total:</strong> ${money(order.total_amount)}</p>
+    <p style="margin:24px 0 0;">
+      <a href="${trackUrl}" style="display:inline-block;background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;">View order status</a>
+    </p>
+  </div>
+  <p style="max-width:560px;margin:16px auto 0;text-align:center;font-size:12px;color:#888;">You are receiving this because you placed an order at ${escapeHtml(STORE_NAME)}.</p>
+</body></html>`
+}
+
+function statusEmailText(
+  order: OrderForStatusEmail,
+  status: OrderStatus,
+  note?: string | null,
+): string {
+  const base = getPublicSiteUrl()
+  const trackUrl = base ? `${base}/track-order?id=${order.id}` : `/track-order?id=${order.id}`
+  const lines = [
+    `${STORE_NAME} — ${statusHeadline(status)}`,
+    ``,
+    `Hi ${order.customer_name},`,
+    ``,
+    statusBody(status, order.tracking_number),
+  ]
+  if (note?.trim()) {
+    lines.push('', note.trim())
+  }
+  lines.push(
+    ``,
+    `Order: #${order.id.slice(0, 8)}`,
+    `Status: ${ORDER_STATUS_LABEL[status]}`,
+    `Total: ${money(order.total_amount)}`,
+    ``,
+    `Track: ${trackUrl}`,
+  )
+  return lines.join('\n')
+}
+
+/**
+ * Send a status-change notification to the customer. Called from the admin
+ * "update order" API after a successful PATCH. Failures are logged and do not
+ * throw — we never want a flaky email to break an otherwise-successful update.
+ */
+export async function sendOrderStatusEmail(
+  order: OrderForStatusEmail,
+  status: OrderStatus,
+  note?: string | null,
+): Promise<void> {
+  const picked = pickSender()
+  if (!picked) {
+    console.warn('[email] No email transport configured — skipping status update email.')
+    return
+  }
+  if (!order.customer_email?.trim()) {
+    console.warn('[email] Order has no customer_email — skipping status update.')
+    return
+  }
+  const { sender, label } = picked
+  const shortId = order.id.slice(0, 8)
+  const headline = statusHeadline(status)
+  try {
+    await sender({
+      to: order.customer_email,
+      subject: `${headline} — Order #${shortId}`,
+      html: statusEmailHtml(order, status, note),
+      text: statusEmailText(order, status, note),
+    })
+  } catch (error) {
+    console.error(`[email:${label}] Status update email failed:`, error)
   }
 }

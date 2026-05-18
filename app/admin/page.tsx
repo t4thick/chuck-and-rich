@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
+import { requireAdminPage } from '@/lib/auth/require-admin-page'
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
 export default async function AdminDashboard() {
+  await requireAdminPage()
   const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS).toISOString()
 
   const [

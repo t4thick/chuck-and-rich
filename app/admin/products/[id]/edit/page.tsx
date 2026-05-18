@@ -2,12 +2,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { ProductForm } from '@/components/admin/ProductForm'
+import { requireAdminPage } from '@/lib/auth/require-admin-page'
 
 export default async function EditProductPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  await requireAdminPage()
   const { id } = await params
   const { data: product } = await supabaseAdmin
     .from('products')
