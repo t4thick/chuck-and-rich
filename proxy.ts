@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/auth/admin-session'
+import { isSupabaseAdminRoleBypassEnabled } from '@/lib/auth/admin-access-mode'
 
 const CUSTOMER_AUTH_PATHS = ['/account', '/checkout', '/order-confirmation', '/track-order']
 
@@ -25,7 +26,7 @@ export async function proxy(request: NextRequest) {
       url.searchParams.set('error', 'configuration')
       return NextResponse.redirect(url)
     }
-    if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    if (pathname.startsWith('/admin') && pathname !== '/admin/login' && !pathname.startsWith('/admin/login/')) {
       return NextResponse.redirect(new URL('/admin/login?error=configuration', request.url))
     }
     return NextResponse.next({ request })
@@ -67,28 +68,32 @@ export async function proxy(request: NextRequest) {
       return supabaseResponse
     }
 
-    if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    if (pathname.startsWith('/admin') && pathname !== '/admin/login' && !pathname.startsWith('/admin/login/')) {
       if (adminSessionValid) {
         return supabaseResponse
       }
-      if (!user) {
-        return NextResponse.redirect(new URL('/admin/login', request.url))
-      }
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle()
+      if (isSupabaseAdminRoleBypassEnabled()) {
+        if (!user) {
+          return NextResponse.redirect(new URL('/admin/login', request.url))
+        }
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle()
 
-      if (profileError) {
-        console.error('[proxy] profiles lookup:', profileError.message)
-        return NextResponse.redirect(new URL('/admin/login?error=forbidden', request.url))
+        if (profileError) {
+          console.error('[proxy] profiles lookup:', profileError.message)
+          return NextResponse.redirect(new URL('/admin/login?error=forbidden', request.url))
+        }
+
+        if (profile?.role !== 'admin') {
+          return NextResponse.redirect(new URL('/admin/login?error=forbidden', request.url))
+        }
+        return supabaseResponse
       }
 
-      if (profile?.role !== 'admin') {
-        return NextResponse.redirect(new URL('/admin/login?error=forbidden', request.url))
-      }
-      return supabaseResponse
+      return NextResponse.redirect(new URL('/admin/login', request.url))
     }
 
     if (user && (pathname === '/login' || pathname === '/signup')) {
@@ -100,6 +105,13 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   } catch (e) {
     console.error('[proxy]', e)
+    const adminGateFail =
+      pathname.startsWith('/admin') &&
+      pathname !== '/admin/login' &&
+      pathname !== '/admin/login/'
+    if (adminGateFail) {
+      return NextResponse.redirect(new URL('/admin/login?error=configuration', request.url))
+    }
     return NextResponse.next({ request })
   }
 }

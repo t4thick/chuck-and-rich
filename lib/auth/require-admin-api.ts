@@ -2,11 +2,10 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/auth/admin-session'
+import { isSupabaseAdminRoleBypassEnabled } from '@/lib/auth/admin-access-mode'
 
 /**
- * Server-side admin check for /api/admin routes (defense in depth; the proxy also gates these paths).
- * Allows (1) signed admin session cookie set by /api/admin/login, or
- *        (2) Supabase user with profiles.role === 'admin'.
+ * `/api/admin/*` guard — matches `proxy.ts` + `requireAdminPage` policy.
  */
 export async function requireAdminApi(): Promise<
   { ok: true } | { ok: false; response: NextResponse }
@@ -15,6 +14,10 @@ export async function requireAdminApi(): Promise<
   const session = cookieStore.get(ADMIN_COOKIE_NAME)?.value
   if (await verifyAdminSessionToken(session)) {
     return { ok: true }
+  }
+
+  if (!isSupabaseAdminRoleBypassEnabled()) {
+    return { ok: false, response: NextResponse.json({ error: 'Unauthorized.' }, { status: 401 }) }
   }
 
   const supabase = await createClient()
