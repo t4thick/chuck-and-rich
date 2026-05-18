@@ -132,10 +132,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Both keys must come from the same Stripe account. The account ID is the
-    // characters after `sk_test_` / `pk_test_` (or `_live_`), up to the next `_`.
+    // Both keys must come from the same Stripe account. Modern Stripe keys
+    // (issued since ~2020) embed a 17-char account ID immediately after the
+    // mode prefix, e.g. `sk_test_51TJNzEJHvbwKGXut<rest>` — the `51TJNzEJHvbwKGXut`
+    // part is identical between the secret and publishable keys of the same account.
+    // Older keys without a visible account ID won't match this pattern; in that
+    // case we silently skip the check (Stripe will surface the real error).
     const accountIdFrom = (key: string): string | null => {
-      const m = key.match(/^(?:sk|pk|rk)_(?:test|live)_([^_]+)_?/)
+      const m = key.match(/^(?:sk|pk|rk)_(?:test|live)_([A-Za-z0-9]{17})/)
       return m ? m[1] : null
     }
     const secretAcct = accountIdFrom(stripeKey)
