@@ -13,7 +13,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [legacyPassword, setLegacyPassword] = useState('')
-  const [mode, setMode] = useState<'supabase' | 'legacy'>('supabase')
+  const [mode, setMode] = useState<'supabase' | 'legacy'>('legacy')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -60,18 +60,24 @@ export default function AdminLoginPage() {
 
   return (
     <div className="stack">
-      <h2>Admin sign-in</h2>
+      <h2>Staff admin</h2>
+      <p className="muted">
+        This page is not linked from the store on purpose. Bookmark{' '}
+        <strong>/admin/login</strong> on your device. Sign in with the store password below (same value as{' '}
+        <code>ADMIN_PASSWORD</code> in your deployment settings).
+      </p>
 
       {forbidden && (
         <p className="error">
-          You need an admin account. Ask the owner to set your profile role to admin in Supabase, or use the legacy password if enabled.
+          Access denied. Use the staff password, or sign in with an account whose Supabase profile has role{' '}
+          <code>admin</code>.
         </p>
       )}
 
       <p>
-        Mode:{' '}
-        <label><input type="radio" checked={mode === 'supabase'} onChange={() => setMode('supabase')} /> Email & password</label>{' '}
-        <label><input type="radio" checked={mode === 'legacy'} onChange={() => setMode('legacy')} /> Legacy password</label>
+        Sign-in method:{' '}
+        <label><input type="radio" checked={mode === 'legacy'} onChange={() => setMode('legacy')} /> Staff password</label>{' '}
+        <label><input type="radio" checked={mode === 'supabase'} onChange={() => setMode('supabase')} /> Admin Supabase account</label>
       </p>
 
       {mode === 'supabase' ? (
@@ -85,12 +91,12 @@ export default function AdminLoginPage() {
         <form onSubmit={handleLegacy} className="stack">
           <p>
             <label>
-              Admin password (ADMIN_PASSWORD env):<br />
+              Staff password:<br />
               <input type="password" value={legacyPassword} onChange={(e) => setLegacyPassword(e.target.value)} required autoFocus />
             </label>
           </p>
           {error && <p className="error">{error}</p>}
-          <button type="submit" disabled={loading}>{loading ? 'Logging in…' : 'Login with legacy password'}</button>
+          <button type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
         </form>
       )}
 
