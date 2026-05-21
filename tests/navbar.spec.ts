@@ -13,9 +13,10 @@ test.describe('Navbar', () => {
     await expect(logo).toHaveAttribute('href', '/')
   })
 
-  test('desktop header has search, Shop, and cart', async ({ page }) => {
+  test('desktop header has search, Home, Shop, and cart', async ({ page }) => {
     const header = page.locator('header').first()
     await expect(header.getByPlaceholder(/Search groceries/i)).toBeVisible()
+    await expect(header.getByRole('link', { name: 'Home', exact: true })).toBeVisible()
     await expect(header.getByRole('link', { name: 'Shop', exact: true })).toBeVisible()
     await expect(header.getByRole('link', { name: /Cart/i })).toBeVisible()
   })
@@ -31,5 +32,27 @@ test.describe('Navbar', () => {
     await expect(cartLink).toBeVisible()
     await cartLink.click()
     await expect(page).toHaveURL(/\/cart/)
+  })
+})
+
+test.describe('Mobile bottom navigation', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('shows Amazon-style tab bar with Home', async ({ page }) => {
+    await page.goto('/shop')
+
+    const nav = page.getByRole('navigation', { name: 'Mobile navigation' })
+    await expect(nav).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Home' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Shop' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Cart' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Track' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Account' })).toBeVisible()
+  })
+
+  test('Home tab returns to homepage', async ({ page }) => {
+    await page.goto('/shop')
+    await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Home' }).click()
+    await expect(page).toHaveURL('/')
   })
 })

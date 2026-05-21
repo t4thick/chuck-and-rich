@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Menu, ShoppingBag, Store, X } from 'lucide-react'
+import { Home, Menu, ShoppingBag, Store, X } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { NavbarAuth } from '@/components/NavbarAuth'
 import { ShopSearchBar } from '@/components/store/ShopSearchBar'
@@ -12,9 +12,10 @@ import { STORE } from '@/lib/constants/store'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  { href: '/shop', label: 'Shop' },
-  { href: '/track-order', label: 'Track order' },
-  { href: '/account', label: 'Account' },
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/shop', label: 'Shop', icon: Store },
+  { href: '/track-order', label: 'Track order', icon: null },
+  { href: '/account', label: 'Account', icon: null },
 ] as const
 
 export function Navbar() {
@@ -66,9 +67,13 @@ export function Navbar() {
                 href={href}
                 className={cn(
                   'rounded-full px-3 py-2 text-sm font-medium no-underline transition-colors',
-                  pathname === href || pathname.startsWith(`${href}/`)
-                    ? 'bg-brand-100 text-brand-800'
-                    : 'text-earth-700 hover:bg-earth-100 hover:text-brand-950'
+                  href === '/'
+                    ? pathname === '/'
+                      ? 'bg-brand-100 text-brand-800'
+                      : 'text-earth-700 hover:bg-earth-100 hover:text-brand-950'
+                    : pathname === href || pathname.startsWith(`${href}/`)
+                      ? 'bg-brand-100 text-brand-800'
+                      : 'text-earth-700 hover:bg-earth-100 hover:text-brand-950'
                 )}
               >
                 {label}
@@ -132,16 +137,23 @@ export function Navbar() {
             aria-label="Mobile"
           >
             <div className="flex flex-col gap-1">
-              {NAV_LINKS.map(({ href, label }) => (
+              {NAV_LINKS.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
                   href={href}
                   className={cn(
-                    'rounded-xl px-4 py-3 text-base font-medium no-underline',
-                    pathname === href ? 'bg-brand-100 text-brand-800' : 'text-earth-800 hover:bg-earth-100'
+                    'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium no-underline',
+                    href === '/'
+                      ? pathname === '/'
+                        ? 'bg-brand-100 text-brand-800'
+                        : 'text-earth-800 hover:bg-earth-100'
+                      : pathname === href || pathname.startsWith(`${href}/`)
+                        ? 'bg-brand-100 text-brand-800'
+                        : 'text-earth-800 hover:bg-earth-100'
                   )}
                   onClick={() => setOpen(false)}
                 >
+                  {Icon && <Icon className="h-5 w-5 shrink-0 opacity-70" aria-hidden />}
                   {label}
                 </Link>
               ))}

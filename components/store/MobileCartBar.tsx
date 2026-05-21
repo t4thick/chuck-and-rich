@@ -4,9 +4,10 @@ import { usePathname } from 'next/navigation'
 import { ShoppingBag } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { Button } from '@/components/ui/button'
+import { MOBILE_BOTTOM_NAV_OFFSET } from '@/lib/constants/mobile-nav'
 import { formatMoney } from '@/lib/utils'
 
-/** Sticky checkout bar on mobile when cart has items. */
+/** Sticky checkout bar on mobile when cart has items — sits above bottom tab bar. */
 export function MobileCartBar() {
   const { totalItems, totalPrice, openCart } = useCart()
   const pathname = usePathname()
@@ -15,7 +16,10 @@ export function MobileCartBar() {
   if (pathname.startsWith('/cart') || pathname.startsWith('/checkout')) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-earth-200 bg-white/95 p-3 shadow-[0_-8px_32px_rgb(42_28_22/0.12)] backdrop-blur-md md:hidden">
+    <div
+      className="fixed left-0 right-0 z-40 border-t border-earth-200 bg-white/95 p-3 shadow-[0_-8px_32px_rgb(42_28_22/0.12)] backdrop-blur-md md:hidden"
+      style={{ bottom: MOBILE_BOTTOM_NAV_OFFSET }}
+    >
       <Button
         type="button"
         variant="accent"
