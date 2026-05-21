@@ -71,7 +71,7 @@ export function CartDrawer() {
                   className="flex gap-3 rounded-2xl border border-earth-200/80 bg-white p-3 shadow-sm"
                 >
                   <Link href={`/products/${product.id}`} className="shrink-0 no-underline" onClick={closeCart}>
-                    <ProductImage src={product.image_url} alt={product.name} className="h-16 w-16 rounded-xl" sizes="64px" />
+                    <ProductImage src={product.image_url} alt={product.name} className="h-16 w-16 rounded-xl" sizes="64px" framed={false} />
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col">
                     <Link
@@ -122,7 +122,7 @@ export function CartDrawer() {
               </div>
               <p className="mt-1 text-xs text-earth-500">Shipping calculated at checkout</p>
               <Link href="/checkout" className="mt-4 block no-underline" onClick={closeCart}>
-                <Button variant="accent" size="lg" className="w-full">
+                <Button variant="accent" size="lg" className="h-12 w-full rounded-xl">
                   Checkout
                 </Button>
               </Link>

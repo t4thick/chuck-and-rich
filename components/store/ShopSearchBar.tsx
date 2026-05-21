@@ -24,7 +24,7 @@ export function ShopSearchBar({ className, compact }: { className?: string; comp
         placeholder={compact ? 'Search…' : 'Search spices, rice, snacks…'}
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        className={cn('rounded-full border-earth-200 bg-cream pl-9', compact ? 'h-9 text-sm' : 'h-11')}
+        className={cn('rounded-xl border-earth-200 bg-white pl-9 shadow-sm focus-visible:ring-brand-500/25', compact ? 'h-9 text-sm' : 'h-11')}
       />
     </form>
   )
