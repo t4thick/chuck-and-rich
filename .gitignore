@@ -17,7 +17,7 @@
 /blob-report/
 /playwright/.cache/
 
-# next.js
+# next.js (when on OneDrive Windows, distDir may redirect to %LOCALAPPDATA%/lovely-queen-market/.next)
 /.next/
 /out/
 
@@ -28,6 +28,8 @@
 .DS_Store
 *.pem
 _commitmsg.txt
+build-log.txt
+.vercel-build-out.txt
 
 # debug
 npm-debug.log*
