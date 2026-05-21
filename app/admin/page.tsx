@@ -21,6 +21,7 @@ import {
   money,
   type OrderMoneyRow,
 } from '@/lib/admin/revenue-stats'
+import { formatOrderNumber } from '@/lib/orders/order-number'
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -89,7 +90,7 @@ export default async function AdminDashboard() {
     supabaseAdmin.from('orders').select('total_amount').gte('created_at', sevenDaysAgo),
     supabaseAdmin
       .from('orders')
-      .select('id, customer_name, total_amount, status, created_at')
+      .select('id, order_number, customer_name, total_amount, status, created_at')
       .order('created_at', { ascending: false })
       .limit(10),
   ])
@@ -218,6 +219,7 @@ export default async function AdminDashboard() {
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th>Order</th>
                   <th>Customer</th>
                   <th>Total</th>
                   <th>Status</th>
@@ -230,6 +232,9 @@ export default async function AdminDashboard() {
                   const st = normalizeOrderStatus(order.status)
                   return (
                     <tr key={order.id}>
+                      <td className="font-mono text-xs font-semibold text-earth-900">
+                        {formatOrderNumber(order.order_number) || '—'}
+                      </td>
                       <td className="font-medium text-earth-900">{order.customer_name ?? '—'}</td>
                       <td className="tabular-nums">{money(Number(order.total_amount ?? 0))}</td>
                       <td>{pill(st)}</td>

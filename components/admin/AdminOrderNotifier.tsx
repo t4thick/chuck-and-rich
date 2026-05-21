@@ -4,9 +4,11 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { Bell, BellOff, ShoppingBag, X } from 'lucide-react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { formatOrderNumber } from '@/lib/orders/order-number'
 
 type OrderRow = {
   id: string
+  order_number: number | null
   customer_name: string | null
   total_amount: number | null
   created_at: string
@@ -14,6 +16,7 @@ type OrderRow = {
 
 type Toast = {
   id: string
+  orderNumber: string
   customerName: string
   total: number
   shownAt: number
@@ -66,10 +69,14 @@ function maybeShowSystemNotification(order: OrderRow) {
   if (typeof window === 'undefined' || !('Notification' in window)) return
   if (Notification.permission !== 'granted') return
   try {
-    const n = new Notification('New order received', {
-      body: `${order.customer_name ?? 'A customer'} placed an order for ${formatMoney(order.total_amount)}.`,
-      tag: `order-${order.id}`,
-    })
+    const orderNumber = formatOrderNumber(order.order_number)
+    const n = new Notification(
+      orderNumber ? `New order ${orderNumber}` : 'New order received',
+      {
+        body: `${order.customer_name ?? 'A customer'} placed an order for ${formatMoney(order.total_amount)}.`,
+        tag: `order-${order.id}`,
+      }
+    )
     n.onclick = () => {
       window.focus()
       window.location.href = `/admin/orders/${order.id}`
@@ -124,6 +131,7 @@ export function AdminOrderNotifier() {
             [
               {
                 id: row.id,
+                orderNumber: formatOrderNumber(row.order_number),
                 customerName: row.customer_name ?? 'Customer',
                 total: Number(row.total_amount ?? 0),
                 shownAt: Date.now(),
@@ -200,7 +208,9 @@ export function AdminOrderNotifier() {
               <ShoppingBag className="h-4 w-4" strokeWidth={2} aria-hidden />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-earth-900">New order</p>
+              <p className="text-sm font-semibold text-earth-900">
+                {t.orderNumber ? `New order ${t.orderNumber}` : 'New order'}
+              </p>
               <p className="mt-0.5 truncate text-sm text-earth-600">
                 {t.customerName} ·{' '}
                 <span className="tabular-nums font-medium text-earth-900">

@@ -5,11 +5,13 @@ import { ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-status'
 import { PAYMENT_LABEL, normalizePaymentMethod } from '@/lib/payment-methods'
 import { getPublicSiteUrl } from '@/lib/site-url'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
+import { formatOrderNumber } from '@/lib/orders/order-number'
 
 const STORE_NAME = 'Lovely Queen African Market'
 
 export type OrderRowForEmail = {
   id: string
+  order_number?: number | null
   customer_name: string
   customer_email: string
   customer_phone: string | null
@@ -23,6 +25,14 @@ export type OrderRowForEmail = {
   total_amount: number
   shipping_method: string | null
   payment_method: string | null
+}
+
+function orderRefLabel(order: { id: string; order_number?: number | null }): string {
+  return formatOrderNumber(order.order_number) || `#${order.id.slice(0, 8)}`
+}
+
+function trackQueryValue(order: { id: string; order_number?: number | null }): string {
+  return formatOrderNumber(order.order_number) || order.id
 }
 
 function escapeHtml(s: string): string {
@@ -77,8 +87,9 @@ function receiptHtml(order: OrderRowForEmail, items: AuthoritativeOrderItem[]): 
     PAYMENT_LABEL[normalizePaymentMethod(order.payment_method)] ?? order.payment_method ?? '—'
   const ship = SHIPPING_METHOD_LABEL[(order.shipping_method as ShippingMethod) ?? 'standard'] ?? order.shipping_method ?? '—'
   const base = getPublicSiteUrl()
-  const trackPath = `/track-order?id=${encodeURIComponent(order.id)}`
+  const trackPath = `/track-order?id=${encodeURIComponent(trackQueryValue(order))}`
   const trackUrl = base ? `${base}${trackPath}` : trackPath
+  const orderLabel = orderRefLabel(order)
 
   return `
 <!DOCTYPE html>
@@ -87,7 +98,7 @@ function receiptHtml(order: OrderRowForEmail, items: AuthoritativeOrderItem[]): 
     <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#0f3d2e;font-weight:600;">${escapeHtml(STORE_NAME)}</p>
     <h1 style="margin:0 0 12px;font-size:22px;">Thanks for your order</h1>
     <p style="margin:0 0 20px;color:#444;font-size:15px;">Hi ${escapeHtml(order.customer_name)}, we received your order and will send updates to this email.</p>
-    <p style="margin:0 0 16px;font-size:13px;color:#666;"><strong>Order ID:</strong> ${escapeHtml(order.id)}</p>
+    <p style="margin:0 0 16px;font-size:13px;color:#666;"><strong>Order number:</strong> ${escapeHtml(orderLabel)}</p>
     ${itemsTableHtml(items)}
     <table role="presentation" style="width:100%;margin-top:16px;font-size:14px;">
       <tr><td style="padding:4px 0;">Subtotal</td><td style="text-align:right;">${money(order.subtotal_amount)}</td></tr>
@@ -117,7 +128,7 @@ function receiptText(order: OrderRowForEmail, items: AuthoritativeOrderItem[]): 
     ``,
     `Hi ${order.customer_name},`,
     ``,
-    `Order ID: ${order.id}`,
+    `Order number: ${orderRefLabel(order)}`,
     ``,
     itemsPlainText(items),
     ``,
@@ -133,7 +144,7 @@ function receiptText(order: OrderRowForEmail, items: AuthoritativeOrderItem[]): 
     `Payment: ${pay}`,
     `Shipping: ${ship}`,
     ``,
-    `Track: ${getPublicSiteUrl()}/track-order?id=${order.id}`,
+    `Track: ${getPublicSiteUrl()}/track-order?id=${trackQueryValue(order)}`,
   ].join('\n')
 }
 
@@ -146,9 +157,9 @@ function merchantHtml(order: OrderRowForEmail, items: AuthoritativeOrderItem[]):
 <!DOCTYPE html>
 <html><body style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;color:#111;background:#f9f9f9;margin:0;padding:24px;">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:28px;border:1px solid #e5e5e5;">
-    <h1 style="margin:0 0 8px;font-size:20px;color:#0f3d2e;">New order</h1>
+    <h1 style="margin:0 0 8px;font-size:20px;color:#0f3d2e;">New order ${escapeHtml(orderRefLabel(order))}</h1>
     <p style="margin:0 0 16px;font-size:14px;color:#444;"><strong>${escapeHtml(order.customer_name)}</strong> placed an order for <strong>${money(order.total_amount)}</strong>.</p>
-    <p style="margin:0 0 8px;font-size:13px;"><strong>Order ID:</strong> ${escapeHtml(order.id)}</p>
+    <p style="margin:0 0 8px;font-size:13px;"><strong>Order:</strong> ${escapeHtml(orderRefLabel(order))} <span style="color:#999;">(${escapeHtml(order.id)})</span></p>
     <p style="margin:0 0 8px;font-size:13px;"><strong>Email:</strong> ${escapeHtml(order.customer_email)}</p>
     <p style="margin:0 0 16px;font-size:13px;"><strong>Phone:</strong> ${escapeHtml(order.customer_phone ?? '—')}</p>
     ${itemsTableHtml(items)}
@@ -162,9 +173,8 @@ function merchantHtml(order: OrderRowForEmail, items: AuthoritativeOrderItem[]):
 
 function merchantText(order: OrderRowForEmail, items: AuthoritativeOrderItem[]): string {
   return [
-    `New order — ${STORE_NAME}`,
+    `New order ${orderRefLabel(order)} — ${STORE_NAME}`,
     `Total: ${money(order.total_amount)}`,
-    `Order ID: ${order.id}`,
     `Customer: ${order.customer_name}`,
     `Email: ${order.customer_email}`,
     `Phone: ${order.customer_phone ?? '—'}`,
@@ -271,12 +281,12 @@ export async function sendOrderEmails(order: OrderRowForEmail, items: Authoritat
     return
   }
   const { sender, label } = picked
-  const shortId = order.id.slice(0, 8)
+  const orderLabel = orderRefLabel(order)
 
   try {
     await sender({
       to: order.customer_email,
-      subject: `Your order #${shortId} — ${STORE_NAME}`,
+      subject: `Your order ${orderLabel} — ${STORE_NAME}`,
       html: receiptHtml(order, items),
       text: receiptText(order, items),
     })
@@ -289,7 +299,7 @@ export async function sendOrderEmails(order: OrderRowForEmail, items: Authoritat
     try {
       await sender({
         to: merchantTo,
-        subject: `New order #${shortId} — ${money(order.total_amount)} — ${order.customer_name}`,
+        subject: `New order ${orderLabel} — ${money(order.total_amount)} — ${order.customer_name}`,
         html: merchantHtml(order, items),
         text: merchantText(order, items),
       })
@@ -306,7 +316,7 @@ export async function sendOrderEmails(order: OrderRowForEmail, items: Authoritat
   //   T-Mobile: tmomail.net      Sprint: messaging.sprintpcs.com
   const smsGateway = process.env.MERCHANT_SMS_GATEWAY_EMAIL?.trim()
   if (smsGateway) {
-    const shortBody = `New order #${shortId} — ${money(order.total_amount)} from ${order.customer_name}${order.city ? ` (${order.city})` : ''}`
+    const shortBody = `New order ${orderLabel} — ${money(order.total_amount)} from ${order.customer_name}${order.city ? ` (${order.city})` : ''}`
     try {
       await sender({
         to: smsGateway,
@@ -326,6 +336,7 @@ export async function sendOrderEmails(order: OrderRowForEmail, items: Authoritat
 
 export type OrderForStatusEmail = {
   id: string
+  order_number?: number | null
   customer_name: string
   customer_email: string
   total_amount: number
@@ -373,7 +384,7 @@ function statusEmailHtml(
   note?: string | null,
 ): string {
   const base = getPublicSiteUrl()
-  const trackPath = `/track-order?id=${encodeURIComponent(order.id)}`
+  const trackPath = `/track-order?id=${encodeURIComponent(trackQueryValue(order))}`
   const trackUrl = base ? `${base}${trackPath}` : trackPath
   const headline = statusHeadline(status)
   const body = statusBody(status, order.tracking_number)
@@ -390,7 +401,7 @@ function statusEmailHtml(
     <p style="margin:0 0 8px;color:#444;font-size:15px;">Hi ${escapeHtml(order.customer_name)},</p>
     <p style="margin:0 0 16px;color:#333;font-size:15px;">${escapeHtml(body)}</p>
     ${noteBlock}
-    <p style="margin:16px 0 4px;font-size:13px;color:#666;"><strong>Order:</strong> #${escapeHtml(order.id.slice(0, 8))}</p>
+    <p style="margin:16px 0 4px;font-size:13px;color:#666;"><strong>Order:</strong> ${escapeHtml(orderRefLabel(order))}</p>
     <p style="margin:0 0 4px;font-size:13px;color:#666;"><strong>Status:</strong> ${escapeHtml(ORDER_STATUS_LABEL[status])}</p>
     <p style="margin:0 0 16px;font-size:13px;color:#666;"><strong>Total:</strong> ${money(order.total_amount)}</p>
     <p style="margin:24px 0 0;">
@@ -407,7 +418,8 @@ function statusEmailText(
   note?: string | null,
 ): string {
   const base = getPublicSiteUrl()
-  const trackUrl = base ? `${base}/track-order?id=${order.id}` : `/track-order?id=${order.id}`
+  const trackQ = trackQueryValue(order)
+  const trackUrl = base ? `${base}/track-order?id=${trackQ}` : `/track-order?id=${trackQ}`
   const lines = [
     `${STORE_NAME} — ${statusHeadline(status)}`,
     ``,
@@ -420,7 +432,7 @@ function statusEmailText(
   }
   lines.push(
     ``,
-    `Order: #${order.id.slice(0, 8)}`,
+    `Order: ${orderRefLabel(order)}`,
     `Status: ${ORDER_STATUS_LABEL[status]}`,
     `Total: ${money(order.total_amount)}`,
     ``,
@@ -449,12 +461,12 @@ export async function sendOrderStatusEmail(
     return
   }
   const { sender, label } = picked
-  const shortId = order.id.slice(0, 8)
+  const orderLabel = orderRefLabel(order)
   const headline = statusHeadline(status)
   try {
     await sender({
       to: order.customer_email,
-      subject: `${headline} — Order #${shortId}`,
+      subject: `${headline} — Order ${orderLabel}`,
       html: statusEmailHtml(order, status, note),
       text: statusEmailText(order, status, note),
     })

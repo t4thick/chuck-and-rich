@@ -14,6 +14,7 @@ import {
 } from '@/lib/order-status'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
+import { formatOrderNumber } from '@/lib/orders/order-number'
 
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
@@ -71,8 +72,10 @@ export default async function AdminOrderDetailPage({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="admin-page-title">Order detail</h1>
-          <p className="mt-1 font-mono text-xs text-earth-400">{order.id}</p>
+          <h1 className="admin-page-title">
+            Order {formatOrderNumber(order.order_number) || 'detail'}
+          </h1>
+          <p className="mt-1 break-all font-mono text-xs text-earth-400">{order.id}</p>
         </div>
         <span className={`admin-status-pill self-start ${STATUS_PILL_COLORS[normalizedStatus]}`}>
           {ORDER_STATUS_LABEL[normalizedStatus]}

@@ -206,6 +206,7 @@ export async function fulfillOrderFromPaymentIntent(
     await sendOrderEmails(
       {
         id: order.id,
+        order_number: order.order_number ?? null,
         customer_name: order.customer_name,
         customer_email: order.customer_email,
         customer_phone: order.customer_phone,
@@ -229,6 +230,7 @@ export async function fulfillOrderFromPaymentIntent(
   try {
     await sendOrderSmsToMerchant({
       orderId: order.id,
+      orderNumber: order.order_number ?? null,
       customerName: order.customer_name,
       totalAmount: Number(order.total_amount),
       city: order.city,

@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
@@ -21,7 +20,6 @@ export function AdminLoginClient({
   adminPasswordConfigured?: boolean
   adminSecretConfigured?: boolean
 }) {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [staffPassword, setStaffPassword] = useState('')
@@ -40,8 +38,9 @@ export function AdminLoginClient({
       credentials: 'same-origin',
     })
     if (res.ok) {
-      router.push('/admin')
-      router.refresh()
+      // Hard navigation so the browser sends a fresh request with the new cookie.
+      // router.push does a soft client-side nav that often races the Set-Cookie.
+      window.location.assign('/admin')
       return
     }
     setLoading(false)
@@ -77,13 +76,13 @@ export function AdminLoginClient({
       email: email.trim(),
       password,
     })
-    setLoading(false)
     if (signError) {
+      setLoading(false)
       setError(signError.message)
       return
     }
-    router.push('/admin')
-    router.refresh()
+    // Hard navigation so the new Supabase session cookies are visible to the proxy.
+    window.location.assign('/admin')
   }
 
   async function handleStaffPassword(e: React.FormEvent) {
@@ -97,12 +96,15 @@ export function AdminLoginClient({
       credentials: 'same-origin',
       body: JSON.stringify({ password: staffPassword }),
     })
-    setLoading(false)
     if (res.ok) {
-      router.push('/admin')
-      router.refresh()
+      // Hard navigation guarantees the freshly-set admin_session cookie is sent
+      // with the next request. router.push does a soft client-side nav that
+      // sometimes raced the Set-Cookie header on the previous response, which
+      // is why "press Enter, nothing happens, then reload works".
+      window.location.assign('/admin')
       return
     }
+    setLoading(false)
 
     const data = await res.json().catch(() => ({}))
     if (res.status === 429) {

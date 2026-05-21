@@ -16,10 +16,12 @@ import { PageHeader } from '@/components/store/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { formatMoney } from '@/lib/utils'
+import { formatOrderNumber } from '@/lib/orders/order-number'
 
 type TrackOrderResponse = {
   order: {
     id: string
+    order_number?: number | null
     status: string
     created_at: string
     total_amount: number | null
@@ -127,13 +129,13 @@ export function TrackOrderClient() {
       <PageHeader
         eyebrow="Orders"
         title="Track your order"
-        subtitle="Enter your order ID to see delivery progress and item details."
+        subtitle="Enter your order number (LQ-1042) to see delivery progress and item details."
       />
 
       <div className="store-container py-8 sm:py-10">
         <form onSubmit={handleSubmit} className="premium-card max-w-2xl p-6">
           <label htmlFor="track-order-id" className="form-label">
-            Order ID
+            Order number
           </label>
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
@@ -143,7 +145,7 @@ export function TrackOrderClient() {
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
                 required
-                placeholder="Paste your order ID"
+                placeholder="LQ-1042"
                 className="pl-9"
               />
             </div>
@@ -152,7 +154,7 @@ export function TrackOrderClient() {
             </Button>
           </div>
           <p className="mt-3 text-xs text-earth-500">
-            Order details are available when signed in to the account that placed the order.
+            You&apos;ll find this on the order confirmation email and in your account.
           </p>
         </form>
 
@@ -165,7 +167,13 @@ export function TrackOrderClient() {
               <p className="mt-2 text-2xl font-semibold tracking-tight text-earth-900">
                 {ORDER_STATUS_LABEL[status]}
               </p>
-              <p className="mt-1 break-all font-mono text-xs text-earth-400">{data.order.id}</p>
+              {data.order.order_number ? (
+                <p className="mt-1 font-mono text-sm font-semibold text-earth-700">
+                  {formatOrderNumber(data.order.order_number)}
+                </p>
+              ) : (
+                <p className="mt-1 break-all font-mono text-xs text-earth-400">{data.order.id}</p>
+              )}
 
               <div className="mt-8">
                 <OrderStatusTimeline status={data.order.status} />

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeOrderStatus } from '@/lib/order-status'
+import { parseOrderRef } from '@/lib/orders/order-number'
 
 export async function GET(req: NextRequest) {
-  const id = req.nextUrl.searchParams.get('id')?.trim()
+  const idRaw = req.nextUrl.searchParams.get('id')?.trim()
   const supabase = await createClient()
   const {
     data: { user },
@@ -14,16 +15,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Please sign in to track your orders.' }, { status: 401 })
   }
 
-  if (!id) {
-    return NextResponse.json({ error: 'Order ID is required.' }, { status: 400 })
+  const ref = parseOrderRef(idRaw)
+  if (!ref) {
+    return NextResponse.json(
+      { error: 'Enter your order number (e.g. LQ-1042) or order ID.' },
+      { status: 400 }
+    )
   }
 
-  const { data: order, error: orderError } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('orders')
     .select('*')
-    .eq('id', id)
     .eq('user_id', user.id)
-    .maybeSingle()
+
+  query = ref.type === 'uuid' ? query.eq('id', ref.value) : query.eq('order_number', ref.value)
+
+  const { data: order, error: orderError } = await query.maybeSingle()
 
   if (orderError || !order) {
     return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
@@ -33,11 +40,11 @@ export async function GET(req: NextRequest) {
     supabaseAdmin
       .from('order_items')
       .select('id,product_name,product_price,quantity,subtotal')
-      .eq('order_id', id),
+      .eq('order_id', order.id),
     supabaseAdmin
       .from('order_status_logs')
       .select('id,from_status,to_status,changed_at,changed_by,note')
-      .eq('order_id', id)
+      .eq('order_id', order.id)
       .order('changed_at', { ascending: true }),
   ])
 

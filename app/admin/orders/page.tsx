@@ -10,6 +10,7 @@ import {
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { formatOrderNumber, parseOrderRef } from '@/lib/orders/order-number'
 
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
@@ -31,11 +32,24 @@ export default async function AdminOrdersPage({
 
   let query = supabaseAdmin
     .from('orders')
-    .select('id, customer_name, customer_email, city, total_amount, status, created_at')
+    .select(
+      'id, order_number, customer_name, customer_email, city, total_amount, status, created_at'
+    )
     .order('created_at', { ascending: false })
   if (q?.trim()) {
     const term = q.trim()
-    query = query.or(`customer_name.ilike.%${term}%,customer_email.ilike.%${term}%,id.eq.${term}`)
+    const ref = parseOrderRef(term)
+    if (ref?.type === 'number') {
+      query = query.or(
+        `customer_name.ilike.%${term}%,customer_email.ilike.%${term}%,order_number.eq.${ref.value}`
+      )
+    } else if (ref?.type === 'uuid') {
+      query = query.or(
+        `customer_name.ilike.%${term}%,customer_email.ilike.%${term}%,id.eq.${ref.value}`
+      )
+    } else {
+      query = query.or(`customer_name.ilike.%${term}%,customer_email.ilike.%${term}%`)
+    }
   }
   const { data: orders } = await query
 
@@ -67,7 +81,7 @@ export default async function AdminOrdersPage({
             type="search"
             name="q"
             defaultValue={q ?? ''}
-            placeholder="Search by name, email, or order ID"
+            placeholder="Search by name, email, or LQ-1042"
             className="pl-10"
           />
         </div>
@@ -117,6 +131,7 @@ export default async function AdminOrdersPage({
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th>Order</th>
                   <th>Customer</th>
                   <th>Email</th>
                   <th>City</th>
@@ -131,6 +146,9 @@ export default async function AdminOrdersPage({
                   const st = normalizeOrderStatus(order.status)
                   return (
                     <tr key={order.id}>
+                      <td className="font-mono text-xs font-semibold text-earth-900">
+                        {formatOrderNumber(order.order_number) || '—'}
+                      </td>
                       <td className="font-medium text-earth-900">{order.customer_name}</td>
                       <td className="text-earth-600">{order.customer_email}</td>
                       <td className="text-earth-600">{order.city ?? '—'}</td>
@@ -170,7 +188,12 @@ export default async function AdminOrdersPage({
                     className="admin-card flex flex-col gap-1 no-underline"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <p className="font-medium text-earth-900">{order.customer_name}</p>
+                      <div>
+                        <p className="font-mono text-xs font-semibold text-earth-900">
+                          {formatOrderNumber(order.order_number) || '—'}
+                        </p>
+                        <p className="text-sm font-medium text-earth-800">{order.customer_name}</p>
+                      </div>
                       <span className="tabular-nums text-sm font-semibold text-earth-900">
                         ${Number(order.total_amount ?? 0).toFixed(2)}
                       </span>

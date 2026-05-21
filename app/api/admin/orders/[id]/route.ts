@@ -27,7 +27,7 @@ export async function PATCH(
 
     const { data: existingOrder, error: existingError } = await supabaseAdmin
       .from('orders')
-      .select('status, customer_name, customer_email, total_amount')
+      .select('status, order_number, customer_name, customer_email, total_amount')
       .eq('id', id)
       .single()
 
@@ -99,6 +99,7 @@ export async function PATCH(
         await sendOrderStatusEmail(
           {
             id,
+            order_number: existingOrder.order_number ?? null,
             customer_name: existingOrder.customer_name ?? 'there',
             customer_email: existingOrder.customer_email,
             total_amount: Number(existingOrder.total_amount ?? 0),

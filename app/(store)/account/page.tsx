@@ -7,9 +7,11 @@ import { EmailVerificationBanner } from '@/components/account/EmailVerificationB
 import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/utils'
+import { formatOrderNumber } from '@/lib/orders/order-number'
 
 type AccountOrderRow = {
   id: string
+  order_number: number | null
   total_amount: number
   status: string
   created_at: string
@@ -30,7 +32,7 @@ export default async function AccountPage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, total_amount, status, created_at, customer_email')
+    .select('id, order_number, total_amount, status, created_at, customer_email')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(25)
@@ -111,27 +113,36 @@ export default async function AccountPage() {
           <div className="mt-6 space-y-3">
             {orders.map((o: AccountOrderRow) => {
               const st = normalizeOrderStatus(o.status)
+              const number = formatOrderNumber(o.order_number)
               return (
                 <article
                   key={o.id}
                   className="premium-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-earth-500">
-                      {new Date(o.created_at).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </p>
-                    <p className="mt-1 text-base font-semibold text-earth-900 tabular-nums">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-bold text-earth-900">
+                        {number || '—'}
+                      </span>
+                      <span className="text-xs text-earth-400">·</span>
+                      <p className="text-xs font-bold uppercase tracking-wider text-earth-500">
+                        {new Date(o.created_at).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <p className="mt-2 text-base font-semibold text-earth-900 tabular-nums">
                       {formatMoney(Number(o.total_amount))}
                     </p>
                     <p className="mt-1 text-sm text-earth-600">{ORDER_STATUS_LABEL[st]}</p>
-                    <p className="mt-1 truncate font-mono text-xs text-earth-400">{o.id}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Link href={`/track-order?id=${encodeURIComponent(o.id)}`} className="no-underline">
+                    <Link
+                      href={`/track-order?id=${encodeURIComponent(number || o.id)}`}
+                      className="no-underline"
+                    >
                       <Button variant="outline" size="sm" className="rounded-xl">
                         Track
                       </Button>

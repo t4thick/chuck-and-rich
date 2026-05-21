@@ -10,6 +10,7 @@ import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
 import { normalizePaymentMethod } from '@/lib/payment-methods'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { formatMoney } from '@/lib/utils'
+import { formatOrderNumber } from '@/lib/orders/order-number'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,7 @@ export default async function OrderConfirmationPage({
 
   let order: {
     id: string
+    order_number: number | null
     status: string
     shipping_method: string | null
     shipping_fee: number | null
@@ -42,13 +44,15 @@ export default async function OrderConfirmationPage({
     const { data } = await supabaseAdmin
       .from('orders')
       .select(
-        'id,status,shipping_method,shipping_fee,total_amount,subtotal_amount,tracking_number,payment_method'
+        'id,order_number,status,shipping_method,shipping_fee,total_amount,subtotal_amount,tracking_number,payment_method'
       )
       .eq('id', id)
       .eq('user_id', user.id)
       .maybeSingle()
     order = data
   }
+
+  const orderNumberLabel = order ? formatOrderNumber(order.order_number) : ''
 
   const normalizedStatus = normalizeOrderStatus(order?.status)
   const shippingMethod = (order?.shipping_method as ShippingMethod | null | undefined) ?? 'standard'
@@ -76,10 +80,12 @@ export default async function OrderConfirmationPage({
             <p className="mt-6 text-earth-700">Cash on delivery — pay when your order arrives.</p>
           )}
 
-          {id && (
+          {orderNumberLabel && (
             <p className="mt-4 text-sm text-earth-600">
-              Order reference:{' '}
-              <span className="break-all font-mono text-xs text-earth-800">{id}</span>
+              Order number:{' '}
+              <span className="font-mono text-base font-semibold tracking-tight text-earth-900">
+                {orderNumberLabel}
+              </span>
             </p>
           )}
 
@@ -137,7 +143,10 @@ export default async function OrderConfirmationPage({
 
         <div className="mx-auto mt-12 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
           {order && (
-            <Link href={`/track-order?id=${encodeURIComponent(order.id)}`} className="no-underline">
+            <Link
+              href={`/track-order?id=${encodeURIComponent(orderNumberLabel || order.id)}`}
+              className="no-underline"
+            >
               <Button variant="default" className="h-12 w-full gap-2 rounded-xl sm:w-auto">
                 <Package className="h-4 w-4" />
                 Track this order

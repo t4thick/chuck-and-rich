@@ -13,10 +13,13 @@
  * we never want a flaky SMS to fail the whole webhook.
  */
 
+import { formatOrderNumber } from '@/lib/orders/order-number'
+
 const TWILIO_API_VERSION = '2010-04-01'
 
 export type OrderSmsInput = {
   orderId: string
+  orderNumber?: number | null
   customerName: string
   totalAmount: number
   city?: string | null
@@ -52,9 +55,9 @@ export async function sendOrderSmsToMerchant(input: OrderSmsInput): Promise<void
   const toNumber = trimEnv('MERCHANT_ALERT_PHONE')!
 
   const shortIdLen = input.shortIdLength ?? 8
-  const shortId = input.orderId.slice(0, shortIdLen)
+  const friendly = formatOrderNumber(input.orderNumber) || `#${input.orderId.slice(0, shortIdLen)}`
   const cityClause = input.city ? ` to ${input.city}` : ''
-  const body = `[Lovely Queen] New order #${shortId} — ${formatMoney(input.totalAmount)} from ${input.customerName}${cityClause}. Open admin to confirm.`
+  const body = `[Lovely Queen] New order ${friendly} — ${formatMoney(input.totalAmount)} from ${input.customerName}${cityClause}. Open admin to confirm.`
 
   const url = `https://api.twilio.com/${TWILIO_API_VERSION}/Accounts/${encodeURIComponent(accountSid)}/Messages.json`
   const params = new URLSearchParams({
