@@ -17,14 +17,14 @@ export function MobileCartBar() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-40 border-t border-earth-200 bg-white/95 p-3 shadow-[0_-8px_32px_rgb(42_28_22/0.12)] backdrop-blur-md md:hidden"
+      className="animate-fade-up fixed left-0 right-0 z-40 px-3 pb-2 md:hidden"
       style={{ bottom: MOBILE_BOTTOM_NAV_OFFSET }}
     >
       <Button
         type="button"
         variant="accent"
         size="lg"
-        className="h-12 w-full gap-3 text-base font-semibold"
+        className="btn-shine h-12 w-full gap-3 rounded-xl text-base font-semibold shadow-[var(--shadow-float)]"
         onClick={openCart}
       >
         <ShoppingBag className="h-5 w-5" aria-hidden />

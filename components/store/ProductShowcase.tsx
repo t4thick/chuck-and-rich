@@ -24,17 +24,18 @@ export function ProductShowcase({
     <section className="page-section bg-sand">
       <div className="store-container">
         <RevealOnScroll>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="section-eyebrow">{eyebrow}</p>
-              <h2 className="section-title mt-2">{title}</h2>
+              <h2 className="section-title mt-3 text-balance">{title}</h2>
               <p className="section-subtitle">{subtitle}</p>
             </div>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 no-underline hover:text-brand-900"
+              className="group inline-flex items-center gap-1.5 self-start text-sm font-semibold text-brand-700 no-underline hover:text-brand-800 sm:self-auto"
             >
-              Shop all <ArrowRight className="h-4 w-4" />
+              Shop all
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
             </Link>
           </div>
         </RevealOnScroll>

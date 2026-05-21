@@ -27,35 +27,36 @@ const TRUST_ITEMS = [
 
 export function TrustStrip() {
   return (
-    <section className="page-section bg-sage">
-      <div className="store-container">
+    <section className="page-section relative overflow-hidden bg-sage">
+      <div className="kente-overlay absolute inset-0 opacity-30" aria-hidden />
+      <div className="store-container relative">
         <RevealOnScroll>
           <div className="mx-auto max-w-2xl text-center">
-            <p className="section-eyebrow">Why Lovely Queen</p>
-            <h2 className="section-title mt-2 text-balance">Groceries you can trust</h2>
+            <p className="section-eyebrow justify-center">Why Lovely Queen</p>
+            <h2 className="section-title mt-3 text-balance">Groceries you can trust</h2>
             <p className="section-subtitle mx-auto">
-              We&apos;re not a generic marketplace — we&apos;re your neighborhood African grocery with
-              real people behind every order.
+              We&apos;re not a generic marketplace — we&apos;re your neighborhood African grocery
+              with real people behind every order.
             </p>
           </div>
         </RevealOnScroll>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {TRUST_ITEMS.map(({ icon: Icon, title, desc }, i) => (
-            <RevealOnScroll key={title} delay={i * 80} className="h-full">
-              <div className="premium-card premium-card-hover h-full p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-md bg-brand-700 text-white">
+            <RevealOnScroll key={title} delay={i * 90} className="h-full">
+              <div className="group premium-card premium-card-hover h-full p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-700 text-white shadow-[var(--shadow-elev)] transition duration-500 group-hover:rotate-6 group-hover:scale-105">
                   <Icon className="h-5 w-5" aria-hidden />
                 </div>
-                <p className="mt-5 font-display text-lg font-bold text-earth-950">{title}</p>
+                <p className="mt-5 font-display text-lg font-semibold text-earth-900">{title}</p>
                 <p className="mt-2 text-sm leading-relaxed text-earth-600">{desc}</p>
               </div>
             </RevealOnScroll>
           ))}
         </div>
 
-        <RevealOnScroll delay={200}>
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border border-earth-200/80 bg-white px-6 py-5 shadow-sm sm:flex-row">
+        <RevealOnScroll delay={300}>
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border border-earth-200/80 bg-white/95 px-6 py-5 shadow-[var(--shadow-card)] backdrop-blur-md sm:flex-row">
             <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-earth-600 sm:justify-start">
               <MapPin className="inline h-4 w-4 text-brand-600" aria-hidden />
               <span>{STORE.address}</span>

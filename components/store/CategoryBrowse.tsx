@@ -13,27 +13,29 @@ type CategoryBrowseProps = {
 
 export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBrowseProps) {
   return (
-    <section id="categories" className="page-section bg-white">
+    <section id="categories" className="page-section grain-bg bg-white">
       <div className="store-container">
         <RevealOnScroll>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="section-eyebrow">Shop by department</p>
-              <h2 className="section-title mt-2">Everything for your kitchen</h2>
+              <h2 className="section-title mt-3">Everything for your kitchen</h2>
               <p className="section-subtitle">
-                Photo-forward categories — the same departments you know from a full African market.
+                Browse 170+ products across spices, rice, frozen, beauty, and more — the same
+                departments you know from a full African market.
               </p>
             </div>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 no-underline hover:text-brand-800"
+              className="group inline-flex items-center gap-1.5 self-start text-sm font-semibold text-brand-700 no-underline hover:text-brand-800 sm:self-auto"
             >
-              View all products <ArrowRight className="h-4 w-4" />
+              View all products
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
             </Link>
           </div>
         </RevealOnScroll>
 
-        <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <ul className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
           {displayCategories.map((cat, i) => {
             const imageUrl = getCategoryImage(cat)
             const count = categoryCount[cat] ?? 0
@@ -45,13 +47,13 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
                     href={`/shop?category=${encodeURIComponent(cat)}`}
                     className="asafo-category-tile group block no-underline"
                   >
-                    <div className="relative aspect-square overflow-hidden bg-earth-100">
+                    <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-earth-100 to-earth-200">
                       {imageUrl ? (
                         <Image
                           src={imageUrl}
                           alt={cat}
                           fill
-                          className="object-cover transition duration-300 group-hover:scale-105"
+                          className="object-cover transition duration-700 group-hover:scale-110"
                           sizes="(max-width:640px) 50vw, 20vw"
                         />
                       ) : (
@@ -59,12 +61,18 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
                           <CategoryIcon category={cat} className="h-12 w-12 text-brand-700" />
                         </span>
                       )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-earth-950/30 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+                      <span className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white text-brand-700 opacity-0 shadow-md transition duration-500 group-hover:opacity-100">
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
                     </div>
                     <div className="border-t border-earth-100 px-3 py-3 text-center">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-earth-900">{cat}</h3>
+                      <h3 className="line-clamp-1 text-sm font-semibold text-earth-900 transition group-hover:text-brand-700">
+                        {cat}
+                      </h3>
                       {count > 0 && (
-                        <p className="mt-0.5 text-xs text-earth-500">
-                          {count} product{count === 1 ? '' : 's'}
+                        <p className="mt-0.5 text-[11px] text-earth-500">
+                          {count} item{count === 1 ? '' : 's'}
                         </p>
                       )}
                     </div>
@@ -76,14 +84,14 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
         </ul>
 
         <RevealOnScroll delay={80}>
-          <div className="mt-8 flex flex-wrap justify-center gap-2 border-t border-earth-100 pt-8">
+          <div className="mt-10 flex flex-wrap justify-center gap-2 border-t border-earth-100 pt-8">
             {PRODUCT_CATEGORIES.filter((c) => (categoryCount[c] ?? 0) > 0)
               .slice(0, 8)
               .map((cat) => (
                 <Link
                   key={cat}
                   href={`/shop?category=${encodeURIComponent(cat)}`}
-                  className="rounded-md border border-earth-200 bg-sand px-3 py-1.5 text-xs font-medium text-earth-700 no-underline transition hover:border-brand-400 hover:bg-white hover:text-brand-800"
+                  className="rounded-full border border-earth-200 bg-white px-3.5 py-1.5 text-xs font-medium text-earth-700 no-underline transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-800 hover:shadow-sm"
                 >
                   {cat}
                 </Link>

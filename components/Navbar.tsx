@@ -34,21 +34,23 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 border-b border-earth-200 bg-sand transition-shadow duration-200',
-        scrolled && 'shadow-[var(--shadow-card)]'
+        'sticky top-0 z-50 border-b transition-all duration-300',
+        scrolled
+          ? 'glass-nav border-earth-200/60 shadow-[var(--shadow-card)]'
+          : 'border-transparent bg-sand'
       )}
     >
       <div className="store-container">
-        <div className={cn('flex items-center justify-between gap-3 transition-all', scrolled ? 'h-14' : 'h-16')}>
+        <div className={cn('flex items-center justify-between gap-3 transition-all duration-300', scrolled ? 'h-14' : 'h-[68px]')}>
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-2 no-underline"
+            className="group flex shrink-0 items-center gap-2.5 no-underline"
             onClick={() => setOpen(false)}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-700 text-white">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-700 text-white shadow-[var(--shadow-elev)] transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105">
               <Store className="h-4 w-4" aria-hidden />
             </span>
-            <span className="font-display text-xl font-bold tracking-tight text-earth-900 sm:text-2xl">
+            <span className="font-display text-xl font-semibold tracking-tight text-earth-900 sm:text-[1.4rem]">
               <span className="hidden sm:inline">{STORE.shortName}</span>
               <span className="sm:hidden">Lovely Queen</span>
             </span>
@@ -81,13 +83,16 @@ export function Navbar() {
             <Button
               type="button"
               size="sm"
-              className="relative ml-2 gap-1.5 rounded-md"
+              className="btn-shine relative ml-2 gap-1.5 rounded-md"
               onClick={openCart}
             >
               <ShoppingBag className="h-4 w-4" aria-hidden />
               Cart
               {totalItems > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-600 px-1 text-xs font-bold text-white">
+                <span
+                  key={totalItems}
+                  className="animate-bounce-in flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-xs font-bold text-white shadow-sm"
+                >
                   {totalItems > 99 ? '99+' : totalItems}
                 </span>
               )}
@@ -105,7 +110,10 @@ export function Navbar() {
             >
               <ShoppingBag className="h-5 w-5" />
               {totalItems > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-600 px-0.5 text-[10px] font-bold text-white">
+                <span
+                  key={totalItems}
+                  className="animate-bounce-in absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-0.5 text-[10px] font-bold text-white shadow-sm"
+                >
                   {totalItems > 99 ? '99+' : totalItems}
                 </span>
               )}
