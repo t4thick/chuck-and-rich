@@ -1,9 +1,12 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { ArrowRight, Package, Settings, User } from 'lucide-react'
 import { createClientOptional } from '@/lib/supabase/server'
 import { AccountSignOut } from '@/components/AccountSignOut'
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner'
 import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
+import { Button } from '@/components/ui/button'
+import { formatMoney } from '@/lib/utils'
 
 type AccountOrderRow = {
   id: string
@@ -19,7 +22,9 @@ export default async function AccountPage() {
   const supabase = await createClientOptional()
   if (!supabase) redirect('/login?next=/account&error=configuration')
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/account')
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
@@ -31,65 +36,118 @@ export default async function AccountPage() {
     .limit(25)
 
   return (
-    <div className="stack">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2>My account</h2>
+    <>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="section-eyebrow">Overview</p>
+          <h1 className="section-title mt-2">Welcome back</h1>
+          <p className="section-subtitle mt-2">{user.email}</p>
+        </div>
         <AccountSignOut />
       </div>
-      <p className="muted">{user.email}</p>
 
-      {!user.email_confirmed_at && <EmailVerificationBanner email={user.email} />}
+      {!user.email_confirmed_at && (
+        <div className="mt-6">
+          <EmailVerificationBanner email={user.email} />
+        </div>
+      )}
 
-      <h3>Settings</h3>
-      <ul>
-        <li><Link href="/account/profile">Edit profile (name, phone)</Link></li>
-        <li><Link href="/account/addresses">Manage addresses</Link></li>
-        <li><Link href="/account/password">Change password</Link></li>
-      </ul>
+      <div className="mt-10 grid gap-4 sm:grid-cols-3">
+        {[
+          { href: '/account/profile', icon: User, label: 'Edit profile', desc: 'Name & phone' },
+          { href: '/account/addresses', icon: Settings, label: 'Addresses', desc: 'Delivery locations' },
+          { href: '/track-order', icon: Package, label: 'Track order', desc: 'Order status' },
+        ].map(({ href, icon: Icon, label, desc }) => (
+          <Link
+            key={href}
+            href={href}
+            className="premium-card premium-card-hover block p-5 no-underline"
+          >
+            <Icon className="h-5 w-5 text-brand-700" aria-hidden />
+            <p className="mt-3 font-display font-bold text-earth-950">{label}</p>
+            <p className="mt-1 text-sm text-earth-600">{desc}</p>
+          </Link>
+        ))}
+      </div>
 
-      <h3>Profile</h3>
-      <table>
-        <tbody>
-          <tr><th>Name</th><td>{profile?.full_name || '—'}</td></tr>
-          <tr><th>Phone</th><td>{profile?.phone || '—'}</td></tr>
-          <tr><th>Email</th><td>{user.email}</td></tr>
-        </tbody>
-      </table>
+      <div className="premium-card mt-10 p-6">
+        <h2 className="font-display text-lg font-bold text-earth-950">Profile</h2>
+        <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div>
+            <dt className="text-xs font-bold uppercase tracking-wider text-earth-500">Name</dt>
+            <dd className="mt-1 font-medium text-earth-900">{profile?.full_name || '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-bold uppercase tracking-wider text-earth-500">Phone</dt>
+            <dd className="mt-1 font-medium text-earth-900">{profile?.phone || '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-bold uppercase tracking-wider text-earth-500">Email</dt>
+            <dd className="mt-1 font-medium text-earth-900">{user.email}</dd>
+          </div>
+        </dl>
+      </div>
 
-      <h3>Orders</h3>
-      {!orders?.length ? (
-        <p>No orders linked to this account yet.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Placed</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="mt-10">
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="font-display text-xl font-bold text-earth-950">Recent orders</h2>
+          <Link href="/shop" className="text-sm font-semibold text-brand-700 no-underline">
+            Shop again
+          </Link>
+        </div>
+
+        {!orders?.length ? (
+          <div className="premium-card mt-6 px-6 py-12 text-center">
+            <Package className="mx-auto h-10 w-10 text-earth-300" strokeWidth={1.25} />
+            <p className="mt-4 font-medium text-earth-800">No orders yet</p>
+            <p className="mt-1 text-sm text-earth-600">When you place an order, it will show up here.</p>
+            <Link href="/shop" className="mt-6 inline-block no-underline">
+              <Button variant="accent" className="rounded-xl">
+                Start shopping
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-6 space-y-3">
             {orders.map((o: AccountOrderRow) => {
               const st = normalizeOrderStatus(o.status)
               return (
-                <tr key={o.id}>
-                  <td>{new Date(o.created_at).toLocaleString()}</td>
-                  <td>${Number(o.total_amount).toFixed(2)}</td>
-                  <td>{ORDER_STATUS_LABEL[st]}</td>
-                  <td>
-                    <Link href={`/track-order?id=${encodeURIComponent(o.id)}`}>Track</Link>
-                    {' · '}
-                    <Link href={`/account/reorder/${encodeURIComponent(o.id)}`}>Reorder</Link>
-                  </td>
-                </tr>
+                <article
+                  key={o.id}
+                  className="premium-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-earth-500">
+                      {new Date(o.created_at).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </p>
+                    <p className="mt-1 font-display font-bold text-earth-950">
+                      {formatMoney(Number(o.total_amount))}
+                    </p>
+                    <p className="mt-1 text-sm text-earth-600">{ORDER_STATUS_LABEL[st]}</p>
+                    <p className="mt-1 truncate font-mono text-xs text-earth-400">{o.id}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={`/track-order?id=${encodeURIComponent(o.id)}`} className="no-underline">
+                      <Button variant="outline" size="sm" className="rounded-xl">
+                        Track
+                      </Button>
+                    </Link>
+                    <Link href={`/account/reorder/${encodeURIComponent(o.id)}`} className="no-underline">
+                      <Button variant="default" size="sm" className="gap-1 rounded-xl">
+                        Reorder <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
+                </article>
               )
             })}
-          </tbody>
-        </table>
-      )}
-
-      <p><Link href="/shop">← Continue shopping</Link></p>
-    </div>
+          </div>
+        )}
+      </div>
+    </>
   )
 }

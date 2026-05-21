@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Menu, ShoppingBag, X } from 'lucide-react'
+import { Menu, ShoppingBag, Store, X } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { NavbarAuth } from '@/components/NavbarAuth'
 import { ShopSearchBar } from '@/components/store/ShopSearchBar'
@@ -43,11 +43,16 @@ export function Navbar() {
         <div className={cn('flex items-center justify-between gap-3 transition-all', scrolled ? 'h-14' : 'h-16')}>
           <Link
             href="/"
-            className="shrink-0 font-display text-lg font-bold tracking-tight text-brand-900 no-underline sm:text-xl"
+            className="flex shrink-0 items-center gap-2 no-underline"
             onClick={() => setOpen(false)}
           >
-            <span className="hidden sm:inline">{STORE.shortName}</span>
-            <span className="sm:hidden">Lovely Queen</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-800 text-white shadow-sm">
+              <Store className="h-4 w-4" aria-hidden />
+            </span>
+            <span className="font-display text-lg font-bold tracking-tight text-earth-950 sm:text-xl">
+              <span className="hidden sm:inline">{STORE.shortName}</span>
+              <span className="sm:hidden">Lovely Queen</span>
+            </span>
           </Link>
 
           <div className="hidden flex-1 px-4 md:block md:max-w-md lg:max-w-lg">

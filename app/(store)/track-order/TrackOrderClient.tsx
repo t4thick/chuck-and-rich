@@ -1,11 +1,21 @@
 'use client'
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Package, Search } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, getStatusStepIndex, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
+import {
+  ORDER_STATUS_LABEL,
+  normalizeOrderStatus,
+  type OrderStatus,
+} from '@/lib/order-status'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { OrderStatusTimeline } from '@/components/account/OrderStatusTimeline'
+import { PageHeader } from '@/components/store/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { formatMoney } from '@/lib/utils'
 
 type TrackOrderResponse = {
   order: {
@@ -45,30 +55,35 @@ export function TrackOrderClient() {
   const [data, setData] = useState<TrackOrderResponse | null>(null)
   const subscribedIdRef = useRef<string>('')
 
-  const status = useMemo<OrderStatus>(() => normalizeOrderStatus(data?.order?.status), [data?.order?.status])
-  const stepIndex = getStatusStepIndex(status)
-  const shippingMethod = ((data?.order?.shipping_method as ShippingMethod | undefined) ?? 'standard')
+  const status = useMemo<OrderStatus>(
+    () => normalizeOrderStatus(data?.order?.status),
+    [data?.order?.status]
+  )
+  const shippingMethod = (data?.order?.shipping_method as ShippingMethod | undefined) ?? 'standard'
 
-  const fetchOrder = useCallback(async (idOverride?: string) => {
-    const id = (idOverride ?? orderId).trim()
-    if (!id) return
-    setLoading(true)
-    setError('')
-    try {
-      const res = await fetch(`/api/orders/track?id=${encodeURIComponent(id)}`)
-      const payload = await res.json()
-      if (!res.ok) {
-        setError(payload.error ?? 'Could not find this order.')
-        setData(null)
-        return
+  const fetchOrder = useCallback(
+    async (idOverride?: string) => {
+      const id = (idOverride ?? orderId).trim()
+      if (!id) return
+      setLoading(true)
+      setError('')
+      try {
+        const res = await fetch(`/api/orders/track?id=${encodeURIComponent(id)}`)
+        const payload = await res.json()
+        if (!res.ok) {
+          setError(payload.error ?? 'Could not find this order.')
+          setData(null)
+          return
+        }
+        setData(payload)
+      } catch {
+        setError('Network error.')
+      } finally {
+        setLoading(false)
       }
-      setData(payload)
-    } catch {
-      setError('Network error.')
-    } finally {
-      setLoading(false)
-    }
-  }, [orderId])
+    },
+    [orderId]
+  )
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -89,8 +104,16 @@ export function TrackOrderClient() {
     const supabase = createClient()
     const channel = supabase
       .channel(`track-order-${id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, () => void fetchOrder(id))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'order_status_logs', filter: `order_id=eq.${id}` }, () => void fetchOrder(id))
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` },
+        () => void fetchOrder(id)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'order_status_logs', filter: `order_id=eq.${id}` },
+        () => void fetchOrder(id)
+      )
       .subscribe()
 
     return () => {
@@ -100,95 +123,126 @@ export function TrackOrderClient() {
   }, [data?.order?.id, fetchOrder])
 
   return (
-    <div className="stack">
-      <h2>Track order</h2>
+    <div className="min-h-screen bg-cream">
+      <PageHeader
+        eyebrow="Orders"
+        title="Track your order"
+        subtitle="Enter your order ID to see delivery progress and item details."
+      />
 
-      <form onSubmit={handleSubmit} className="row">
-        <label>
-          Order ID:{' '}
-          <input
-            value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
-            required
-            placeholder="57534587-9fea-…"
-            style={{ width: '20em' }}
-          />
-        </label>
-        <button type="submit" disabled={loading}>{loading ? 'Checking…' : 'Track'}</button>
-      </form>
-
-      <p className="muted">For privacy, order details are only available while signed in to the account that placed the order.</p>
-
-      {error && <p className="error">{error}</p>}
-
-      {data && (
-        <div className="stack">
-          <hr />
-          <h3>Order {data.order.id}</h3>
-          <p>
-            <strong>Status:</strong> {ORDER_STATUS_LABEL[status]}
+      <div className="store-container py-8 sm:py-10">
+        <form onSubmit={handleSubmit} className="premium-card max-w-2xl p-6">
+          <label htmlFor="track-order-id" className="form-label">
+            Order ID
+          </label>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-earth-400" />
+              <Input
+                id="track-order-id"
+                value={orderId}
+                onChange={(e) => setOrderId(e.target.value)}
+                required
+                placeholder="Paste your order ID"
+                className="pl-9"
+              />
+            </div>
+            <Button type="submit" disabled={loading} className="h-11 rounded-xl sm:min-w-[120px]">
+              {loading ? 'Checking…' : 'Track'}
+            </Button>
+          </div>
+          <p className="mt-3 text-xs text-earth-500">
+            Order details are available when signed in to the account that placed the order.
           </p>
+        </form>
 
-          <ol>
-            {ORDER_STATUS_FLOW.map((step, index) => {
-              const done = stepIndex >= index
-              return (
-                <li key={step}>
-                  {done ? '✓ ' : '○ '}
-                  {done ? <strong>{ORDER_STATUS_LABEL[step]}</strong> : ORDER_STATUS_LABEL[step]}
-                </li>
-              )
-            })}
-          </ol>
+        {error && <p className="error mt-6">{error}</p>}
 
-          <table>
-            <tbody>
-              <tr><th>Shipping method</th><td>{SHIPPING_METHOD_LABEL[shippingMethod]}</td></tr>
-              <tr><th>Tracking number</th><td>{data.order.tracking_number ?? '— not assigned yet'}</td></tr>
-              <tr><th>Destination</th><td>{data.order.city ?? '-'}, {data.order.country ?? '-'}</td></tr>
-              <tr><th>Total</th><td>${Number(data.order.total_amount ?? 0).toFixed(2)}</td></tr>
-            </tbody>
-          </table>
+        {data && (
+          <div className="mt-10 grid gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="premium-card p-6 sm:p-8">
+              <p className="text-xs font-bold uppercase tracking-wider text-earth-500">Status</p>
+              <p className="mt-2 font-display text-2xl font-bold text-earth-950">
+                {ORDER_STATUS_LABEL[status]}
+              </p>
+              <p className="mt-1 font-mono text-xs text-earth-400">{data.order.id}</p>
 
-          {data.items.length > 0 && (
-            <>
-              <h4>Items</h4>
-              <table>
-                <thead><tr><th>Product</th><th>Qty</th><th>Subtotal</th></tr></thead>
-                <tbody>
-                  {data.items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.product_name}</td>
-                      <td>{item.quantity}</td>
-                      <td>${item.subtotal.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
+              <div className="mt-8">
+                <OrderStatusTimeline status={data.order.status} />
+              </div>
+            </div>
 
-          {data.logs.length > 0 && (
-            <>
-              <h4>Status log</h4>
-              <table>
-                <thead><tr><th>When</th><th>Status</th><th>Note</th></tr></thead>
-                <tbody>
-                  {data.logs.map((log) => (
-                    <tr key={log.id}>
-                      <td>{new Date(log.changed_at).toLocaleString()}</td>
-                      <td>{ORDER_STATUS_LABEL[normalizeOrderStatus(log.to_status)]}</td>
-                      <td>{log.note ?? ''}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
-        </div>
-      )}
+            <div className="space-y-6">
+              <div className="premium-card p-6">
+                <h3 className="font-display font-bold text-earth-950">Delivery details</h3>
+                <dl className="mt-4 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-earth-500">Shipping</dt>
+                    <dd className="font-medium text-earth-900">
+                      {SHIPPING_METHOD_LABEL[shippingMethod]}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-earth-500">Tracking #</dt>
+                    <dd className="font-medium text-earth-900">
+                      {data.order.tracking_number ?? 'Not assigned yet'}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-earth-500">Destination</dt>
+                    <dd className="font-medium text-earth-900">
+                      {data.order.city ?? '—'}, {data.order.country ?? '—'}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4 border-t border-earth-100 pt-3">
+                    <dt className="font-semibold text-earth-800">Total</dt>
+                    <dd className="font-bold text-earth-950">
+                      {formatMoney(Number(data.order.total_amount ?? 0))}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
 
-      <p><Link href="/shop">← Continue shopping</Link></p>
+              {data.items.length > 0 && (
+                <div className="premium-card p-6">
+                  <h3 className="font-display font-bold text-earth-950">Items</h3>
+                  <ul className="mt-4 space-y-3">
+                    {data.items.map((item) => (
+                      <li
+                        key={item.id}
+                        className="flex justify-between gap-3 border-b border-earth-100 pb-3 text-sm last:border-0"
+                      >
+                        <span className="text-earth-700">
+                          {item.product_name} × {item.quantity}
+                        </span>
+                        <span className="font-semibold text-earth-900">
+                          {formatMoney(item.subtotal)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!data && !error && (
+          <div className="premium-card mt-10 max-w-md px-6 py-12 text-center">
+            <Package className="mx-auto h-10 w-10 text-earth-300" strokeWidth={1.25} />
+            <p className="mt-4 text-sm text-earth-600">Enter an order ID above to view progress.</p>
+          </div>
+        )}
+
+        <p className="mt-10">
+          <Link
+            href="/shop"
+            className="text-sm font-semibold text-brand-700 no-underline hover:text-brand-900"
+          >
+            ← Continue shopping
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }

@@ -1,10 +1,15 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { CheckCircle2, Package } from 'lucide-react'
 import { createClientOptional } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, getStatusStepIndex, normalizeOrderStatus } from '@/lib/order-status'
+import { OrderStatusTimeline } from '@/components/account/OrderStatusTimeline'
+import { PageHeader } from '@/components/store/PageHeader'
+import { Button } from '@/components/ui/button'
+import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
 import { normalizePaymentMethod } from '@/lib/payment-methods'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
+import { formatMoney } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +41,9 @@ export default async function OrderConfirmationPage({
   if (id) {
     const { data } = await supabaseAdmin
       .from('orders')
-      .select('id,status,shipping_method,shipping_fee,total_amount,subtotal_amount,tracking_number,payment_method')
+      .select(
+        'id,status,shipping_method,shipping_fee,total_amount,subtotal_amount,tracking_number,payment_method'
+      )
       .eq('id', id)
       .eq('user_id', user.id)
       .maybeSingle()
@@ -44,55 +51,111 @@ export default async function OrderConfirmationPage({
   }
 
   const normalizedStatus = normalizeOrderStatus(order?.status)
-  const statusIndex = getStatusStepIndex(order?.status)
   const shippingMethod = (order?.shipping_method as ShippingMethod | null | undefined) ?? 'standard'
   const paymentMethod = order ? normalizePaymentMethod(order.payment_method) : null
 
   return (
-    <div className="stack">
-      <h2>Order placed</h2>
-      <p>Thank you for shopping with Lovely Queen African Market.</p>
+    <div className="min-h-screen bg-cream">
+      <PageHeader
+        eyebrow="Order confirmed"
+        title="Thank you for your order"
+        subtitle="Lovely Queen African Market — we'll take it from here."
+        centered
+      />
 
-      {paymentMethod === 'stripe' && <p className="success">Payment received via Stripe. Confirmation email on the way.</p>}
-      {paymentMethod === 'cod' && <p>Cash on delivery — pay when your order arrives.</p>}
+      <div className="store-container py-10 sm:py-12">
+        <div className="mx-auto max-w-2xl text-center">
+          <CheckCircle2 className="mx-auto h-14 w-14 text-brand-600" strokeWidth={1.5} />
 
-      {id && <p><strong>Order reference:</strong> <code>{id}</code></p>}
+          {paymentMethod === 'stripe' && (
+            <p className="success mt-6">
+              Payment received. A confirmation email is on the way.
+            </p>
+          )}
+          {paymentMethod === 'cod' && (
+            <p className="mt-6 text-earth-700">Cash on delivery — pay when your order arrives.</p>
+          )}
 
-      {!order && id && <p className="error">We couldn&apos;t find that order under your account.</p>}
+          {id && (
+            <p className="mt-4 text-sm text-earth-600">
+              Order reference:{' '}
+              <span className="font-mono text-xs text-earth-800">{id}</span>
+            </p>
+          )}
 
-      {order && (
-        <>
-          <h3>Delivery progress</h3>
-          <ol>
-            {ORDER_STATUS_FLOW.map((step, index) => {
-              const done = statusIndex >= index
-              return (
-                <li key={step}>
-                  {done ? '✓ ' : '○ '}
-                  {done ? <strong>{ORDER_STATUS_LABEL[step]}</strong> : ORDER_STATUS_LABEL[step]}
-                </li>
-              )
-            })}
-          </ol>
-          <table>
-            <tbody>
-              <tr><th>Current status</th><td>{ORDER_STATUS_LABEL[normalizedStatus]}</td></tr>
-              <tr><th>Shipping method</th><td>{SHIPPING_METHOD_LABEL[shippingMethod]}</td></tr>
-              <tr><th>Shipping fee</th><td>${Number(order.shipping_fee ?? 0).toFixed(2)}</td></tr>
-              <tr><th>Total</th><td>${Number(order.total_amount ?? 0).toFixed(2)}</td></tr>
-              {order.tracking_number && <tr><th>Tracking #</th><td>{order.tracking_number}</td></tr>}
-            </tbody>
-          </table>
-        </>
-      )}
+          {!order && id && (
+            <p className="error mt-4">We couldn&apos;t find that order under your account.</p>
+          )}
+        </div>
 
-      <p>
-        {order && <Link href={`/track-order?id=${encodeURIComponent(order.id)}`}>Track this order</Link>}
-        {' · '}
-        <Link href="/account">My account</Link>
-        {' · '}
-        <Link href="/shop">Continue shopping</Link>
-      </p>
+        {order && (
+          <div className="mx-auto mt-12 grid max-w-4xl gap-8 lg:grid-cols-2">
+            <div className="premium-card p-6 sm:p-8">
+              <h2 className="font-display text-lg font-bold text-earth-950">Delivery progress</h2>
+              <div className="mt-6">
+                <OrderStatusTimeline status={order.status} />
+              </div>
+            </div>
+
+            <div className="premium-card p-6 sm:p-8">
+              <h2 className="font-display text-lg font-bold text-earth-950">Order summary</h2>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-earth-500">Status</dt>
+                  <dd className="font-semibold text-earth-900">
+                    {ORDER_STATUS_LABEL[normalizedStatus]}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-earth-500">Shipping</dt>
+                  <dd className="font-medium text-earth-900">
+                    {SHIPPING_METHOD_LABEL[shippingMethod]}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-earth-500">Shipping fee</dt>
+                  <dd className="font-medium text-earth-900">
+                    {formatMoney(Number(order.shipping_fee ?? 0))}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4 border-t border-earth-100 pt-3">
+                  <dt className="font-semibold text-earth-800">Total</dt>
+                  <dd className="text-lg font-bold text-earth-950">
+                    {formatMoney(Number(order.total_amount ?? 0))}
+                  </dd>
+                </div>
+                {order.tracking_number && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-earth-500">Tracking #</dt>
+                    <dd className="font-medium text-earth-900">{order.tracking_number}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          </div>
+        )}
+
+        <div className="mx-auto mt-12 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+          {order && (
+            <Link href={`/track-order?id=${encodeURIComponent(order.id)}`} className="no-underline">
+              <Button variant="default" className="h-12 w-full gap-2 rounded-xl sm:w-auto">
+                <Package className="h-4 w-4" />
+                Track this order
+              </Button>
+            </Link>
+          )}
+          <Link href="/account" className="no-underline">
+            <Button variant="outline" className="h-12 w-full rounded-xl sm:w-auto">
+              My account
+            </Button>
+          </Link>
+          <Link href="/shop" className="no-underline">
+            <Button variant="accent" className="h-12 w-full rounded-xl sm:w-auto">
+              Continue shopping
+            </Button>
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

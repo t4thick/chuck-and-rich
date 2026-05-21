@@ -3,7 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
-import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from '@/lib/constants/categories'
+import { PRODUCT_CATEGORIES } from '@/lib/constants/categories'
+import { CategoryIcon } from '@/components/store/CategoryIcon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -144,8 +145,8 @@ function CategoryList({
               : 'text-earth-700 hover:bg-sand hover:text-earth-950'
           )}
         >
-          <span className="text-lg" aria-hidden>
-            🛒
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sand">
+            <CategoryIcon category="" className="h-4 w-4" />
           </span>
           All products
         </button>
@@ -162,8 +163,8 @@ function CategoryList({
                 : 'text-earth-700 hover:bg-sand hover:text-earth-950'
             )}
           >
-            <span className="text-lg" aria-hidden>
-              {CATEGORY_ICONS[c] ?? '📦'}
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sand">
+              <CategoryIcon category={c} className="h-4 w-4" />
             </span>
             <span className="line-clamp-1">{c}</span>
           </button>
@@ -317,7 +318,6 @@ export function ShopFiltersBar() {
                 : 'border border-earth-200 bg-white text-earth-700'
             )}
           >
-            {CATEGORY_ICONS[c] ? `${CATEGORY_ICONS[c]} ` : ''}
             {c}
           </button>
         ))}

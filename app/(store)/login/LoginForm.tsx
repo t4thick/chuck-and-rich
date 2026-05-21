@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 import { useClientSearchParams } from '@/lib/hooks/use-client-search-params'
 import { mapSignInError } from '@/lib/auth/map-auth-error'
+import { AuthShell } from '@/components/auth/AuthShell'
 import { PasswordField } from '@/components/auth/PasswordField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,7 +28,9 @@ export function LoginForm() {
     try {
       const saved = localStorage.getItem(REMEMBER_EMAIL_KEY)
       if (saved) setEmail(saved)
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     emailRef.current?.focus()
   }, [])
 
@@ -53,82 +56,79 @@ export function LoginForm() {
     try {
       if (rememberDevice) localStorage.setItem(REMEMBER_EMAIL_KEY, trimmed)
       else localStorage.removeItem(REMEMBER_EMAIL_KEY)
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     router.push(next)
     router.refresh()
   }
 
   return (
-    <div className="page-section">
-      <div className="auth-card">
-        <h1 className="text-2xl">Sign in</h1>
-        <p className="muted mt-1">Welcome back to Lovely Queen Market</p>
+    <AuthShell title="Sign in" subtitle="Welcome back to Lovely Queen Market">
+      {err === 'auth' && (
+        <p className="error mb-4">
+          That link expired or was already used. Sign in below or reset your password.
+        </p>
+      )}
+      {err === 'configuration' && (
+        <p className="error mb-4">Sign-in is temporarily unavailable.</p>
+      )}
 
-        {err === 'auth' && (
-          <p className="error mt-4">
-            That link expired or was already used. Sign in below or reset your password.
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="login-email" className="form-label">
+            Email
+          </label>
+          <Input
+            ref={emailRef}
+            id="login-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <PasswordField
+          label="Password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+          disabled={loading}
+        />
+
+        <label className="flex items-center gap-2 text-sm text-earth-600">
+          <input
+            type="checkbox"
+            className="rounded border-earth-300"
+            checked={rememberDevice}
+            onChange={(e) => setRememberDevice(e.target.checked)}
+          />
+          Remember my email on this device
+        </label>
+
+        {error && (
+          <p className="error" role="alert">
+            {error}
           </p>
         )}
-        {err === 'configuration' && (
-          <p className="error mt-4">Sign-in is temporarily unavailable.</p>
-        )}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="login-email" className="form-label">
-              Email
-            </label>
-            <Input
-              ref={emailRef}
-              id="login-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+        <Button type="submit" className="h-12 w-full rounded-xl" size="lg" disabled={loading}>
+          {loading ? 'Signing in…' : 'Sign in'}
+        </Button>
+      </form>
 
-          <PasswordField
-            label="Password"
-            value={password}
-            onChange={setPassword}
-            autoComplete="current-password"
-            disabled={loading}
-          />
-
-          <label className="flex items-center gap-2 text-sm text-stone-600">
-            <input
-              type="checkbox"
-              className="rounded border-stone-300"
-              checked={rememberDevice}
-              onChange={(e) => setRememberDevice(e.target.checked)}
-            />
-            Remember my email on this device
-          </label>
-
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
-
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm">
-          <Link href={`/forgot-password?next=${encodeURIComponent(next)}`}>Forgot password?</Link>
-        </p>
-        <p className="mt-2 text-center text-sm text-stone-500">
-          New here?{' '}
-          <Link href={`/signup?next=${encodeURIComponent(next)}`} className="font-semibold">
-            Create an account
-          </Link>
-        </p>
-      </div>
-    </div>
+      <p className="mt-6 text-center text-sm">
+        <Link href={`/forgot-password?next=${encodeURIComponent(next)}`}>Forgot password?</Link>
+      </p>
+      <p className="mt-2 text-center text-sm text-earth-500">
+        New here?{' '}
+        <Link href={`/signup?next=${encodeURIComponent(next)}`} className="font-semibold">
+          Create an account
+        </Link>
+      </p>
+    </AuthShell>
   )
 }

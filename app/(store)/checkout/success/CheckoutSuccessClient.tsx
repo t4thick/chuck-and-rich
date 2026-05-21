@@ -3,7 +3,10 @@
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
+import { PageHeader } from '@/components/store/PageHeader'
+import { Button } from '@/components/ui/button'
 
 export function CheckoutSuccessClient() {
   const router = useRouter()
@@ -60,17 +63,38 @@ export function CheckoutSuccessClient() {
   }, [sessionId, paymentIntentId, clearCart, router])
 
   useEffect(() => {
-    const t = window.setTimeout(() => { void finalize() }, 0)
+    const t = window.setTimeout(() => {
+      void finalize()
+    }, 0)
     return () => window.clearTimeout(t)
   }, [finalize])
 
   return (
-    <div className="stack">
-      <h2>Payment</h2>
-      {error ? <p className="error">{error}</p> : <p>{message}</p>}
-      <p>
-        <Link href="/account">Account &amp; orders</Link> · <Link href="/shop">Continue shopping</Link>
-      </p>
+    <div className="min-h-screen bg-cream">
+      <PageHeader eyebrow="Checkout" title="Processing payment" subtitle="Please wait while we confirm your order." centered />
+
+      <div className="store-container py-16">
+        <div className="premium-card mx-auto max-w-md px-6 py-12 text-center">
+          {!error && <Loader2 className="mx-auto h-10 w-10 animate-spin text-brand-600" />}
+          {error ? (
+            <p className="error">{error}</p>
+          ) : (
+            <p className="text-earth-700">{message}</p>
+          )}
+          <div className="mt-8 flex flex-col gap-2">
+            <Link href="/account" className="no-underline">
+              <Button variant="outline" className="w-full rounded-xl">
+                Account & orders
+              </Button>
+            </Link>
+            <Link href="/shop" className="no-underline">
+              <Button variant="ghost" className="w-full">
+                Continue shopping
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

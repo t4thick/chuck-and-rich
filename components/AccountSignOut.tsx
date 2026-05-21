@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
 
 export function AccountSignOut() {
   const router = useRouter()
@@ -18,8 +19,8 @@ export function AccountSignOut() {
   }
 
   return (
-    <button type="button" onClick={signOut} disabled={loading}>
+    <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={signOut} disabled={loading}>
       {loading ? 'Signing out…' : 'Sign out'}
-    </button>
+    </Button>
   )
 }

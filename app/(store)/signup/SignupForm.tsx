@@ -7,6 +7,7 @@ import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client
 import { useClientSearchParams } from '@/lib/hooks/use-client-search-params'
 import { mapSignUpError } from '@/lib/auth/map-auth-error'
 import { isPasswordAcceptableForSignup } from '@/lib/auth/password-strength'
+import { AuthShell } from '@/components/auth/AuthShell'
 import { PasswordField } from '@/components/auth/PasswordField'
 import { getAuthSiteOrigin } from '@/lib/site-url-client'
 import { Button } from '@/components/ui/button'
@@ -101,133 +102,128 @@ export function SignupForm() {
   }
 
   return (
-    <div className="page-section">
-      <div className="auth-card max-w-lg">
-        <h1 className="text-2xl">Create account</h1>
-        <p className="muted mt-1">Shop African & Caribbean groceries online</p>
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="signup-first" className="form-label">
-                First name
-              </label>
-              <Input
-                ref={firstRef}
-                id="signup-first"
-                type="text"
-                autoComplete="given-name"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="signup-last" className="form-label">
-                Last name
-              </label>
-              <Input
-                id="signup-last"
-                type="text"
-                autoComplete="family-name"
-                required
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-              />
-            </div>
-          </div>
-
+    <AuthShell title="Create account" subtitle="Shop African & Caribbean groceries online">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="signup-email" className="form-label">
-              Email
+            <label htmlFor="signup-first" className="form-label">
+              First name
             </label>
             <Input
-              id="signup-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
+              ref={firstRef}
+              id="signup-first"
+              type="text"
+              autoComplete="given-name"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
             />
           </div>
-
           <div>
-            <label htmlFor="signup-phone" className="form-label">
-              Phone <span className="font-normal text-stone-400">(optional)</span>
+            <label htmlFor="signup-last" className="form-label">
+              Last name
             </label>
             <Input
-              id="signup-phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              id="signup-last"
+              type="text"
+              autoComplete="family-name"
+              required
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
             />
           </div>
+        </div>
 
-          <PasswordField
-            label="Password"
-            value={password}
-            onChange={setPassword}
-            autoComplete="new-password"
-            disabled={loading}
-            showStrengthMeter
+        <div>
+          <label htmlFor="signup-email" className="form-label">
+            Email
+          </label>
+          <Input
+            id="signup-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
+        </div>
 
-          <label className="flex items-start gap-2 text-sm text-stone-600">
-            <input
-              type="checkbox"
-              className="mt-0.5 rounded border-stone-300"
-              checked={marketingOptIn}
-              onChange={(e) => setMarketingOptIn(e.target.checked)}
-            />
-            Email me deals and restock alerts (optional)
+        <div>
+          <label htmlFor="signup-phone" className="form-label">
+            Phone <span className="font-normal text-earth-400">(optional)</span>
           </label>
+          <Input
+            id="signup-phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
 
-          <label className="flex items-start gap-2 text-sm text-stone-600">
-            <input
-              type="checkbox"
-              className="mt-0.5 rounded border-stone-300"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              required
-            />
-            <span>
-              I agree to the{' '}
-              <Link href="/terms" target="_blank">
-                Terms
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" target="_blank">
-                Privacy Policy
-              </Link>
-            </span>
-          </label>
+        <PasswordField
+          label="Password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          disabled={loading}
+          showStrengthMeter
+        />
 
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
-          {message && (
-            <p className="success" role="status">
-              {message}
-            </p>
-          )}
+        <label className="flex items-start gap-2 text-sm text-earth-600">
+          <input
+            type="checkbox"
+            className="mt-0.5 rounded border-earth-300"
+            checked={marketingOptIn}
+            onChange={(e) => setMarketingOptIn(e.target.checked)}
+          />
+          Email me deals and restock alerts (optional)
+        </label>
 
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? 'Creating account…' : 'Create account'}
-          </Button>
-        </form>
+        <label className="flex items-start gap-2 text-sm text-earth-600">
+          <input
+            type="checkbox"
+            className="mt-0.5 rounded border-earth-300"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            required
+          />
+          <span>
+            I agree to the{' '}
+            <Link href="/terms" target="_blank">
+              Terms
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" target="_blank">
+              Privacy Policy
+            </Link>
+          </span>
+        </label>
 
-        <p className="mt-6 text-center text-sm text-stone-500">
-          Already have an account?{' '}
-          <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-semibold">
-            Sign in
-          </Link>
-        </p>
-      </div>
-    </div>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        {message && (
+          <p className="success" role="status">
+            {message}
+          </p>
+        )}
+
+        <Button type="submit" className="h-12 w-full rounded-xl" size="lg" disabled={loading}>
+          {loading ? 'Creating account…' : 'Create account'}
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-earth-500">
+        Already have an account?{' '}
+        <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-semibold">
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   )
 }

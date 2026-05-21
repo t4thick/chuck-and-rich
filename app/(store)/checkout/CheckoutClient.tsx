@@ -1,9 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { ArrowLeft, Lock, Truck } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
+import { PageHeader } from '@/components/store/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { CheckoutStripePayment } from './CheckoutStripePayment'
 import {
   calculateShipping,
@@ -11,6 +15,7 @@ import {
   type ShippingMethod,
 } from '@/lib/shipping'
 import { getAuthSiteOrigin } from '@/lib/site-url-client'
+import { cn } from '@/lib/utils'
 
 type CheckoutAccount = {
   email: string
@@ -32,8 +37,30 @@ type CheckoutForm = {
 
 const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Mexico']
 
+function CheckoutStep({
+  step,
+  title,
+  children,
+}: {
+  step: number
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <section className="premium-card p-6 sm:p-8">
+      <div className="mb-6 flex items-center gap-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-sm font-bold text-white">
+          {step}
+        </span>
+        <h2 className="font-display text-lg font-bold text-earth-950">{title}</h2>
+      </div>
+      {children}
+    </section>
+  )
+}
+
 export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAccount }) {
-  const { items, totalPrice, totalItems, updateQuantity, removeItem } = useCart()
+  const { items, totalPrice, totalItems } = useCart()
   const router = useRouter()
   const detailsFormRef = useRef<HTMLFormElement>(null)
 
@@ -136,154 +163,281 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
 
   if (items.length === 0) {
     return (
-      <div className="page-section">
-        <div className="store-container">
-          <h1 className="text-3xl">Checkout</h1>
-          <p className="mt-4 text-stone-600">
-            Your cart is empty.{' '}
-            <Link href="/shop" className="font-semibold">
-              Back to shop
-            </Link>
-          </p>
+      <div className="min-h-screen bg-cream">
+        <PageHeader eyebrow="Checkout" title="Your cart is empty" subtitle="Add groceries before checking out." />
+        <div className="store-container py-12 text-center">
+          <Link href="/shop" className="no-underline">
+            <Button size="lg" variant="accent" className="rounded-xl">
+              Browse shop
+            </Button>
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="page-section pb-24 md:pb-10">
-      <div className="store-container">
-        <h1 className="text-3xl sm:text-4xl">Checkout</h1>
-        <p className="muted mt-2">
-          Signed in as {initialAccount.email} · {totalItems} item{totalItems === 1 ? '' : 's'}
-        </p>
+    <div className="min-h-screen bg-cream pb-24 md:pb-12">
+      <PageHeader
+        eyebrow="Secure checkout"
+        title="Complete your order"
+        subtitle={`Signed in as ${initialAccount.email} · ${totalItems} item${totalItems === 1 ? '' : 's'}`}
+      />
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-5">
-          <div className="space-y-6 lg:col-span-3">
-            <form ref={detailsFormRef} onSubmit={(e) => e.preventDefault()} className="space-y-6">
-              <fieldset>
-                <legend>1. Account</legend>
-                <div className="space-y-4">
-                  <div>
-                    <label className="form-label">Email</label>
-                    <input type="email" name="email" className="form-input bg-stone-50" value={form.email} readOnly />
-                  </div>
-                  <div>
-                    <label className="form-label">Full name</label>
-                    <input type="text" name="name" className="form-input" value={form.name} onChange={handleChange} required autoComplete="name" />
-                  </div>
-                  <div>
-                    <label className="form-label">Phone</label>
-                    <input type="tel" name="phone" className="form-input" value={form.phone} onChange={handleChange} required autoComplete="tel" />
-                  </div>
+      <div className="store-container py-8 sm:py-10">
+        <Link
+          href="/cart"
+          className="mb-8 inline-flex items-center gap-1.5 text-sm font-semibold text-earth-600 no-underline hover:text-brand-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to cart
+        </Link>
+
+        <div className="grid gap-8 lg:grid-cols-5 lg:gap-12">
+          <form
+            ref={detailsFormRef}
+            onSubmit={(e) => e.preventDefault()}
+            className="space-y-6 lg:col-span-3"
+          >
+            <CheckoutStep step={1} title="Contact details">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="checkout-email" className="form-label">
+                    Email
+                  </label>
+                  <Input
+                    id="checkout-email"
+                    type="email"
+                    name="email"
+                    className="bg-sand"
+                    value={form.email}
+                    readOnly
+                  />
                 </div>
-              </fieldset>
-
-              <fieldset>
-                <legend>2. Delivery address</legend>
-                <div className="space-y-4">
-                  <div>
-                    <label className="form-label">Street</label>
-                    <input type="text" name="address1" className="form-input" value={form.address1} onChange={handleChange} required autoComplete="address-line1" />
-                  </div>
-                  <div>
-                    <label className="form-label">Apt / Suite</label>
-                    <input type="text" name="address2" className="form-input" value={form.address2} onChange={handleChange} autoComplete="address-line2" />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="form-label">City</label>
-                      <input type="text" name="city" className="form-input" value={form.city} onChange={handleChange} required autoComplete="address-level2" />
-                    </div>
-                    <div>
-                      <label className="form-label">State</label>
-                      <input type="text" name="state" className="form-input" value={form.state} onChange={handleChange} required autoComplete="address-level1" />
-                    </div>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="form-label">Country</label>
-                      <select name="country" className="form-select" value={form.country} onChange={handleChange}>
-                        {COUNTRIES.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="form-label">ZIP</label>
-                      <input type="text" name="postalCode" className="form-input" value={form.postalCode} onChange={handleChange} required autoComplete="postal-code" />
-                    </div>
-                  </div>
+                <div>
+                  <label htmlFor="checkout-name" className="form-label">
+                    Full name
+                  </label>
+                  <Input
+                    id="checkout-name"
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                    autoComplete="name"
+                  />
                 </div>
-              </fieldset>
-
-              <fieldset>
-                <legend>3. Shipping method</legend>
-                <div className="space-y-3">
-                  {(['standard', 'express', 'pickup'] as ShippingMethod[]).map((method) => {
-                    const quote = calculateShipping({ subtotal: totalPrice, country: form.country, state: form.state, method })
-                    return (
-                      <label key={method} className="flex cursor-pointer items-start gap-3 rounded-lg border border-stone-200 p-3 has-[:checked]:border-brand-400 has-[:checked]:bg-brand-50">
-                        <input
-                          type="radio"
-                          name="shippingMethod"
-                          className="mt-1"
-                          checked={shippingMethod === method}
-                          onChange={() => setShippingMethod(method)}
-                        />
-                        <span className="text-sm">
-                          <span className="font-semibold text-stone-900">{SHIPPING_METHOD_LABEL[method]}</span>
-                          <span className="text-stone-500"> — {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`} ({quote.zone})</span>
-                        </span>
-                      </label>
-                    )
-                  })}
+                <div>
+                  <label htmlFor="checkout-phone" className="form-label">
+                    Phone
+                  </label>
+                  <Input
+                    id="checkout-phone"
+                    type="tel"
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
+                    required
+                    autoComplete="tel"
+                  />
                 </div>
-              </fieldset>
-            </form>
-          </div>
-
-          <div className="space-y-6 lg:col-span-2">
-            <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
-              <h2 className="text-lg font-semibold">Order summary</h2>
-              <div className="mt-4 space-y-3 text-sm">
-                {items.map(({ product, quantity }) => (
-                  <div key={product.id} className="flex justify-between gap-2 border-b border-stone-100 pb-3">
-                    <span className="line-clamp-2 text-stone-700">{product.name} × {quantity}</span>
-                    <span className="shrink-0 font-medium">${(product.price * quantity).toFixed(2)}</span>
-                  </div>
-                ))}
               </div>
-              <div className="mt-4 space-y-2 border-t border-stone-100 pt-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Subtotal</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+            </CheckoutStep>
+
+            <CheckoutStep step={2} title="Delivery address">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="checkout-address1" className="form-label">
+                    Street address
+                  </label>
+                  <Input
+                    id="checkout-address1"
+                    type="text"
+                    name="address1"
+                    value={form.address1}
+                    onChange={handleChange}
+                    required
+                    autoComplete="address-line1"
+                  />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Shipping</span>
-                  <span>{shipping.fee === 0 ? 'Free' : `$${shipping.fee.toFixed(2)}`}</span>
+                <div>
+                  <label htmlFor="checkout-address2" className="form-label">
+                    Apt / suite <span className="font-normal text-earth-400">(optional)</span>
+                  </label>
+                  <Input
+                    id="checkout-address2"
+                    type="text"
+                    name="address2"
+                    value={form.address2}
+                    onChange={handleChange}
+                    autoComplete="address-line2"
+                  />
                 </div>
-                <div className="flex justify-between text-base font-bold">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="checkout-city" className="form-label">
+                      City
+                    </label>
+                    <Input
+                      id="checkout-city"
+                      type="text"
+                      name="city"
+                      value={form.city}
+                      onChange={handleChange}
+                      required
+                      autoComplete="address-level2"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="checkout-state" className="form-label">
+                      State
+                    </label>
+                    <Input
+                      id="checkout-state"
+                      type="text"
+                      name="state"
+                      value={form.state}
+                      onChange={handleChange}
+                      required
+                      autoComplete="address-level1"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="checkout-country" className="form-label">
+                      Country
+                    </label>
+                    <select
+                      id="checkout-country"
+                      name="country"
+                      className="form-select"
+                      value={form.country}
+                      onChange={handleChange}
+                    >
+                      {COUNTRIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="checkout-zip" className="form-label">
+                      ZIP code
+                    </label>
+                    <Input
+                      id="checkout-zip"
+                      type="text"
+                      name="postalCode"
+                      value={form.postalCode}
+                      onChange={handleChange}
+                      required
+                      autoComplete="postal-code"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CheckoutStep>
+
+            <CheckoutStep step={3} title="Shipping method">
+              <div className="space-y-3">
+                {(['standard', 'express', 'pickup'] as ShippingMethod[]).map((method) => {
+                  const quote = calculateShipping({
+                    subtotal: totalPrice,
+                    country: form.country,
+                    state: form.state,
+                    method,
+                  })
+                  const selected = shippingMethod === method
+                  return (
+                    <label
+                      key={method}
+                      className={cn(
+                        'flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition',
+                        selected
+                          ? 'border-brand-400 bg-brand-50/50'
+                          : 'border-earth-200 bg-white hover:border-earth-300'
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="shippingMethod"
+                        className="mt-1"
+                        checked={selected}
+                        onChange={() => setShippingMethod(method)}
+                      />
+                      <span className="text-sm">
+                        <span className="font-semibold text-earth-950">
+                          {SHIPPING_METHOD_LABEL[method]}
+                        </span>
+                        <span className="block text-earth-600">
+                          {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`} · {quote.zone}
+                        </span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </CheckoutStep>
+          </form>
+
+          <div className="lg:col-span-2">
+            <div className="premium-card sticky top-24 p-6">
+              <h2 className="font-display text-lg font-bold text-earth-950">Order summary</h2>
+              <ul className="mt-4 space-y-3 text-sm">
+                {items.map(({ product, quantity }) => (
+                  <li
+                    key={product.id}
+                    className="flex justify-between gap-3 border-b border-earth-100 pb-3 last:border-0"
+                  >
+                    <span className="line-clamp-2 text-earth-700">
+                      {product.name} × {quantity}
+                    </span>
+                    <span className="shrink-0 font-semibold text-earth-900">
+                      ${(product.price * quantity).toFixed(2)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 space-y-2 border-t border-earth-100 pt-4 text-sm">
+                <div className="flex justify-between text-earth-600">
+                  <span>Subtotal</span>
+                  <span className="font-medium text-earth-900">${totalPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-earth-600">
+                  <span>Shipping</span>
+                  <span className="font-medium text-earth-900">
+                    {shipping.fee === 0 ? 'Free' : `$${shipping.fee.toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-earth-100 pt-3 text-lg font-bold text-earth-950">
                   <span>Total</span>
                   <span>${grandTotal.toFixed(2)}</span>
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-stone-100 pt-6">
-                <h3 className="font-semibold">Payment</h3>
-                <p className="muted mt-1">
-                  Test: <code className="rounded bg-stone-100 px-1">4242 4242 4242 4242</code>
+              <div className="mt-6 border-t border-earth-100 pt-6">
+                <div className="flex items-center gap-2 text-sm font-semibold text-earth-800">
+                  <Lock className="h-4 w-4 text-brand-600" aria-hidden />
+                  Payment
+                </div>
+                <p className="mt-1 text-xs text-earth-500">
+                  Secure payment powered by Stripe
                 </p>
 
                 {!clientSecret && (
-                  <button
+                  <Button
                     type="button"
-                    className="mt-4 w-full rounded-lg bg-accent-600 px-4 py-3 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50"
+                    variant="accent"
+                    size="lg"
+                    className="mt-4 h-12 w-full rounded-xl"
                     onClick={() => void preparePayment()}
                     disabled={loading}
                   >
                     {loading ? 'Preparing…' : 'Continue to payment'}
-                  </button>
+                  </Button>
                 )}
 
                 {clientSecret && returnUrl && (
@@ -299,8 +453,9 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
                 {error && <p className="error mt-3">{error}</p>}
               </div>
 
-              <p className="mt-4 text-center text-sm">
-                <Link href="/cart">← Back to cart</Link>
+              <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-earth-500">
+                <Truck className="h-3.5 w-3.5" aria-hidden />
+                Pickup available at our Columbus store
               </p>
             </div>
           </div>

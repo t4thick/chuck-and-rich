@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 import { isPasswordAcceptableForSignup } from '@/lib/auth/password-strength'
 import { PasswordField } from '@/components/auth/PasswordField'
+import { Button } from '@/components/ui/button'
 
 export function ChangePasswordForm() {
   const [password, setPassword] = useState('')
@@ -44,12 +45,28 @@ export function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="stack">
-      <PasswordField label="New password" value={password} onChange={setPassword} autoComplete="new-password" disabled={loading} showStrengthMeter />
-      <PasswordField label="Confirm new password" name="confirm" value={confirm} onChange={setConfirm} autoComplete="new-password" disabled={loading} />
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <PasswordField
+        label="New password"
+        value={password}
+        onChange={setPassword}
+        autoComplete="new-password"
+        disabled={loading}
+        showStrengthMeter
+      />
+      <PasswordField
+        label="Confirm new password"
+        name="confirm"
+        value={confirm}
+        onChange={setConfirm}
+        autoComplete="new-password"
+        disabled={loading}
+      />
       {error && <p className="error">{error}</p>}
       {message && <p className="success">{message}</p>}
-      <button type="submit" disabled={loading}>{loading ? 'Saving…' : 'Update password'}</button>
+      <Button type="submit" className="h-11 rounded-xl" disabled={loading}>
+        {loading ? 'Saving…' : 'Update password'}
+      </Button>
     </form>
   )
 }

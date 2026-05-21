@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 import { useClientSearchParams } from '@/lib/hooks/use-client-search-params'
 import { isPasswordAcceptableForSignup } from '@/lib/auth/password-strength'
+import { AuthShell } from '@/components/auth/AuthShell'
 import { PasswordField } from '@/components/auth/PasswordField'
+import { Button } from '@/components/ui/button'
 
 export function ResetPasswordForm() {
   const router = useRouter()
@@ -74,20 +76,20 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <div className="stack">
-      <h2>Choose a new password</h2>
-
+    <AuthShell title="New password" subtitle="Choose a strong password for your account.">
       {ready === 'checking' && <p role="status">Verifying your reset link…</p>}
 
       {ready === 'no-session' && (
-        <div className="stack" role="alert">
+        <div role="alert">
           <p className="error">This reset link is no longer valid (expired or already used).</p>
-          <p><Link href="/forgot-password">Send a new reset email</Link></p>
+          <p className="mt-4">
+            <Link href="/forgot-password">Send a new reset email</Link>
+          </p>
         </div>
       )}
 
       {ready === 'ready' && !done && (
-        <form onSubmit={handleSubmit} className="stack">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <PasswordField
             label="New password"
             value={password}
@@ -104,16 +106,26 @@ export function ResetPasswordForm() {
             autoComplete="new-password"
             disabled={loading}
           />
-          {error && <p className="error" role="alert">{error}</p>}
-          <button type="submit" disabled={loading}>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+          <Button type="submit" className="h-12 w-full rounded-xl" size="lg" disabled={loading}>
             {loading ? 'Saving…' : 'Update password'}
-          </button>
+          </Button>
         </form>
       )}
 
-      {done && <p className="success" role="status">Password updated. Redirecting…</p>}
+      {done && (
+        <p className="success" role="status">
+          Password updated. Redirecting…
+        </p>
+      )}
 
-      <p><Link href="/login">← Back to sign in</Link></p>
-    </div>
+      <p className="mt-6 text-center text-sm">
+        <Link href="/login">← Back to sign in</Link>
+      </p>
+    </AuthShell>
   )
 }

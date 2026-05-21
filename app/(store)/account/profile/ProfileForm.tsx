@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 type Props = {
   userId: string
@@ -54,37 +56,53 @@ export function ProfileForm({ userId, initial }: Props) {
       },
     })
 
-    setMessage('Saved.')
+    setMessage('Profile saved.')
     router.refresh()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="stack">
-      <p>
-        <label>
-          Full name:<br />
-          <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="name" />
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div>
+        <label htmlFor="profile-name" className="form-label">
+          Full name
         </label>
-      </p>
-      <p>
-        <label>
-          Phone:<br />
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
+        <Input
+          id="profile-name"
+          type="text"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          required
+          autoComplete="name"
+        />
+      </div>
+      <div>
+        <label htmlFor="profile-phone" className="form-label">
+          Phone
         </label>
-      </p>
-      <p>
-        <label>
-          <input type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)} />{' '}
-          Email me deals and restock alerts
-        </label>
-      </p>
+        <Input
+          id="profile-phone"
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          autoComplete="tel"
+        />
+      </div>
+      <label className="flex items-start gap-2 text-sm text-earth-600">
+        <input
+          type="checkbox"
+          className="mt-0.5 rounded border-earth-300"
+          checked={marketingOptIn}
+          onChange={(e) => setMarketingOptIn(e.target.checked)}
+        />
+        Email me deals and restock alerts
+      </label>
 
       {error && <p className="error">{error}</p>}
       {message && <p className="success">{message}</p>}
 
-      <button type="submit" disabled={loading}>
+      <Button type="submit" className="h-11 rounded-xl" disabled={loading}>
         {loading ? 'Saving…' : 'Save profile'}
-      </button>
+      </Button>
     </form>
   )
 }

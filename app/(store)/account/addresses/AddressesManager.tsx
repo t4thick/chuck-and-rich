@@ -2,7 +2,10 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { MapPin, Plus, Star } from 'lucide-react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export type AddressRow = {
   id: string
@@ -121,15 +124,19 @@ export function AddressesManager({ userId, initial }: { userId: string; initial:
         .eq('user_id', userId)
         .select()
         .single()
-      if (upErr) { setError(upErr.message); setSaving(false); return }
+      if (upErr) {
+        setError(upErr.message)
+        setSaving(false)
+        return
+      }
       setAddresses((prev) => prev.map((a) => (a.id === draft.id ? (data as AddressRow) : a)))
     } else {
-      const { data, error: insErr } = await supabase
-        .from('addresses')
-        .insert(row)
-        .select()
-        .single()
-      if (insErr) { setError(insErr.message); setSaving(false); return }
+      const { data, error: insErr } = await supabase.from('addresses').insert(row).select().single()
+      if (insErr) {
+        setError(insErr.message)
+        setSaving(false)
+        return
+      }
       setAddresses((prev) => [data as AddressRow, ...prev])
     }
     setDraft(null)
@@ -142,7 +149,10 @@ export function AddressesManager({ userId, initial }: { userId: string; initial:
     if (!isSupabaseBrowserConfigured()) return
     const supabase = createClient()
     const { error: delErr } = await supabase.from('addresses').delete().eq('id', id).eq('user_id', userId)
-    if (delErr) { setError(delErr.message); return }
+    if (delErr) {
+      setError(delErr.message)
+      return
+    }
     setAddresses((prev) => prev.filter((a) => a.id !== id))
     router.refresh()
   }
@@ -151,81 +161,202 @@ export function AddressesManager({ userId, initial }: { userId: string; initial:
     if (!isSupabaseBrowserConfigured()) return
     const supabase = createClient()
     await supabase.from('addresses').update({ is_default: false }).eq('user_id', userId)
-    const { error: upErr } = await supabase.from('addresses').update({ is_default: true }).eq('id', id).eq('user_id', userId)
-    if (upErr) { setError(upErr.message); return }
+    const { error: upErr } = await supabase
+      .from('addresses')
+      .update({ is_default: true })
+      .eq('id', id)
+      .eq('user_id', userId)
+    if (upErr) {
+      setError(upErr.message)
+      return
+    }
     setAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === id })))
     router.refresh()
   }
 
   return (
-    <div className="stack">
+    <div className="space-y-6">
       {error && <p className="error">{error}</p>}
 
-      {addresses.length === 0 ? (
-        <p>No saved addresses yet.</p>
+      {addresses.length === 0 && !draft ? (
+        <div className="premium-card px-6 py-12 text-center">
+          <MapPin className="mx-auto h-10 w-10 text-earth-300" strokeWidth={1.25} />
+          <p className="mt-4 font-medium text-earth-800">No saved addresses yet</p>
+          <Button type="button" className="mt-6 rounded-xl" onClick={startNew}>
+            <Plus className="mr-1 h-4 w-4" />
+            Add address
+          </Button>
+        </div>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Default</th>
-              <th>Label</th>
-              <th>Address</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {addresses.map((a) => (
-              <tr key={a.id}>
-                <td>{a.is_default ? '★' : ''}</td>
-                <td>{a.label || '—'}</td>
-                <td>
-                  <strong>{a.full_name}</strong><br />
-                  {a.line1}{a.line2 ? `, ${a.line2}` : ''}<br />
-                  {a.city}, {a.state} {a.postal_code}<br />
-                  {a.country}
-                  {a.phone && <><br /><span className="muted">{a.phone}</span></>}
-                </td>
-                <td>
-                  <button type="button" onClick={() => startEdit(a)}>Edit</button>{' '}
-                  {!a.is_default && <button type="button" onClick={() => void makeDefault(a.id)}>Make default</button>}{' '}
-                  <button type="button" onClick={() => void remove(a.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {addresses.map((a) => (
+            <article key={a.id} className="premium-card p-5">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  {a.is_default && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-800">
+                      <Star className="h-3 w-3 fill-current" /> Default
+                    </span>
+                  )}
+                  <p className="mt-2 font-display font-bold text-earth-950">
+                    {a.label || 'Address'}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-earth-700">
+                <span className="font-semibold text-earth-900">{a.full_name}</span>
+                <br />
+                {a.line1}
+                {a.line2 ? `, ${a.line2}` : ''}
+                <br />
+                {a.city}, {a.state} {a.postal_code}
+                <br />
+                {a.country}
+                {a.phone && (
+                  <>
+                    <br />
+                    <span className="text-earth-500">{a.phone}</span>
+                  </>
+                )}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={() => startEdit(a)}>
+                  Edit
+                </Button>
+                {!a.is_default && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => void makeDefault(a.id)}>
+                    Make default
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                  onClick={() => void remove(a.id)}
+                >
+                  Delete
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
 
-      {!draft && <button type="button" onClick={startNew}>+ Add address</button>}
+      {!draft && addresses.length > 0 && (
+        <Button type="button" variant="outline" className="rounded-xl" onClick={startNew}>
+          <Plus className="mr-1 h-4 w-4" />
+          Add address
+        </Button>
+      )}
 
       {draft && (
-        <form onSubmit={save} className="stack">
-          <h3>{draft.id ? 'Edit address' : 'New address'}</h3>
-          <p><label>Label (optional): <input type="text" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} /></label></p>
-          <p><label>Full name: <input type="text" value={draft.full_name} onChange={(e) => setDraft({ ...draft, full_name: e.target.value })} required autoComplete="name" /></label></p>
-          <p><label>Phone (optional): <input type="tel" value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} autoComplete="tel" /></label></p>
-          <p><label>Street: <input type="text" value={draft.line1} onChange={(e) => setDraft({ ...draft, line1: e.target.value })} required autoComplete="address-line1" /></label></p>
-          <p><label>Apt/Suite: <input type="text" value={draft.line2} onChange={(e) => setDraft({ ...draft, line2: e.target.value })} autoComplete="address-line2" /></label></p>
-          <p><label>City: <input type="text" value={draft.city} onChange={(e) => setDraft({ ...draft, city: e.target.value })} required autoComplete="address-level2" /></label></p>
-          <p><label>State: <input type="text" value={draft.state} onChange={(e) => setDraft({ ...draft, state: e.target.value })} required autoComplete="address-level1" /></label></p>
-          <p>
-            <label>
-              Country:{' '}
-              <select value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })}>
-                {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        <form onSubmit={save} className="premium-card space-y-4 p-6 sm:p-8">
+          <h3 className="font-display text-lg font-bold text-earth-950">
+            {draft.id ? 'Edit address' : 'New address'}
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="form-label">Label (optional)</label>
+              <Input value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
+            </div>
+            <div>
+              <label className="form-label">Full name</label>
+              <Input
+                value={draft.full_name}
+                onChange={(e) => setDraft({ ...draft, full_name: e.target.value })}
+                required
+                autoComplete="name"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="form-label">Phone (optional)</label>
+            <Input
+              type="tel"
+              value={draft.phone}
+              onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+              autoComplete="tel"
+            />
+          </div>
+          <div>
+            <label className="form-label">Street</label>
+            <Input
+              value={draft.line1}
+              onChange={(e) => setDraft({ ...draft, line1: e.target.value })}
+              required
+              autoComplete="address-line1"
+            />
+          </div>
+          <div>
+            <label className="form-label">Apt / suite</label>
+            <Input
+              value={draft.line2}
+              onChange={(e) => setDraft({ ...draft, line2: e.target.value })}
+              autoComplete="address-line2"
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="form-label">City</label>
+              <Input
+                value={draft.city}
+                onChange={(e) => setDraft({ ...draft, city: e.target.value })}
+                required
+                autoComplete="address-level2"
+              />
+            </div>
+            <div>
+              <label className="form-label">State</label>
+              <Input
+                value={draft.state}
+                onChange={(e) => setDraft({ ...draft, state: e.target.value })}
+                required
+                autoComplete="address-level1"
+              />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="form-label">Country</label>
+              <select
+                value={draft.country}
+                className="form-select"
+                onChange={(e) => setDraft({ ...draft, country: e.target.value })}
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
-            </label>
-          </p>
-          <p><label>ZIP: <input type="text" value={draft.postal_code} onChange={(e) => setDraft({ ...draft, postal_code: e.target.value })} required autoComplete="postal-code" /></label></p>
-          <p>
-            <label>
-              <input type="checkbox" checked={draft.is_default} onChange={(e) => setDraft({ ...draft, is_default: e.target.checked })} />{' '}
-              Set as default
-            </label>
-          </p>
-          <div className="row">
-            <button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save address'}</button>
-            <button type="button" onClick={cancel}>Cancel</button>
+            </div>
+            <div>
+              <label className="form-label">ZIP</label>
+              <Input
+                value={draft.postal_code}
+                onChange={(e) => setDraft({ ...draft, postal_code: e.target.value })}
+                required
+                autoComplete="postal-code"
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-earth-600">
+            <input
+              type="checkbox"
+              className="rounded border-earth-300"
+              checked={draft.is_default}
+              onChange={(e) => setDraft({ ...draft, is_default: e.target.checked })}
+            />
+            Set as default address
+          </label>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Button type="submit" className="rounded-xl" disabled={saving}>
+              {saving ? 'Saving…' : 'Save address'}
+            </Button>
+            <Button type="button" variant="ghost" onClick={cancel}>
+              Cancel
+            </Button>
           </div>
         </form>
       )}

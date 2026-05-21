@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 import { useClientSearchParams } from '@/lib/hooks/use-client-search-params'
 import { mapPasswordResetError } from '@/lib/auth/map-auth-error'
+import { AuthShell } from '@/components/auth/AuthShell'
 import { getAuthSiteOrigin } from '@/lib/site-url-client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export default function ForgotPasswordPage() {
   const { next } = useClientSearchParams()
@@ -47,40 +50,45 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="stack">
-      <h2>Forgot password</h2>
-
+    <AuthShell title="Forgot password" subtitle="We'll email you a link to reset your password.">
       {sent ? (
-        <div className="stack" role="status">
+        <div role="status">
           <p className="success">If an account exists for that email, we sent a reset link.</p>
-          <p className="muted">Check your inbox and spam folder. We don&apos;t confirm whether an email is registered.</p>
+          <p className="muted mt-3">
+            Check your inbox and spam folder. We don&apos;t confirm whether an email is registered.
+          </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="stack">
-          <p>
-            <label>
-              Email:<br />
-              <input
-                ref={emailRef}
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="forgot-email" className="form-label">
+              Email
             </label>
-          </p>
-          {error && <p className="error" role="alert">{error}</p>}
-          <button type="submit" disabled={loading}>
+            <Input
+              ref={emailRef}
+              id="forgot-email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+          <Button type="submit" className="h-12 w-full rounded-xl" size="lg" disabled={loading}>
             {loading ? 'Sending…' : 'Send reset link'}
-          </button>
+          </Button>
         </form>
       )}
 
-      <p>
+      <p className="mt-6 text-center text-sm">
         <Link href={`/login?next=${encodeURIComponent(next)}`}>← Back to sign in</Link>
       </p>
-    </div>
+    </AuthShell>
   )
 }

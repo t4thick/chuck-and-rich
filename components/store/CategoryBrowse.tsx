@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { CATEGORY_ICONS, PRODUCT_CATEGORIES } from '@/lib/constants/categories'
+import { PRODUCT_CATEGORIES } from '@/lib/constants/categories'
+import { CategoryIcon } from '@/components/store/CategoryIcon'
 import { RevealOnScroll } from '@/components/store/RevealOnScroll'
 
 type CategoryBrowseProps = {
@@ -37,8 +38,8 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
                 href={`/shop?category=${encodeURIComponent(cat)}`}
                 className="group premium-card premium-card-hover flex flex-col items-center p-6 text-center no-underline"
               >
-                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sand text-3xl shadow-inner transition duration-300 group-hover:scale-105 group-hover:bg-brand-50">
-                  {CATEGORY_ICONS[cat] ?? '🛒'}
+                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sand shadow-inner transition duration-300 group-hover:scale-105 group-hover:bg-brand-50">
+                  <CategoryIcon category={cat} className="h-7 w-7" />
                 </span>
                 <span className="mt-4 line-clamp-2 text-sm font-semibold text-earth-950 group-hover:text-brand-800">
                   {cat}

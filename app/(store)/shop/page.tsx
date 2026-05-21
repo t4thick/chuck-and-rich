@@ -6,6 +6,7 @@ import {
   ShopFiltersBar,
   ShopFiltersSidebar,
 } from '@/components/shop/ShopFilters'
+import { PageHeader } from '@/components/store/PageHeader'
 import { fetchProductsForShop } from '@/lib/supabase/products'
 import type { Product } from '@/types'
 
@@ -31,15 +32,11 @@ export default async function ShopPage({
 
   return (
     <div className="min-h-screen bg-cream">
-      <div className="border-b border-earth-200/80 bg-white">
-        <div className="store-container py-10 sm:py-12">
-          <p className="section-eyebrow">Shop</p>
-          <h1 className="section-title mt-2">{title}</h1>
-          <p className="section-subtitle">
-            Premium African & Caribbean pantry staples — filter by category, price, or search.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Shop"
+        title={title}
+        subtitle="Premium African & Caribbean pantry staples — filter by category, price, or search."
+      />
 
       <div className="store-container py-8 sm:py-10 lg:py-12">
         <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-12">

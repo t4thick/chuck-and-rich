@@ -1,68 +1,73 @@
 import Link from 'next/link'
-import { Lock, MapPin, Phone, ShieldCheck } from 'lucide-react'
+import { Lock, MapPin, Phone, ShieldCheck, Store } from 'lucide-react'
 import { STORE } from '@/lib/constants/store'
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-earth-200 bg-earth-950 text-stone-300">
+    <footer className="mt-auto border-t border-earth-200 bg-sand">
       <div className="store-container py-12 sm:py-16">
         <div className="grid gap-10 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            <p className="font-display text-2xl font-bold text-white">{STORE.shortName}</p>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-stone-400">
-              {STORE.tagline}. Bringing authentic African flavors to families across America —
-              with the warmth of a neighborhood market and the polish of modern e-commerce.
+            <div className="flex items-center gap-2">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-800 text-white">
+                <Store className="h-5 w-5" aria-hidden />
+              </span>
+              <p className="font-display text-xl font-bold text-earth-950">{STORE.shortName}</p>
+            </div>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-earth-600">
+              {STORE.tagline}. Bringing authentic African flavors to families across America — with
+              the warmth of a neighborhood market and the polish of modern e-commerce.
             </p>
-            <div className="mt-6 flex flex-wrap gap-4 text-xs text-stone-500">
+            <div className="mt-6 flex flex-wrap gap-4 text-xs font-semibold text-earth-500">
               <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-gold-500" /> Secure checkout
+                <ShieldCheck className="h-4 w-4 text-brand-600" /> Secure checkout
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Lock className="h-4 w-4 text-gold-500" /> Stripe payments
+                <Lock className="h-4 w-4 text-brand-600" /> Stripe payments
               </span>
             </div>
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-500">Visit us</p>
-            <p className="mt-4 flex items-start gap-2 text-sm">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold-500" aria-hidden />
+            <p className="text-xs font-bold uppercase tracking-wider text-earth-500">Visit us</p>
+            <p className="mt-4 flex items-start gap-2 text-sm text-earth-700">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
               <span>{STORE.address}</span>
             </p>
             <p className="mt-3 flex items-center gap-2 text-sm">
-              <Phone className="h-4 w-4 shrink-0 text-gold-500" aria-hidden />
-              <a href={STORE.phoneHref} className="text-stone-200 no-underline hover:text-white">
+              <Phone className="h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+              <a href={STORE.phoneHref} className="font-medium text-brand-800 no-underline hover:text-brand-950">
                 {STORE.phone}
               </a>
             </p>
-            <p className="mt-2 text-sm text-stone-500">{STORE.hours}</p>
+            <p className="mt-2 text-sm text-earth-500">{STORE.hours}</p>
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-500">Shop</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-earth-500">Shop</p>
             <ul className="mt-4 space-y-2.5 text-sm">
               <li>
-                <Link href="/shop" className="text-stone-300 no-underline hover:text-white">
+                <Link href="/shop" className="text-earth-700 no-underline hover:text-brand-800">
                   All products
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=Spices" className="text-stone-300 no-underline hover:text-white">
+                <Link href="/shop?category=Spices" className="text-earth-700 no-underline hover:text-brand-800">
                   Spices
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=Flours%20%26%20Rice" className="text-stone-300 no-underline hover:text-white">
+                <Link href="/shop?category=Flours%20%26%20Rice" className="text-earth-700 no-underline hover:text-brand-800">
                   Rice & grains
                 </Link>
               </li>
               <li>
-                <Link href="/track-order" className="text-stone-300 no-underline hover:text-white">
+                <Link href="/track-order" className="text-earth-700 no-underline hover:text-brand-800">
                   Track order
                 </Link>
               </li>
               <li>
-                <Link href="/account" className="text-stone-300 no-underline hover:text-white">
+                <Link href="/account" className="text-earth-700 no-underline hover:text-brand-800">
                   My account
                 </Link>
               </li>
@@ -70,15 +75,15 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-earth-800 pt-8 text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-3 border-t border-earth-200 pt-8 text-xs text-earth-500 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {STORE.name}. All rights reserved.
           </p>
           <p className="flex gap-5">
-            <Link href="/privacy" className="text-stone-400 no-underline hover:text-stone-200">
+            <Link href="/privacy" className="text-earth-600 no-underline hover:text-earth-900">
               Privacy
             </Link>
-            <Link href="/terms" className="text-stone-400 no-underline hover:text-stone-200">
+            <Link href="/terms" className="text-earth-600 no-underline hover:text-earth-900">
               Terms
             </Link>
           </p>
