@@ -3,11 +3,13 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, CreditCard, MapPin, RotateCcw, Truck } from 'lucide-react'
 import { createClientOptional } from '@/lib/supabase/server'
+import { fetchFrequentlyBoughtTogether } from '@/lib/supabase/products'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { ProductCard } from '@/components/ProductCard'
 import { ProductImage } from '@/components/store/ProductImage'
 import { RecordRecentlyViewed } from '@/components/store/RecordRecentlyViewed'
 import { RecentlyViewed } from '@/components/store/RecentlyViewed'
+import { FrequentlyBoughtTogether } from '@/components/store/FrequentlyBoughtTogether'
 import { Badge } from '@/components/ui/badge'
 import { formatMoney } from '@/lib/utils'
 import type { Product } from '@/types'
@@ -60,7 +62,10 @@ export default async function ProductPage({
   const product = await loadProduct(id)
   if (!product) notFound()
 
-  const related = await loadRelated(product.category, product.id)
+  const [related, fbt] = await Promise.all([
+    loadRelated(product.category, product.id),
+    fetchFrequentlyBoughtTogether(product.category, product.id, 3),
+  ])
 
   return (
     <div className="bg-white">
@@ -134,17 +139,24 @@ export default async function ProductPage({
           </div>
         </div>
 
-        {related.length > 0 && (
-          <section className="mt-14 border-t border-earth-200 pt-12 sm:mt-16">
-            <h2 className="section-title">More in {product.category}</h2>
+      </div>
+
+      <FrequentlyBoughtTogether anchor={product} suggestions={fbt} />
+
+      {related.length > 0 && (
+        <section className="border-t border-earth-200 bg-white py-12 sm:py-16">
+          <div className="store-container">
+            <h2 className="text-xl font-semibold tracking-tight text-earth-900 sm:text-2xl">
+              More in {product.category}
+            </h2>
             <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
-          </section>
-        )}
-      </div>
+          </div>
+        </section>
+      )}
 
       <RecentlyViewed excludeId={product.id} />
     </div>

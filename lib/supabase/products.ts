@@ -8,11 +8,23 @@ export type ProductsQueryResult = {
   configured: boolean
 }
 
+export type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'name-asc' | 'newest'
+
+const SORT_CONFIG: Record<SortOption, { column: string; ascending: boolean }> = {
+  featured: { column: 'created_at', ascending: false },
+  newest: { column: 'created_at', ascending: false },
+  'price-asc': { column: 'price', ascending: true },
+  'price-desc': { column: 'price', ascending: false },
+  'name-asc': { column: 'name', ascending: true },
+}
+
 export async function fetchProductsForShop(options?: {
   q?: string
   category?: string
   minPrice?: number
   maxPrice?: number
+  inStockOnly?: boolean
+  sort?: SortOption
 }): Promise<ProductsQueryResult> {
   const { configured } = getSupabasePublicConfig()
   if (!configured) {
@@ -41,8 +53,12 @@ export async function fetchProductsForShop(options?: {
     if (options?.maxPrice != null && !Number.isNaN(options.maxPrice)) {
       query = query.lte('price', options.maxPrice)
     }
+    if (options?.inStockOnly) {
+      query = query.eq('in_stock', true)
+    }
 
-    const { data, error } = await query.order('name')
+    const sort = SORT_CONFIG[options?.sort ?? 'featured']
+    const { data, error } = await query.order(sort.column, { ascending: sort.ascending })
     if (error) {
       return {
         products: [],
@@ -89,6 +105,50 @@ export async function fetchCategoryCounts(): Promise<Record<string, number>> {
     )
   } catch {
     return {}
+  }
+}
+
+export async function searchProductsLite(q: string, limit = 6): Promise<Product[]> {
+  const term = q.trim()
+  if (!term) return []
+  const { configured } = getSupabasePublicConfig()
+  if (!configured) return []
+  try {
+    const supabase = await createClientOptional()
+    if (!supabase) return []
+    const { data } = await supabase
+      .from('products')
+      .select('id,name,price,image_url,category,in_stock')
+      .ilike('name', `%${term}%`)
+      .order('in_stock', { ascending: false })
+      .limit(limit)
+    return ((data ?? []) as Product[]) ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function fetchFrequentlyBoughtTogether(
+  category: string,
+  excludeId: string,
+  limit = 3
+): Promise<Product[]> {
+  const { configured } = getSupabasePublicConfig()
+  if (!configured) return []
+  try {
+    const supabase = await createClientOptional()
+    if (!supabase) return []
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('category', category)
+      .eq('in_stock', true)
+      .neq('id', excludeId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    return ((data ?? []) as Product[]) ?? []
+  } catch {
+    return []
   }
 }
 

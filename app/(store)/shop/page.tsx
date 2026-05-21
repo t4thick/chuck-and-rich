@@ -5,21 +5,33 @@ import {
   ActiveFilterChips,
   ShopFiltersBar,
   ShopFiltersSidebar,
+  SortMenu,
 } from '@/components/shop/ShopFilters'
-import { PageHeader } from '@/components/store/PageHeader'
-import { fetchCategoryCounts, fetchProductsForShop } from '@/lib/supabase/products'
+import { fetchCategoryCounts, fetchProductsForShop, type SortOption } from '@/lib/supabase/products'
 import type { Product } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
+const VALID_SORTS: SortOption[] = ['featured', 'newest', 'price-asc', 'price-desc', 'name-asc']
+
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; minPrice?: string; maxPrice?: string }>
+  searchParams: Promise<{
+    q?: string
+    category?: string
+    minPrice?: string
+    maxPrice?: string
+    inStock?: string
+    sort?: string
+  }>
 }) {
   const p = await searchParams
   const minN = p.minPrice ? parseFloat(p.minPrice) : NaN
   const maxN = p.maxPrice ? parseFloat(p.maxPrice) : NaN
+  const sort = (VALID_SORTS as string[]).includes(p.sort ?? '')
+    ? (p.sort as SortOption)
+    : 'featured'
 
   const [{ products, errorMessage }, categoryCount] = await Promise.all([
     fetchProductsForShop({
@@ -27,22 +39,40 @@ export default async function ShopPage({
       category: p.category,
       minPrice: Number.isNaN(minN) ? undefined : minN,
       maxPrice: Number.isNaN(maxN) ? undefined : maxN,
+      inStockOnly: p.inStock === '1',
+      sort,
     }),
     fetchCategoryCounts(),
   ])
 
-  const title = p.category ? p.category : p.q ? `Results for “${p.q}”` : 'All groceries'
+  const title = p.category ? p.category : p.q ? `Results for "${p.q}"` : 'All products'
+  const subtitle = p.category
+    ? `${products.length} product${products.length === 1 ? '' : 's'} in ${p.category.toLowerCase()}`
+    : p.q
+      ? `${products.length} match${products.length === 1 ? '' : 'es'}`
+      : `${products.length} product${products.length === 1 ? '' : 's'} across all departments`
 
   return (
-    <div className="min-h-screen bg-cream">
-      <PageHeader
-        eyebrow="Shop"
-        title={title}
-        subtitle="Premium African & Caribbean pantry staples — filter by category, price, or search."
-      />
+    <div className="min-h-screen bg-white">
+      <div className="border-b border-earth-200 bg-white">
+        <div className="store-container py-6 sm:py-8">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">Shop</p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-earth-900 sm:text-3xl">
+                {title}
+              </h1>
+              <p className="mt-1 text-sm text-earth-600">{subtitle}</p>
+            </div>
+            <div className="hidden lg:block">
+              <SortMenu />
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="store-container py-8 sm:py-10 lg:py-12">
-        <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-12">
+      <div className="store-container py-6 sm:py-8 lg:py-10">
+        <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-10">
           <aside className="hidden lg:block">
             <div className="sticky top-24">
               <Suspense fallback={<p className="muted">Loading filters…</p>}>
@@ -57,39 +87,35 @@ export default async function ShopPage({
             </Suspense>
 
             <Suspense fallback={null}>
-              <div className="mt-6">
+              <div className="mt-4 hidden lg:block">
+                <ActiveFilterChips />
+              </div>
+              <div className="mt-3 lg:hidden">
                 <ActiveFilterChips />
               </div>
             </Suspense>
 
             {errorMessage && (
-              <p className="error mt-6">
+              <p className="error mt-4">
                 {errorMessage} <Link href="/shop">Reload</Link>
               </p>
             )}
 
-            <div className="mt-6 flex items-center justify-between gap-4 border-b border-earth-200/80 pb-4">
-              <p className="text-sm font-medium text-earth-600">
-                {products.length} product{products.length === 1 ? '' : 's'}
-              </p>
-              <Link
-                href="/"
-                className="text-sm font-semibold text-brand-700 no-underline hover:text-brand-900"
-              >
-                ← Back to home
-              </Link>
-            </div>
-
             {products.length === 0 && !errorMessage ? (
-              <div className="premium-card mt-8 px-6 py-16 text-center">
-                <p className="font-display text-xl font-bold text-earth-950">No products found</p>
-                <p className="mt-2 text-earth-600">Try a different category or search term.</p>
-                <Link href="/shop" className="mt-6 inline-block no-underline">
-                  <span className="text-sm font-semibold text-brand-700">Clear filters →</span>
+              <div className="mt-8 rounded-xl border border-dashed border-earth-300 bg-earth-50 px-6 py-16 text-center">
+                <p className="text-base font-semibold text-earth-900">No products found</p>
+                <p className="mt-1 text-sm text-earth-600">
+                  Try a different category or remove some filters.
+                </p>
+                <Link
+                  href="/shop"
+                  className="mt-4 inline-block text-sm font-semibold text-brand-700 no-underline hover:underline"
+                >
+                  Clear all filters →
                 </Link>
               </div>
             ) : (
-              <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 xl:gap-6">
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                 {products.map((product: Product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Clock, Package, Search, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { HeroSearch } from '@/components/store/HeroSearch'
+import { SearchAutocomplete } from '@/components/store/SearchAutocomplete'
 
 const QUICK_LINKS = [
   { label: 'Rice & Grains', href: '/shop?category=Rice%20%26%20Grains' },
@@ -35,7 +35,7 @@ export function HeroSection() {
             </p>
 
             <div className="mx-auto mt-8 max-w-xl">
-              <HeroSearch />
+              <SearchAutocomplete placeholder="Search for jollof rice, palm oil, plantain…" />
             </div>
 
             <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-3">

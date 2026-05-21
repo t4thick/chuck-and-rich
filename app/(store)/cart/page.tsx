@@ -7,20 +7,26 @@ import { Button } from '@/components/ui/button'
 import { ProductImage } from '@/components/store/ProductImage'
 import { formatMoney } from '@/lib/utils'
 
+const FREE_SHIPPING_THRESHOLD = 75
+
 export default function CartPage() {
   const { items, removeItem, updateQuantity, totalPrice, totalItems, clearCart } = useCart()
 
   if (items.length === 0) {
     return (
-      <div className="min-h-[60vh] bg-cream py-16" suppressHydrationWarning>
+      <div className="min-h-[60vh] bg-white py-16" suppressHydrationWarning>
         <div className="store-container">
-          <div className="mx-auto max-w-md premium-card px-6 py-16 text-center">
-            <ShoppingBag className="mx-auto h-14 w-14 text-earth-300" strokeWidth={1.25} />
-            <h1 className="mt-5 font-display text-2xl font-bold text-earth-950">Your cart is empty</h1>
-            <p className="mt-2 text-earth-600">Add spices, rice, and pantry staples to get started.</p>
-            <Link href="/shop" className="mt-8 inline-block no-underline">
-              <Button size="lg" variant="accent" className="rounded-xl">
-                Browse groceries
+          <div className="mx-auto max-w-md rounded-xl border border-earth-200 bg-white px-6 py-14 text-center shadow-[var(--shadow-card)]">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-earth-100">
+              <ShoppingBag className="h-7 w-7 text-earth-400" strokeWidth={1.5} />
+            </div>
+            <h1 className="mt-5 text-xl font-semibold text-earth-900">Your cart is empty</h1>
+            <p className="mt-1 text-sm text-earth-600">
+              Add products to get started.
+            </p>
+            <Link href="/shop" className="mt-6 inline-block no-underline">
+              <Button size="lg" className="h-11 px-6">
+                Start shopping
               </Button>
             </Link>
           </div>
@@ -29,78 +35,85 @@ export default function CartPage() {
     )
   }
 
+  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - totalPrice)
+  const progress = Math.min(100, (totalPrice / FREE_SHIPPING_THRESHOLD) * 100)
+
   return (
-    <div className="min-h-screen bg-cream pb-24 md:pb-12" suppressHydrationWarning>
-      <div className="border-b border-earth-200/80 bg-white">
-        <div className="store-container py-10">
-          <p className="section-eyebrow">Your order</p>
-          <h1 className="section-title mt-2">
-            Cart <span className="text-earth-400">({totalItems})</span>
+    <div className="min-h-screen bg-white pb-24 md:pb-12" suppressHydrationWarning>
+      <div className="border-b border-earth-200 bg-white">
+        <div className="store-container py-6 sm:py-8">
+          <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">Your order</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-earth-900 sm:text-3xl">
+            Cart <span className="text-earth-400 font-normal">({totalItems})</span>
           </h1>
         </div>
       </div>
 
-      <div className="store-container py-8 sm:py-10">
-        <div className="grid gap-8 lg:grid-cols-3 lg:gap-12">
-          <div className="space-y-4 lg:col-span-2">
+      <div className="store-container py-6 sm:py-8">
+        <div className="grid gap-8 lg:grid-cols-3 lg:gap-10">
+          <div className="space-y-3 lg:col-span-2">
             {items.map(({ product, quantity }) => (
-              <article key={product.id} className="premium-card flex gap-4 p-4 sm:p-5">
+              <article
+                key={product.id}
+                className="flex gap-4 rounded-xl border border-earth-200 bg-white p-4 transition-shadow duration-150 hover:shadow-[var(--shadow-card)]"
+              >
                 <Link href={`/products/${product.id}`} className="shrink-0 no-underline">
                   <ProductImage
                     src={product.image_url}
                     alt={product.name}
-                    className="h-24 w-24 rounded-xl sm:h-28 sm:w-28"
-                    sizes="112px"
+                    className="h-20 w-20 rounded-md sm:h-24 sm:w-24"
+                    sizes="96px"
                     framed={false}
                   />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-earth-500">
+                    {product.category}
+                  </p>
                   <Link
                     href={`/products/${product.id}`}
-                    className="font-display text-base font-semibold text-earth-950 no-underline hover:text-brand-800 sm:text-lg"
+                    className="mt-0.5 text-sm font-medium text-earth-900 no-underline hover:text-brand-700 sm:text-base"
                   >
                     {product.name}
                   </Link>
-                  <p className="mt-0.5 text-sm text-earth-500">{product.category}</p>
-                  <p className="mt-1 font-bold text-earth-900">{formatMoney(product.price)}</p>
+                  <p className="mt-1 text-sm font-semibold text-earth-900 tabular-nums">
+                    {formatMoney(product.price)}
+                  </p>
 
-                  <div className="mt-auto flex flex-wrap items-center gap-3 pt-4">
-                    <div className="flex items-center rounded-xl border border-earth-200 bg-sand">
-                      <Button
+                  <div className="mt-auto flex flex-wrap items-center gap-3 pt-3">
+                    <div className="inline-flex items-center rounded-md border border-earth-200">
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 rounded-l-xl rounded-r-none"
+                        className="flex h-8 w-8 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50 disabled:opacity-40"
                         aria-label="Decrease quantity"
+                        disabled={quantity <= 1}
                         onClick={() => updateQuantity(product.id, Math.max(1, quantity - 1))}
                       >
                         <Minus className="h-3.5 w-3.5" />
-                      </Button>
-                      <span className="min-w-[2rem] text-center text-sm font-bold">{quantity}</span>
-                      <Button
+                      </button>
+                      <span className="min-w-[2rem] text-center text-sm font-semibold tabular-nums">
+                        {quantity}
+                      </span>
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 rounded-l-none rounded-r-xl"
+                        className="flex h-8 w-8 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50"
                         aria-label="Increase quantity"
                         onClick={() => updateQuantity(product.id, Math.min(99, quantity + 1))}
                       >
                         <Plus className="h-3.5 w-3.5" />
-                      </Button>
+                      </button>
                     </div>
-                    <span className="text-sm font-bold text-earth-800">
+                    <span className="text-sm font-semibold text-earth-900 tabular-nums">
                       {formatMoney(product.price * quantity)}
                     </span>
-                    <Button
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="ml-auto text-red-600 hover:bg-red-50 hover:text-red-700"
+                      className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-earth-500 transition-colors hover:text-red-600"
                       onClick={() => removeItem(product.id)}
                     >
-                      <Trash2 className="mr-1 h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                       Remove
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </article>
@@ -108,35 +121,71 @@ export default function CartPage() {
           </div>
 
           <div>
-            <div className="premium-card sticky top-24 p-6">
-              <h2 className="font-display text-lg font-bold text-earth-950">Order summary</h2>
-              <div className="mt-5 flex justify-between text-sm">
-                <span className="text-earth-600">Subtotal ({totalItems} items)</span>
-                <span className="font-bold text-earth-950">{formatMoney(totalPrice)}</span>
-              </div>
-              <div className="mt-4 border-t border-earth-100 pt-4">
-                <div className="flex justify-between text-xl font-bold text-earth-950">
-                  <span>Total</span>
-                  <span>{formatMoney(totalPrice)}</span>
+            <div className="sticky top-24 rounded-xl border border-earth-200 bg-white p-5 shadow-[var(--shadow-card)]">
+              <h2 className="text-base font-semibold text-earth-900">Order summary</h2>
+
+              <div className="mt-4 rounded-md bg-earth-50 p-3">
+                {remaining > 0 ? (
+                  <p className="text-xs text-earth-700">
+                    Add{' '}
+                    <span className="font-semibold text-earth-900 tabular-nums">
+                      {formatMoney(remaining)}
+                    </span>{' '}
+                    for free shipping
+                  </p>
+                ) : (
+                  <p className="text-xs font-semibold text-brand-700">Free shipping unlocked</p>
+                )}
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-earth-200">
+                  <div
+                    className="h-full rounded-full bg-brand-600 transition-[width] duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
                 </div>
-                <p className="mt-1 text-xs text-earth-500">Shipping calculated at checkout</p>
               </div>
-              <Link href="/checkout" className="mt-6 block no-underline">
-                <Button variant="accent" size="lg" className="h-12 w-full gap-2 rounded-xl">
-                  Proceed to checkout
+
+              <dl className="mt-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-earth-600">
+                    Subtotal <span className="text-earth-400">({totalItems})</span>
+                  </dt>
+                  <dd className="font-semibold text-earth-900 tabular-nums">
+                    {formatMoney(totalPrice)}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-earth-600">Shipping</dt>
+                  <dd className="text-earth-500">Calculated at checkout</dd>
+                </div>
+              </dl>
+
+              <div className="mt-4 flex items-baseline justify-between border-t border-earth-100 pt-4">
+                <span className="text-sm font-semibold text-earth-900">Total</span>
+                <span className="text-2xl font-semibold tracking-tight text-earth-900 tabular-nums">
+                  {formatMoney(totalPrice)}
+                </span>
+              </div>
+
+              <Link href="/checkout" className="mt-5 block no-underline">
+                <Button size="lg" className="h-11 w-full gap-2">
+                  Checkout
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <div className="mt-4 flex flex-col gap-2">
+              <div className="mt-3 flex flex-col gap-1.5 text-center text-xs">
                 <Link
                   href="/shop"
-                  className="text-center text-sm font-semibold text-brand-700 no-underline hover:text-brand-900"
+                  className="font-medium text-brand-700 no-underline hover:text-brand-800"
                 >
                   Continue shopping
                 </Link>
-                <Button type="button" variant="ghost" size="sm" onClick={clearCart}>
+                <button
+                  type="button"
+                  onClick={clearCart}
+                  className="text-earth-500 transition-colors hover:text-earth-900"
+                >
                   Clear cart
-                </Button>
+                </button>
               </div>
             </div>
           </div>
