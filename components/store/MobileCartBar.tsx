@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { MOBILE_BOTTOM_NAV_OFFSET } from '@/lib/constants/mobile-nav'
 import { formatMoney } from '@/lib/utils'
 
-/** Sticky checkout bar on mobile when cart has items — sits above bottom tab bar. */
 export function MobileCartBar() {
   const { totalItems, totalPrice, openCart } = useCart()
   const pathname = usePathname()
@@ -17,21 +16,20 @@ export function MobileCartBar() {
 
   return (
     <div
-      className="animate-fade-up fixed left-0 right-0 z-40 px-3 pb-2 md:hidden"
+      className="animate-fade-in fixed left-0 right-0 z-40 px-3 pb-2 md:hidden"
       style={{ bottom: MOBILE_BOTTOM_NAV_OFFSET }}
     >
       <Button
         type="button"
-        variant="accent"
         size="lg"
-        className="btn-shine h-12 w-full gap-3 rounded-xl text-base font-semibold shadow-[var(--shadow-float)]"
+        className="h-12 w-full gap-2.5 rounded-xl text-sm font-semibold shadow-[var(--shadow-card-hover)]"
         onClick={openCart}
       >
-        <ShoppingBag className="h-5 w-5" aria-hidden />
+        <ShoppingBag className="h-4 w-4" aria-hidden />
         <span className="flex-1 text-left">
-          View cart · {totalItems} item{totalItems === 1 ? '' : 's'}
+          {totalItems} item{totalItems === 1 ? '' : 's'} · view cart
         </span>
-        <span className="font-bold">{formatMoney(totalPrice)}</span>
+        <span className="font-semibold tabular-nums">{formatMoney(totalPrice)}</span>
       </Button>
     </div>
   )

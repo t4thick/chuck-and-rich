@@ -4,6 +4,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { CartProvider } from '@/context/CartContext'
 import { ToastProvider } from '@/context/ToastContext'
+import { RecentlyViewedProvider } from '@/context/RecentlyViewedContext'
 import { STORE } from '@/lib/constants/store'
 
 const cormorant = Cormorant_Garamond({
@@ -33,7 +34,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${cormorant.variable} ${montserrat.variable}`}>
       <body className="flex min-h-screen flex-col">
         <CartProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <RecentlyViewedProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </RecentlyViewedProvider>
         </CartProvider>
       </body>
     </html>

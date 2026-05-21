@@ -1,16 +1,17 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { ProductCard } from '@/components/ProductCard'
+import { ProductCard, ProductCardSkeleton } from '@/components/ProductCard'
 import { Button } from '@/components/ui/button'
-import { RevealOnScroll } from '@/components/store/RevealOnScroll'
 import type { Product } from '@/types'
 
 type ProductShowcaseProps = {
   title: string
-  subtitle: string
+  subtitle?: string
   products: Product[]
   errorMessage?: string | null
   eyebrow?: string
+  viewAllHref?: string
+  loading?: boolean
 }
 
 export function ProductShowcase({
@@ -18,27 +19,25 @@ export function ProductShowcase({
   subtitle,
   products,
   errorMessage,
-  eyebrow = 'In stock now',
+  viewAllHref = '/shop',
+  loading,
 }: ProductShowcaseProps) {
   return (
-    <section className="page-section bg-sand">
+    <section className="page-section bg-white">
       <div className="store-container">
-        <RevealOnScroll>
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="section-eyebrow">{eyebrow}</p>
-              <h2 className="section-title mt-3 text-balance">{title}</h2>
-              <p className="section-subtitle">{subtitle}</p>
-            </div>
-            <Link
-              href="/shop"
-              className="group inline-flex items-center gap-1.5 self-start text-sm font-semibold text-brand-700 no-underline hover:text-brand-800 sm:self-auto"
-            >
-              Shop all
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-            </Link>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="section-title">{title}</h2>
+            {subtitle && <p className="section-subtitle">{subtitle}</p>}
           </div>
-        </RevealOnScroll>
+          <Link
+            href={viewAllHref}
+            className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-brand-700 no-underline hover:text-brand-800"
+          >
+            View all
+            <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+          </Link>
+        </div>
 
         {errorMessage && (
           <p className="error mt-6">
@@ -46,19 +45,25 @@ export function ProductShowcase({
           </p>
         )}
 
-        {products.length === 0 && !errorMessage ? (
-          <div className="mt-12 rounded-3xl border border-dashed border-earth-300 bg-white px-6 py-16 text-center">
-            <p className="text-earth-700">New products arriving soon.</p>
+        {loading ? (
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : products.length === 0 && !errorMessage ? (
+          <div className="mt-8 rounded-xl border border-dashed border-earth-300 bg-earth-50 px-6 py-14 text-center">
+            <p className="text-sm text-earth-700">No products to show right now.</p>
             <Link href="/shop" className="mt-4 inline-block no-underline">
-              <Button variant="outline">Browse shop</Button>
+              <Button variant="outline" size="sm">
+                Browse shop
+              </Button>
             </Link>
           </div>
         ) : (
-          <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:gap-6">
-            {products.map((product, i) => (
-              <RevealOnScroll key={product.id} delay={Math.min(i * 60, 300)} className="h-full">
-                <ProductCard product={product} />
-              </RevealOnScroll>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}

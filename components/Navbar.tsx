@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Home, Menu, ShoppingBag, Store, X } from 'lucide-react'
+import { Menu, ShoppingBag, Store, X } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { NavbarAuth } from '@/components/NavbarAuth'
 import { ShopSearchBar } from '@/components/store/ShopSearchBar'
@@ -12,86 +12,95 @@ import { STORE } from '@/lib/constants/store'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/shop', label: 'Shop', icon: Store },
-  { href: '/track-order', label: 'Track order', icon: null },
-  { href: '/account', label: 'Account', icon: null },
+  { href: '/', label: 'Home' },
+  { href: '/shop', label: 'Shop' },
+  { href: '/track-order', label: 'Track order' },
+  { href: '/account', label: 'Account' },
 ] as const
+
+function isActive(pathname: string, href: string) {
+  if (href === '/') return pathname === '/'
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
 
 export function Navbar() {
   const { totalItems, openCart } = useCart()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [badgeKey, setBadgeKey] = useState(totalItems)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12)
+    const onScroll = () => setScrolled(window.scrollY > 4)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => {
+    setBadgeKey(totalItems)
+  }, [totalItems])
+
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 border-b transition-all duration-300',
+        'sticky top-0 z-50 border-b transition-colors duration-150',
         scrolled
-          ? 'glass-nav border-earth-200/60 shadow-[var(--shadow-card)]'
-          : 'border-transparent bg-sand'
+          ? 'glass-nav border-earth-200'
+          : 'border-earth-100 bg-white'
       )}
     >
       <div className="store-container">
-        <div className={cn('flex items-center justify-between gap-3 transition-all duration-300', scrolled ? 'h-14' : 'h-[68px]')}>
+        <div className="flex h-14 items-center justify-between gap-3 sm:h-16">
           <Link
             href="/"
-            className="group flex shrink-0 items-center gap-2.5 no-underline"
+            className="flex shrink-0 items-center gap-2 no-underline"
             onClick={() => setOpen(false)}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-700 text-white shadow-[var(--shadow-elev)] transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-700 text-white">
               <Store className="h-4 w-4" aria-hidden />
             </span>
-            <span className="font-display text-xl font-semibold tracking-tight text-earth-900 sm:text-[1.4rem]">
+            <span className="text-base font-semibold tracking-tight text-earth-900 sm:text-[17px]">
               <span className="hidden sm:inline">{STORE.shortName}</span>
               <span className="sm:hidden">Lovely Queen</span>
             </span>
           </Link>
 
-          <div className="hidden flex-1 px-4 md:block md:max-w-md lg:max-w-lg">
+          <div className="hidden flex-1 px-4 md:block md:max-w-md lg:max-w-xl">
             <ShopSearchBar compact />
           </div>
 
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
-            {NAV_LINKS.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'rounded-md px-3 py-2 text-sm font-semibold no-underline transition-colors',
-                  href === '/'
-                    ? pathname === '/'
-                      ? 'bg-brand-700 text-white'
-                      : 'text-earth-800 hover:bg-earth-200'
-                    : pathname === href || pathname.startsWith(`${href}/`)
-                      ? 'bg-brand-700 text-white'
-                      : 'text-earth-800 hover:bg-earth-200'
-                )}
-              >
-                {label}
-              </Link>
-            ))}
+          <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Main">
+            {NAV_LINKS.map(({ href, label }) => {
+              const active = isActive(pathname, href)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    'rounded-md px-3 py-1.5 text-sm font-medium no-underline transition-colors duration-150',
+                    active
+                      ? 'bg-earth-100 text-earth-900'
+                      : 'text-earth-600 hover:bg-earth-50 hover:text-earth-900'
+                  )}
+                >
+                  {label}
+                </Link>
+              )
+            })}
             <NavbarAuth className="ml-1" />
             <Button
               type="button"
               size="sm"
-              className="btn-shine relative ml-2 gap-1.5 rounded-md"
+              className="relative ml-2 h-9 gap-1.5 px-3.5"
               onClick={openCart}
             >
               <ShoppingBag className="h-4 w-4" aria-hidden />
               Cart
               {totalItems > 0 && (
                 <span
-                  key={totalItems}
-                  className="animate-bounce-in flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-xs font-bold text-white shadow-sm"
+                  key={badgeKey}
+                  className="animate-pop flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-[11px] font-semibold leading-none text-white"
                 >
                   {totalItems > 99 ? '99+' : totalItems}
                 </span>
@@ -104,15 +113,15 @@ export function Navbar() {
               type="button"
               variant="ghost"
               size="icon"
-              className="relative"
+              className="relative h-10 w-10"
               aria-label={`Cart, ${totalItems} items`}
               onClick={openCart}
             >
               <ShoppingBag className="h-5 w-5" />
               {totalItems > 0 && (
                 <span
-                  key={totalItems}
-                  className="animate-bounce-in absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-0.5 text-[10px] font-bold text-white shadow-sm"
+                  key={badgeKey}
+                  className="animate-pop absolute right-0.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-0.5 text-[10px] font-semibold leading-none text-white"
                 >
                   {totalItems > 99 ? '99+' : totalItems}
                 </span>
@@ -121,6 +130,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-10 w-10"
               aria-expanded={open}
               aria-controls="mobile-nav"
               aria-label={open ? 'Close menu' : 'Open menu'}
@@ -138,30 +148,28 @@ export function Navbar() {
         {open && (
           <nav
             id="mobile-nav"
-            className="border-t border-earth-100 pb-4 pt-3 lg:hidden"
+            className="animate-fade-in border-t border-earth-100 pb-4 pt-2 lg:hidden"
             aria-label="Mobile"
           >
-            <div className="flex flex-col gap-1">
-              {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium no-underline',
-                    href === '/'
-                      ? pathname === '/'
-                        ? 'bg-brand-100 text-brand-800'
-                        : 'text-earth-800 hover:bg-earth-100'
-                      : pathname === href || pathname.startsWith(`${href}/`)
-                        ? 'bg-brand-100 text-brand-800'
-                        : 'text-earth-800 hover:bg-earth-100'
-                  )}
-                  onClick={() => setOpen(false)}
-                >
-                  {Icon && <Icon className="h-5 w-5 shrink-0 opacity-70" aria-hidden />}
-                  {label}
-                </Link>
-              ))}
+            <div className="flex flex-col gap-0.5">
+              {NAV_LINKS.map(({ href, label }) => {
+                const active = isActive(pathname, href)
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'rounded-md px-3 py-2.5 text-[15px] font-medium no-underline transition-colors duration-150',
+                      active
+                        ? 'bg-earth-100 text-earth-900'
+                        : 'text-earth-700 hover:bg-earth-50'
+                    )}
+                    onClick={() => setOpen(false)}
+                  >
+                    {label}
+                  </Link>
+                )
+              })}
               <div className="mt-3 flex flex-col gap-2 border-t border-earth-100 px-2 pt-3">
                 <NavbarAuth onNavigate={() => setOpen(false)} />
               </div>

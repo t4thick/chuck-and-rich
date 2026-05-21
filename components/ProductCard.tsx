@@ -2,19 +2,24 @@
 
 import Link from 'next/link'
 import { Check, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCart } from '@/context/CartContext'
 import { useToast } from '@/context/ToastContext'
 import { ProductImage } from '@/components/store/ProductImage'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/utils'
 import type { Product } from '@/types'
 
 export function ProductCard({ product }: { product: Product }) {
-  const { addItem, openCart } = useCart()
+  const { addItem } = useCart()
   const toast = useToast()
   const [justAdded, setJustAdded] = useState(false)
+
+  useEffect(() => {
+    if (!justAdded) return
+    const t = setTimeout(() => setJustAdded(false), 900)
+    return () => clearTimeout(t)
+  }, [justAdded])
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
@@ -23,52 +28,50 @@ export function ProductCard({ product }: { product: Product }) {
     addItem(product, 1)
     toast?.show(`Added: ${product.name}`)
     setJustAdded(true)
-    setTimeout(() => setJustAdded(false), 1200)
-    openCart()
   }
 
   return (
-    <article className="group premium-card premium-card-hover relative flex h-full flex-col">
-      <Link href={`/products/${product.id}`} className="relative flex flex-1 flex-col no-underline">
-        <div className="product-image-frame overflow-hidden">
+    <article className="group premium-card premium-card-hover flex h-full flex-col">
+      <Link href={`/products/${product.id}`} className="flex flex-1 flex-col no-underline">
+        <div className="product-image-frame">
           <ProductImage
             src={product.image_url}
             alt={product.name}
             className="rounded-none"
             sizes="(max-width:640px) 50vw, 25vw"
           />
+          {!product.in_stock && (
+            <span className="absolute left-2 top-2 rounded-md bg-earth-900/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+              Out of stock
+            </span>
+          )}
         </div>
-        <div className="flex flex-1 flex-col p-3 sm:p-4">
-          <Badge variant="brand" className="mb-2 w-fit max-w-full truncate text-[10px]">
+        <div className="flex flex-1 flex-col p-3 sm:p-3.5">
+          <p className="line-clamp-1 text-[11px] font-medium uppercase tracking-wider text-earth-500">
             {product.category}
-          </Badge>
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-earth-900 transition group-hover:text-brand-700 sm:text-[15px]">
+          </p>
+          <h3 className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-snug text-earth-900 transition-colors duration-150 group-hover:text-brand-700 sm:text-[15px]">
             {product.name}
           </h3>
-          <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-            <p className="font-display text-lg font-semibold text-brand-700 sm:text-xl">
-              {formatMoney(product.price)}
-            </p>
-            {!product.in_stock && (
-              <Badge variant="outline" className="shrink-0 text-[10px]">
-                Out of stock
-              </Badge>
-            )}
-          </div>
+          <p className="mt-auto pt-3 text-[17px] font-semibold tracking-tight text-earth-900">
+            {formatMoney(product.price)}
+          </p>
         </div>
       </Link>
-      <div className="border-t border-earth-100 p-2 sm:p-3">
+      <div className="border-t border-earth-100 p-2">
         <Button
           type="button"
           variant={product.in_stock ? 'default' : 'outline'}
-          className="btn-shine h-10 w-full gap-2 text-sm transition-all duration-300"
+          size="sm"
+          className="h-9 w-full gap-1.5 text-[13px]"
           disabled={!product.in_stock}
           onClick={handleAdd}
+          aria-label={product.in_stock ? `Add ${product.name} to cart` : 'Unavailable'}
         >
           {justAdded ? (
             <>
-              <Check className="h-4 w-4 animate-bounce-in" aria-hidden />
-              Added!
+              <Check className="h-4 w-4" aria-hidden />
+              Added
             </>
           ) : product.in_stock ? (
             <>
@@ -84,6 +87,23 @@ export function ProductCard({ product }: { product: Product }) {
   )
 }
 
+export function ProductCardSkeleton() {
+  return (
+    <div className="premium-card flex h-full flex-col">
+      <div className="skeleton aspect-square" />
+      <div className="flex flex-1 flex-col gap-2 p-3 sm:p-3.5">
+        <div className="skeleton h-3 w-1/3 rounded" />
+        <div className="skeleton h-4 w-full rounded" />
+        <div className="skeleton h-4 w-2/3 rounded" />
+        <div className="skeleton mt-auto h-5 w-1/3 rounded pt-3" />
+      </div>
+      <div className="border-t border-earth-100 p-2">
+        <div className="skeleton h-9 w-full rounded-md" />
+      </div>
+    </div>
+  )
+}
+
 export function ProductCardMini({ product }: { product: Product }) {
   return (
     <Link href={`/products/${product.id}`} className="flex gap-3 no-underline">
@@ -95,8 +115,8 @@ export function ProductCardMini({ product }: { product: Product }) {
         framed={false}
       />
       <div>
-        <p className="line-clamp-2 text-sm font-semibold text-earth-900">{product.name}</p>
-        <p className="text-sm font-bold text-brand-700">{formatMoney(product.price)}</p>
+        <p className="line-clamp-2 text-sm font-medium text-earth-900">{product.name}</p>
+        <p className="text-sm font-semibold text-earth-900">{formatMoney(product.price)}</p>
       </div>
     </Link>
   )

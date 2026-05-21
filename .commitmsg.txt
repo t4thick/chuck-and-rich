@@ -1,0 +1,50 @@
+Pivot to utility-first commerce platform
+
+Hard reset away from cinematic cultural branding toward a fast,
+minimal, Apple/Stripe/Linear/Costco-style commerce surface.
+
+AGENTS.md: documents the new design directive as binding rules
+(no fluff motion, no cultural theming in chrome, display font
+only for marketing H1, snappy ≤200ms transitions only).
+
+globals.css: stripped blob-drift, btn-shine, kente, float, fade-up
+delays, grain, shimmer; trimmed shadows to a 2-step soft stack;
+neutralized earth palette to a true neutral; sans typography for
+headings; new skeleton + pop + fade-in keyframes only.
+
+Hero: replaced floating-card cinematic layout with a Stripe-style
+centered value prop + prominent search input + popular pills +
+stat strip. No drifting blobs, no decorative imagery in the hero.
+
+Navbar: simplified shadows, removed glass-on-scroll juggle and
+logo rotate, single bg with glass only when scrolled.
+
+ProductCard: dropped shine + bounce, snappier hover (2px lift),
+quick-add no longer interrupts browsing (no openCart), added
+ProductCardSkeleton for loading states.
+
+CartDrawer: utility header, free-shipping progress bar, tighter
+list rows, tabular subtotal, Checkout button (no marketing copy).
+
+MobileBottomNav / MobileCartBar: glass tab bar, tighter sizes,
+floating cart bar with crisp shadow, no shine.
+
+RevealOnScroll: now a passthrough (no scroll-triggered animations
+per directive); kept as API so existing call sites still compile.
+
+Sections: deleted BrandStory, Testimonials, CookTonight,
+ShopByCountry (cultural / emotional). Rewrote CategoryBrowse,
+TrustStrip (now: Free pickup, Local delivery, Secure checkout,
+Easy returns), FeaturedCollections, ProductShowcase, VisitSection
+in a utility tone.
+
+Product page: cleaner two-column layout, sticky add-to-cart card,
+RecordRecentlyViewed side-effect logs views.
+
+Recently Viewed: new RecentlyViewedProvider + RecentlyViewed
+component, wired into root layout, homepage, and product page.
+
+Homepage flow: Hero → Categories → Trending → Featured → New
+Arrivals → Recently Viewed → Trust → Visit.
+
+Footer: white surface, utility column layout, no marketing copy.

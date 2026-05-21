@@ -1,66 +1,63 @@
 import Link from 'next/link'
-import { ArrowRight, MapPin, Phone } from 'lucide-react'
+import { MapPin, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { STORE } from '@/lib/constants/store'
-import { RevealOnScroll } from '@/components/store/RevealOnScroll'
 
 export function VisitSection() {
   return (
-    <section className="page-section bg-cream">
+    <section className="border-t border-earth-200 bg-white py-12 sm:py-16">
       <div className="store-container">
-        <RevealOnScroll>
-          <div className="relative overflow-hidden rounded-[2rem] border border-earth-200/80 bg-white p-8 shadow-[var(--shadow-premium)] sm:p-12 lg:p-16">
-            <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brand-100/40 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-accent-100/50 blur-3xl" />
-
-            <div className="relative mx-auto max-w-2xl text-center">
-              <p className="section-eyebrow">Visit us in Columbus</p>
-              <h2 className="section-title mt-3 text-balance">
-                Your neighborhood African marketplace
-              </h2>
-              <p className="section-subtitle mx-auto mt-4">
-                Shop online for pickup or delivery — or walk our aisles for the full market experience.
-              </p>
-
-              <div className="mt-8 flex flex-col items-center gap-3 text-sm text-earth-600 sm:flex-row sm:justify-center sm:gap-6">
-                <span className="inline-flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-brand-600" aria-hidden />
-                  {STORE.address}
-                </span>
-                <span className="hidden h-4 w-px bg-earth-200 sm:block" aria-hidden />
-                <a
-                  href={STORE.phoneHref}
-                  className="inline-flex items-center gap-2 font-medium text-brand-700 no-underline hover:text-brand-900"
-                >
-                  <Phone className="h-4 w-4" aria-hidden />
-                  {STORE.phone}
-                </a>
+        <div className="grid items-center gap-8 rounded-2xl border border-earth-200 bg-earth-50 p-8 sm:p-10 lg:grid-cols-2 lg:gap-12 lg:p-14">
+          <div>
+            <h2 className="section-title">Visit the store</h2>
+            <p className="section-subtitle">
+              Shop online for pickup or delivery — or stop by our Columbus location.
+            </p>
+            <dl className="mt-6 space-y-3 text-sm">
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+                <div>
+                  <dt className="sr-only">Address</dt>
+                  <dd className="font-medium text-earth-900">{STORE.address}</dd>
+                </div>
               </div>
-
-              <p className="mt-2 text-sm text-earth-500">{STORE.hours}</p>
-
-              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <Link href="/shop" className="no-underline">
-                  <Button size="lg" variant="accent" className="h-12 w-full min-w-[180px] sm:w-auto">
-                    Shop online
-                  </Button>
-                </Link>
-                <a href={STORE.phoneHref} className="no-underline">
-                  <Button size="lg" variant="outline" className="h-12 w-full sm:w-auto">
-                    Call the store
-                  </Button>
-                </a>
+              <div className="flex items-start gap-3">
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+                <div>
+                  <dt className="sr-only">Phone</dt>
+                  <dd>
+                    <a
+                      href={STORE.phoneHref}
+                      className="font-medium text-earth-900 no-underline hover:text-brand-700"
+                    >
+                      {STORE.phone}
+                    </a>
+                  </dd>
+                </div>
               </div>
-
-              <Link
-                href="/track-order"
-                className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 no-underline hover:text-brand-900"
-              >
-                Track an order <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+              <div className="text-earth-600">{STORE.hours}</div>
+            </dl>
           </div>
-        </RevealOnScroll>
+
+          <div className="flex flex-col gap-3 lg:items-end">
+            <Link href="/shop" className="no-underline">
+              <Button size="lg" className="h-11 w-full px-6 lg:w-auto">
+                Shop online
+              </Button>
+            </Link>
+            <a href={STORE.phoneHref} className="no-underline">
+              <Button size="lg" variant="outline" className="h-11 w-full px-6 lg:w-auto">
+                Call the store
+              </Button>
+            </a>
+            <Link
+              href="/track-order"
+              className="text-sm font-medium text-brand-700 no-underline hover:text-brand-800"
+            >
+              Track an order →
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   )

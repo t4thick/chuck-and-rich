@@ -2,93 +2,116 @@ import Link from 'next/link'
 import { Lock, MapPin, Phone, ShieldCheck, Store } from 'lucide-react'
 import { STORE } from '@/lib/constants/store'
 
+const SHOP_LINKS = [
+  { href: '/shop', label: 'All products' },
+  { href: '/shop?category=Spices', label: 'Spices' },
+  { href: '/shop?category=Flours%20%26%20Rice', label: 'Rice & flour' },
+  { href: '/shop?category=Beverages', label: 'Beverages' },
+  { href: '/shop?category=Frozen', label: 'Frozen' },
+] as const
+
+const ACCOUNT_LINKS = [
+  { href: '/track-order', label: 'Track order' },
+  { href: '/account', label: 'My account' },
+  { href: '/cart', label: 'Cart' },
+  { href: '/checkout', label: 'Checkout' },
+] as const
+
+const LEGAL_LINKS = [
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/terms', label: 'Terms' },
+] as const
+
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-brand-800 bg-brand-800 text-white">
+    <footer className="mt-auto border-t border-earth-200 bg-white text-earth-700">
       <div className="store-container py-12 sm:py-14">
         <div className="grid gap-10 lg:grid-cols-4">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <div className="flex items-center gap-2">
-              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10">
-                <Store className="h-5 w-5" aria-hidden />
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-700 text-white">
+                <Store className="h-4 w-4" aria-hidden />
               </span>
-              <p className="font-display text-2xl font-bold">{STORE.shortName}</p>
+              <p className="text-base font-semibold text-earth-900">{STORE.shortName}</p>
             </div>
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80">
-              {STORE.tagline}. Authentic African and Caribbean groceries for families across
-              Ohio — shop online or visit our store.
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-earth-600">
+              African & Caribbean groceries shipped fast from Columbus, Ohio.
             </p>
-            <div className="mt-6 flex flex-wrap gap-4 text-xs font-semibold text-white/70">
+            <div className="mt-5 flex flex-wrap gap-3 text-xs font-medium text-earth-500">
               <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4" /> Secure checkout
+                <ShieldCheck className="h-3.5 w-3.5 text-brand-600" /> Secure checkout
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Lock className="h-4 w-4" /> Stripe payments
+                <Lock className="h-3.5 w-3.5 text-brand-600" /> Stripe
               </span>
             </div>
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-white/60">Visit us</p>
-            <p className="mt-4 flex items-start gap-2 text-sm text-white/90">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">Shop</p>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              {SHOP_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-earth-700 no-underline hover:text-brand-700"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">Account</p>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              {ACCOUNT_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-earth-700 no-underline hover:text-brand-700"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">Visit us</p>
+            <p className="mt-4 flex items-start gap-2 text-sm text-earth-700">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
               <span>{STORE.address}</span>
             </p>
             <p className="mt-3 flex items-center gap-2 text-sm">
-              <Phone className="h-4 w-4 shrink-0" aria-hidden />
-              <a href={STORE.phoneHref} className="font-medium text-white no-underline hover:underline">
+              <Phone className="h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+              <a
+                href={STORE.phoneHref}
+                className="font-medium text-earth-900 no-underline hover:text-brand-700"
+              >
                 {STORE.phone}
               </a>
             </p>
-            <p className="mt-2 text-sm text-white/70">{STORE.hours}</p>
-          </div>
-
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-white/60">Quick links</p>
-            <ul className="mt-4 space-y-2.5 text-sm">
-              <li>
-                <Link href="/shop" className="text-white/90 no-underline hover:text-white">
-                  Shop all products
-                </Link>
-              </li>
-              <li>
-                <Link href="/shop?category=Spices" className="text-white/90 no-underline hover:text-white">
-                  Spices
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/shop?category=Flours%20%26%20Rice"
-                  className="text-white/90 no-underline hover:text-white"
-                >
-                  Rice &amp; flour
-                </Link>
-              </li>
-              <li>
-                <Link href="/track-order" className="text-white/90 no-underline hover:text-white">
-                  Track order
-                </Link>
-              </li>
-              <li>
-                <Link href="/account" className="text-white/90 no-underline hover:text-white">
-                  My account
-                </Link>
-              </li>
-            </ul>
+            <p className="mt-2 text-xs text-earth-500">{STORE.hours}</p>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-white/15 pt-8 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-3 border-t border-earth-200 pt-6 text-xs text-earth-500 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {STORE.name}. All rights reserved.
           </p>
           <p className="flex gap-5">
-            <Link href="/privacy" className="text-white/80 no-underline hover:text-white">
-              Privacy
-            </Link>
-            <Link href="/terms" className="text-white/80 no-underline hover:text-white">
-              Terms
-            </Link>
+            {LEGAL_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="text-earth-600 no-underline hover:text-earth-900"
+              >
+                {l.label}
+              </Link>
+            ))}
           </p>
         </div>
       </div>
