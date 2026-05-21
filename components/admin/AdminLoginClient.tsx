@@ -11,9 +11,15 @@ import { Input } from '@/components/ui/input'
 export function AdminLoginClient({
   allowSupabaseAdmin,
   forbidden,
+  devMode = false,
+  adminPasswordConfigured = true,
+  adminSecretConfigured = true,
 }: {
   allowSupabaseAdmin: boolean
   forbidden: boolean
+  devMode?: boolean
+  adminPasswordConfigured?: boolean
+  adminSecretConfigured?: boolean
 }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -25,6 +31,22 @@ export function AdminLoginClient({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [rateLimited, setRateLimited] = useState(false)
+
+  async function handleDevBypass() {
+    setLoading(true)
+    setError('')
+    const res = await fetch('/api/admin/dev-login', {
+      method: 'POST',
+      credentials: 'same-origin',
+    })
+    if (res.ok) {
+      router.push('/admin')
+      router.refresh()
+      return
+    }
+    setLoading(false)
+    setError('Dev bypass is disabled in production.')
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -133,6 +155,40 @@ export function AdminLoginClient({
                     ? 'Access denied. Enter the correct staff password or use an authorized Supabase admin account.'
                     : 'Access denied. Staff password only — sign in below.'}
                 </span>
+              </div>
+            )}
+
+            {devMode && (
+              <div className="mt-4 space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700" aria-hidden />
+                  <div className="space-y-1">
+                    <p className="font-semibold">Dev mode bypass</p>
+                    <p className="text-xs leading-snug text-amber-800">
+                      You&apos;re on <code className="rounded bg-amber-100 px-1">localhost</code>.
+                      Click below to sign in without typing the password.
+                      <br />
+                      <code className="rounded bg-amber-100 px-1">ADMIN_PASSWORD</code>{' '}
+                      {adminPasswordConfigured ? '✓ set' : '✗ NOT set in .env.local'} ·{' '}
+                      <code className="rounded bg-amber-100 px-1">ADMIN_SESSION_SECRET</code>{' '}
+                      {adminSecretConfigured ? '✓ set' : '✗ NOT set in .env.local'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-amber-400 bg-white"
+                  onClick={() => void handleDevBypass()}
+                  disabled={loading}
+                >
+                  {loading ? 'Signing in…' : 'Skip password & enter admin (dev only)'}
+                </Button>
+                <p className="text-[11px] leading-snug text-amber-700">
+                  This button is hidden in production. On Vercel, set{' '}
+                  <code className="rounded bg-amber-100 px-1">ADMIN_PASSWORD</code> in Environment
+                  Variables and redeploy.
+                </p>
               </div>
             )}
 
@@ -263,18 +319,45 @@ export function AdminLoginClient({
                   </summary>
                   <ul className="mt-2 space-y-1.5 pl-1">
                     <li>• The password is case-sensitive — check Caps Lock.</li>
-                    <li>• If you typed it wrong 5 times, you&apos;re locked out for 15 minutes from this device.</li>
+                    {devMode ? (
+                      <>
+                        <li>
+                          • Locally: just click the amber{' '}
+                          <em>&quot;Skip password&quot;</em> button above — no
+                          rate-limit in dev mode.
+                        </li>
+                        <li>
+                          • Or paste this URL in the browser to sign in instantly:{' '}
+                          <code className="rounded bg-earth-100 px-1 py-0.5">
+                            /api/admin/dev-login
+                          </code>
+                        </li>
+                      </>
+                    ) : (
+                      <>
+                        <li>• If you typed it wrong 5 times, you&apos;re locked out for 15 minutes from this device.</li>
+                        <li>
+                          • On Vercel, set{' '}
+                          <code className="rounded bg-earth-100 px-1 py-0.5">
+                            ADMIN_PASSWORD
+                          </code>{' '}
+                          under Settings → Environment Variables (Production + Preview), then redeploy.
+                        </li>
+                      </>
+                    )}
                     <li>
-                      • Your password is set on the server as the{' '}
-                      <code className="rounded bg-earth-100 px-1 py-0.5">ADMIN_PASSWORD</code>{' '}
-                      environment variable. Locally it&apos;s in{' '}
-                      <code className="rounded bg-earth-100 px-1 py-0.5">.env.local</code>; on
-                      Vercel it&apos;s under Settings → Environment Variables.
+                      • Your password lives in{' '}
+                      <code className="rounded bg-earth-100 px-1 py-0.5">
+                        ADMIN_PASSWORD
+                      </code>{' '}
+                      ({devMode ? '.env.local' : 'Vercel env vars'}). Change the value and restart / redeploy to rotate it.
                     </li>
-                    <li>
-                      • If you forgot it, change <code className="rounded bg-earth-100 px-1 py-0.5">ADMIN_PASSWORD</code>{' '}
-                      and redeploy — there&apos;s no reset email.
-                    </li>
+                    {devMode && (
+                      <li className="text-amber-700">
+                        • Check the dev terminal — failed logins log a length/first-last-char hint
+                        so you can spot a typo vs. a stale env var.
+                      </li>
+                    )}
                   </ul>
                 </details>
               </form>

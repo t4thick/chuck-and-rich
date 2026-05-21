@@ -54,12 +54,15 @@ export async function POST(req: NextRequest) {
   if (!originCheck.ok) return originCheck.response
 
   const ip = getClientIp(req)
-  const { allowed, retryAfterSecs } = checkRateLimit(ip)
-  if (!allowed) {
-    return NextResponse.json(
-      { error: `Too many login attempts. Try again in ${Math.ceil(retryAfterSecs / 60)} minute(s).` },
-      { status: 429, headers: { 'Retry-After': String(retryAfterSecs) } }
-    )
+  // Skip rate limiting in dev so you can iterate locally without getting locked out.
+  if (process.env.NODE_ENV === 'production') {
+    const { allowed, retryAfterSecs } = checkRateLimit(ip)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: `Too many login attempts. Try again in ${Math.ceil(retryAfterSecs / 60)} minute(s).` },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSecs) } }
+      )
+    }
   }
 
   const expected = process.env.ADMIN_PASSWORD?.trim()
@@ -81,6 +84,18 @@ export async function POST(req: NextRequest) {
   const expectedNorm = expected.normalize('NFKC')
 
   if (supplied.length === 0 || !constantTimeEquals(supplied, expectedNorm)) {
+    if (process.env.NODE_ENV !== 'production') {
+      // Local-only diagnostic — never logs the actual password, just shape clues
+      // that let you figure out if you're typing it wrong or the env var is stale.
+      const maskedSupplied =
+        supplied.length === 0
+          ? '(empty)'
+          : `${supplied[0]}…${supplied[supplied.length - 1]} len=${supplied.length}`
+      const maskedExpected = `${expectedNorm[0]}…${expectedNorm[expectedNorm.length - 1]} len=${expectedNorm.length}`
+      console.warn(
+        `[admin-login] FAIL ip=${ip} supplied=${maskedSupplied} expected=${maskedExpected}`
+      )
+    }
     return NextResponse.json({ error: 'Invalid password.' }, { status: 401 })
   }
 

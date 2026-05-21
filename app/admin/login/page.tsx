@@ -11,6 +11,9 @@ export default async function AdminLoginPage({
     <AdminLoginClient
       allowSupabaseAdmin={isSupabaseAdminRoleBypassEnabled()}
       forbidden={sp.error === 'forbidden'}
+      devMode={process.env.NODE_ENV !== 'production'}
+      adminPasswordConfigured={Boolean(process.env.ADMIN_PASSWORD?.trim())}
+      adminSecretConfigured={Boolean(process.env.ADMIN_SESSION_SECRET?.trim())}
     />
   )
 }
