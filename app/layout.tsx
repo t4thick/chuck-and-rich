@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Fraunces, DM_Sans } from 'next/font/google'
+import { Fraunces, Manrope } from 'next/font/google'
 import './globals.css'
 import type { Metadata } from 'next'
 import { CartProvider } from '@/context/CartContext'
@@ -12,9 +12,9 @@ const fraunces = Fraunces({
   display: 'swap',
 })
 
-const dmSans = DM_Sans({
+const manrope = Manrope({
   subsets: ['latin'],
-  variable: '--font-dm-sans',
+  variable: '--font-manrope',
   display: 'swap',
 })
 
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
       <body className="flex min-h-screen flex-col">
         <CartProvider>
           <ToastProvider>{children}</ToastProvider>

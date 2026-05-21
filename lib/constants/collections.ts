@@ -6,7 +6,7 @@ export const FEATURED_COLLECTIONS = [
     subtitle: 'Shito, banku mix, plantain chips & more',
     emoji: '🇬🇭',
     href: '/shop?category=Spices',
-    gradient: 'from-amber-900/90 to-earth-900/80',
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80',
   },
   {
     id: 'nigeria',
@@ -14,7 +14,7 @@ export const FEATURED_COLLECTIONS = [
     subtitle: 'Jollof rice, suya spice, palm oil',
     emoji: '🇳🇬',
     href: '/shop?category=Flours%20%26%20Rice',
-    gradient: 'from-brand-900/90 to-earth-800/85',
+    image: 'https://images.unsplash.com/photo-1586201378083-7d759022257d?w=800&q=80',
   },
   {
     id: 'spices',
@@ -22,15 +22,15 @@ export const FEATURED_COLLECTIONS = [
     subtitle: 'Heat, aroma & authentic blends',
     emoji: '🌶️',
     href: '/shop?category=Spices',
-    gradient: 'from-accent-800/90 to-earth-900/80',
+    image: 'https://images.unsplash.com/photo-1596040035739-62d3p17a625?w=800&q=80',
   },
   {
     id: 'frozen',
     title: 'Frozen Favorites',
-    subtitle: 'Fish, leaves & ready-to-cook',
+    subtitle: 'Fish, leaves & frozen raw goods',
     emoji: '🧊',
     href: '/shop?category=Frozen%20foods',
-    gradient: 'from-brand-800/90 to-brand-950/90',
+    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&q=80',
   },
 ] as const
 
@@ -78,24 +78,24 @@ export const TESTIMONIALS = [
 
 export const RECIPE_INSPO = [
   {
-    title: 'Perfect Jollof Rice',
-    time: '45 min',
-    difficulty: 'Medium',
+    title: 'Jollof pantry staples',
+    time: 'Rice, paste & spices',
+    difficulty: 'Ingredients only',
     href: '/shop?category=Flours%20%26%20Rice',
-    image: 'https://images.unsplash.com/photo-1604329768941-5c4d0a7d4f9a?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1586201378083-7d759022257d?w=800&q=80',
   },
   {
-    title: 'Groundnut Soup',
-    time: '1 hr',
-    difficulty: 'Medium',
+    title: 'Soup & stew basics',
+    time: 'Palm oil, spices, stockfish',
+    difficulty: 'Ingredients only',
     href: '/shop?category=Spices',
-    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80',
   },
   {
-    title: 'Waakye at Home',
-    time: '50 min',
-    difficulty: 'Easy',
+    title: 'Grains & flours',
+    time: 'Rice, beans, cassava & plantain flour',
+    difficulty: 'Ingredients only',
     href: '/shop?category=Flours%20%26%20Rice',
-    image: 'https://images.unsplash.com/photo-1585937421612-70a008296fbe?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&q=80',
   },
 ] as const

@@ -35,8 +35,8 @@ export function Navbar() {
       className={cn(
         'sticky top-0 z-50 border-b transition-all duration-300',
         scrolled
-          ? 'border-earth-200/80 bg-white/95 shadow-sm backdrop-blur-md'
-          : 'border-transparent bg-cream/90 backdrop-blur-sm'
+          ? 'border-earth-200/60 bg-white/90 shadow-[var(--shadow-card)] backdrop-blur-xl'
+          : 'border-transparent bg-cream/80 backdrop-blur-md'
       )}
     >
       <div className="store-container">

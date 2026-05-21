@@ -4,7 +4,7 @@ import { STORE } from '@/lib/constants/store'
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-earth-800 bg-earth-950 text-stone-300">
+    <footer className="mt-auto border-t border-earth-200 bg-earth-950 text-stone-300">
       <div className="store-container py-12 sm:py-16">
         <div className="grid gap-10 lg:grid-cols-4">
           <div className="lg:col-span-2">
