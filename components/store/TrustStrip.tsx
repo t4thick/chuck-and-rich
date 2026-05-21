@@ -27,7 +27,7 @@ const TRUST_ITEMS = [
 
 export function TrustStrip() {
   return (
-    <section className="page-section bg-sand">
+    <section className="page-section bg-sage">
       <div className="store-container">
         <RevealOnScroll>
           <div className="mx-auto max-w-2xl text-center">
@@ -44,7 +44,7 @@ export function TrustStrip() {
           {TRUST_ITEMS.map(({ icon: Icon, title, desc }, i) => (
             <RevealOnScroll key={title} delay={i * 80} className="h-full">
               <div className="premium-card premium-card-hover h-full p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+                <div className="flex h-11 w-11 items-center justify-center rounded-md bg-brand-700 text-white">
                   <Icon className="h-5 w-5" aria-hidden />
                 </div>
                 <p className="mt-5 font-display text-lg font-bold text-earth-950">{title}</p>

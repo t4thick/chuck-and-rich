@@ -89,14 +89,14 @@ export function Testimonials() {
 
 export function BrandStory() {
   return (
-    <section className="page-section overflow-hidden bg-cream">
+    <section className="page-section bg-white">
       <div className="store-container">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
           <RevealOnScroll>
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] shadow-[var(--shadow-float)] sm:aspect-square lg:aspect-[4/5]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-earth-200 shadow-[var(--shadow-card)]">
               <Image
-                src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=900&q=80"
-                alt="Fresh produce at a vibrant market"
+                src="https://asafointernational.com/wp-content/uploads/2025/01/Rice-and-Flour-Display-420x420.png"
+                alt="Rice and flour display"
                 fill
                 className="object-cover"
                 sizes="(max-width:1024px) 100vw, 50vw"
@@ -105,35 +105,24 @@ export function BrandStory() {
           </RevealOnScroll>
           <RevealOnScroll delay={120}>
             <div>
-              <p className="section-eyebrow">Our story</p>
+              <p className="section-eyebrow">About us</p>
               <h2 className="section-title mt-2 text-balance">
-                Bringing authentic African flavors to families across America
+                Quality, reliability, and customer satisfaction
               </h2>
-              <p className="mt-6 text-base leading-relaxed text-earth-700 sm:text-lg">
-                Lovely Queen African Market started with a simple promise: make it easy for diaspora
-                families to cook the meals they miss, with the same quality ingredients they trust
-                back home.
+              <p className="mt-5 text-base leading-relaxed text-earth-700">
+                Lovely Queen African Market is your neighborhood source for West African and
+                Caribbean groceries — the same categories and care you expect from a full-service
+                international market.
               </p>
               <p className="mt-4 text-base leading-relaxed text-earth-600">
-                From our Columbus storefront to your kitchen — we curate spices, grains, frozen
-                specialties, and beauty essentials with care. Family-owned, community-first, and
-                built for the modern shopper.
+                Shop spices, rice, frozen fish, beverages, cosmetics, and fresh produce online or
+                visit us in Columbus. Family-owned and built for diaspora families who cook at home.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                {['Family-owned', 'Authentic imports', 'Columbus, OH'].map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-earth-200 bg-white px-4 py-2 text-xs font-semibold text-earth-700"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
               <Link
                 href="/shop"
-                className="mt-8 inline-flex items-center gap-2 font-semibold text-brand-700 no-underline hover:text-brand-900"
+                className="mt-6 inline-flex items-center gap-2 font-semibold text-brand-700 no-underline hover:text-brand-800"
               >
-                Start shopping <ArrowRight className="h-4 w-4" />
+                Shop all products <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </RevealOnScroll>

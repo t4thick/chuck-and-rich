@@ -12,7 +12,7 @@ export function PageHeader({ eyebrow, title, subtitle, className, centered }: Pa
   return (
     <div
       className={cn(
-        'border-b border-earth-200/80 bg-white',
+        'border-b border-earth-200 bg-sand',
         className
       )}
     >

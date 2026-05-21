@@ -21,7 +21,7 @@ export function ProductShowcase({
   eyebrow = 'In stock now',
 }: ProductShowcaseProps) {
   return (
-    <section className="page-section bg-cream">
+    <section className="page-section bg-sand">
       <div className="store-container">
         <RevealOnScroll>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

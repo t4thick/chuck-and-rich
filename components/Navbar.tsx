@@ -34,10 +34,8 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 border-b transition-all duration-300',
-        scrolled
-          ? 'border-earth-200/60 bg-white/90 shadow-[var(--shadow-card)] backdrop-blur-xl'
-          : 'border-transparent bg-cream/80 backdrop-blur-md'
+        'sticky top-0 z-50 border-b border-earth-200 bg-sand transition-shadow duration-200',
+        scrolled && 'shadow-[var(--shadow-card)]'
       )}
     >
       <div className="store-container">
@@ -47,10 +45,10 @@ export function Navbar() {
             className="flex shrink-0 items-center gap-2 no-underline"
             onClick={() => setOpen(false)}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-800 text-white shadow-sm">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-700 text-white">
               <Store className="h-4 w-4" aria-hidden />
             </span>
-            <span className="font-display text-lg font-bold tracking-tight text-earth-950 sm:text-xl">
+            <span className="font-display text-xl font-bold tracking-tight text-earth-900 sm:text-2xl">
               <span className="hidden sm:inline">{STORE.shortName}</span>
               <span className="sm:hidden">Lovely Queen</span>
             </span>
@@ -66,14 +64,14 @@ export function Navbar() {
                 key={href}
                 href={href}
                 className={cn(
-                  'rounded-full px-3 py-2 text-sm font-medium no-underline transition-colors',
+                  'rounded-md px-3 py-2 text-sm font-semibold no-underline transition-colors',
                   href === '/'
                     ? pathname === '/'
-                      ? 'bg-brand-100 text-brand-800'
-                      : 'text-earth-700 hover:bg-earth-100 hover:text-brand-950'
+                      ? 'bg-brand-700 text-white'
+                      : 'text-earth-800 hover:bg-earth-200'
                     : pathname === href || pathname.startsWith(`${href}/`)
-                      ? 'bg-brand-100 text-brand-800'
-                      : 'text-earth-700 hover:bg-earth-100 hover:text-brand-950'
+                      ? 'bg-brand-700 text-white'
+                      : 'text-earth-800 hover:bg-earth-200'
                 )}
               >
                 {label}
@@ -82,9 +80,8 @@ export function Navbar() {
             <NavbarAuth className="ml-1" />
             <Button
               type="button"
-              variant="outline"
               size="sm"
-              className="relative ml-2 gap-1.5 rounded-full border-earth-200"
+              className="relative ml-2 gap-1.5 rounded-md"
               onClick={openCart}
             >
               <ShoppingBag className="h-4 w-4" aria-hidden />

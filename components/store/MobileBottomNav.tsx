@@ -47,7 +47,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-earth-200 bg-white/95 shadow-[0_-4px_24px_rgb(42_28_22/0.08)] backdrop-blur-md md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-earth-200 bg-sand shadow-[0_-2px_12px_rgb(0_0_0/0.06)] md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       aria-label="Mobile navigation"
     >
@@ -62,7 +62,7 @@ export function MobileBottomNav() {
                 href={href}
                 className={cn(
                   'relative flex h-full flex-col items-center justify-center gap-0.5 px-1 no-underline transition-colors',
-                  active ? 'text-brand-800' : 'text-earth-500 hover:text-earth-800'
+                  active ? 'text-brand-700' : 'text-earth-500 hover:text-earth-800'
                 )}
                 aria-current={active ? 'page' : undefined}
               >

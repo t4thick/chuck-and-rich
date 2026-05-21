@@ -32,37 +32,35 @@ export function ProductCard({ product }: { product: Product }) {
           className="rounded-none"
           sizes="(max-width:640px) 50vw, 25vw"
         />
-        <div className="flex flex-1 flex-col p-4 sm:p-5">
-          <Badge variant="brand" className="mb-2.5 w-fit max-w-full truncate text-[10px] sm:text-xs">
+        <div className="flex flex-1 flex-col p-3 sm:p-4">
+          <Badge variant="brand" className="mb-2 w-fit max-w-full truncate text-[10px]">
             {product.category}
           </Badge>
-          <h3 className="line-clamp-2 font-display text-base font-semibold leading-snug text-earth-950 transition group-hover:text-brand-800 sm:text-lg">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-earth-900 transition group-hover:text-brand-700 sm:text-base">
             {product.name}
           </h3>
-          <div className="mt-auto flex items-end justify-between gap-2 pt-4">
-            <p className="text-lg font-bold tracking-tight text-earth-900 sm:text-xl">
-              {formatMoney(product.price)}
-            </p>
+          <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+            <p className="text-base font-bold text-brand-700 sm:text-lg">{formatMoney(product.price)}</p>
             {!product.in_stock && (
-              <Badge variant="outline" className="shrink-0">
-                Sold out
+              <Badge variant="outline" className="shrink-0 text-[10px]">
+                Out of stock
               </Badge>
             )}
           </div>
         </div>
       </Link>
-      <div className="border-t border-earth-100 p-3 sm:p-4">
+      <div className="border-t border-earth-100 p-2 sm:p-3">
         <Button
           type="button"
           variant={product.in_stock ? 'default' : 'outline'}
-          className="h-11 w-full gap-2 rounded-xl text-sm font-semibold transition-transform active:scale-[0.98] sm:h-12"
+          className="h-10 w-full gap-2 text-sm"
           disabled={!product.in_stock}
           onClick={handleAdd}
         >
           {product.in_stock ? (
             <>
               <Plus className="h-4 w-4" aria-hidden />
-              Quick add
+              Add to cart
             </>
           ) : (
             'Unavailable'
@@ -73,20 +71,19 @@ export function ProductCard({ product }: { product: Product }) {
   )
 }
 
-/** Compact horizontal card for cart-adjacent UI if needed later */
 export function ProductCardMini({ product }: { product: Product }) {
   return (
     <Link href={`/products/${product.id}`} className="flex gap-3 no-underline">
       <ProductImage
         src={product.image_url}
         alt={product.name}
-        className="h-16 w-16 rounded-xl"
+        className="h-16 w-16 rounded-md"
         sizes="64px"
         framed={false}
       />
       <div>
-        <p className="line-clamp-2 text-sm font-semibold text-earth-950">{product.name}</p>
-        <p className="text-sm font-bold text-earth-800">{formatMoney(product.price)}</p>
+        <p className="line-clamp-2 text-sm font-semibold text-earth-900">{product.name}</p>
+        <p className="text-sm font-bold text-brand-700">{formatMoney(product.price)}</p>
       </div>
     </Link>
   )
