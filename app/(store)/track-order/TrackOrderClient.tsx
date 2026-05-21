@@ -165,7 +165,7 @@ export function TrackOrderClient() {
               <p className="mt-2 text-2xl font-semibold tracking-tight text-earth-900">
                 {ORDER_STATUS_LABEL[status]}
               </p>
-              <p className="mt-1 font-mono text-xs text-earth-400">{data.order.id}</p>
+              <p className="mt-1 break-all font-mono text-xs text-earth-400">{data.order.id}</p>
 
               <div className="mt-8">
                 <OrderStatusTimeline status={data.order.status} />

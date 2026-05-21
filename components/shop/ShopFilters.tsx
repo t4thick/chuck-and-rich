@@ -416,7 +416,7 @@ export function ShopFiltersBar({
 
   return (
     <div className="space-y-3 lg:hidden">
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         <button
           type="button"
           onClick={() => state.setCategoryAndGo('')}

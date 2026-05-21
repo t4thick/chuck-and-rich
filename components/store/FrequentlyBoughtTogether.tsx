@@ -67,7 +67,7 @@ export function FrequentlyBoughtTogether({ anchor, suggestions }: Props) {
 
         <div className="mt-6 overflow-hidden rounded-xl border border-earth-200 bg-white">
           <div className="grid items-stretch gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <ul className="-mx-2 flex items-center gap-0 overflow-x-auto px-3 py-5 sm:gap-1 sm:px-5">
+            <ul className="flex items-center gap-0 overflow-x-auto px-3 py-5 sm:gap-1 sm:px-5">
               {allProducts.map((p, i) => (
                 <li key={p.id} className="flex shrink-0 items-center">
                   <label

@@ -79,7 +79,7 @@ export default async function OrderConfirmationPage({
           {id && (
             <p className="mt-4 text-sm text-earth-600">
               Order reference:{' '}
-              <span className="font-mono text-xs text-earth-800">{id}</span>
+              <span className="break-all font-mono text-xs text-earth-800">{id}</span>
             </p>
           )}
 

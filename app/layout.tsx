@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Montserrat } from 'next/font/google'
 import './globals.css'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { CartProvider } from '@/context/CartContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { RecentlyViewedProvider } from '@/context/RecentlyViewedContext'
@@ -20,6 +20,16 @@ export const metadata: Metadata = {
     template: `%s · ${STORE.shortName}`,
   },
   description: STORE.tagline,
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#ffffff' },
+  ],
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
