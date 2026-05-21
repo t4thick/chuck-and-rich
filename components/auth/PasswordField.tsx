@@ -2,6 +2,8 @@
 
 import { useId, useState } from 'react'
 import { evaluatePasswordStrength, type PasswordStrength } from '@/lib/auth/password-strength'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 type Props = {
   id?: string
@@ -34,14 +36,22 @@ export function PasswordField({
 
   return (
     <div>
-      <label htmlFor={id}>
-        {label}{' '}
-        <button type="button" onClick={() => setVisible((v) => !v)} aria-pressed={visible}>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <label htmlFor={id} className="form-label mb-0">
+          {label}
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-auto px-2 py-0 text-xs"
+          onClick={() => setVisible((v) => !v)}
+          aria-pressed={visible}
+        >
           {visible ? 'Hide' : 'Show'}
-        </button>
-      </label>
-      <br />
-      <input
+        </Button>
+      </div>
+      <Input
         id={id}
         name={name}
         type={visible ? 'text' : 'password'}
@@ -52,7 +62,7 @@ export function PasswordField({
         onChange={(e) => onChange(e.target.value)}
       />
       {strength && (
-        <p className="muted" aria-live="polite">
+        <p className="muted mt-1.5" aria-live="polite">
           Strength: {strength.label}
           {strength.hints.length > 0 ? ` (${strength.hints.join(' · ')})` : ''}
         </p>

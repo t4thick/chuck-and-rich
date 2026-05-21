@@ -23,41 +23,51 @@ export default async function ShopPage({
     maxPrice: Number.isNaN(maxN) ? undefined : maxN,
   })
 
+  const title = p.category
+    ? p.category
+    : p.q
+      ? `Results for “${p.q}”`
+      : 'All products'
+
   return (
-    <div className="stack">
-      <h2>Shop</h2>
-      <Suspense fallback={<p>Loading filters…</p>}>
-        <ShopFilters />
-      </Suspense>
+    <div className="page-section">
+      <div className="store-container">
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl">Shop</h1>
+          <p className="mt-2 text-stone-500">{title}</p>
+        </div>
 
-      {errorMessage && (
-        <p className="error">
-          {errorMessage} <Link href="/shop">Reload</Link>
+        <Suspense fallback={<p className="muted">Loading filters…</p>}>
+          <ShopFilters />
+        </Suspense>
+
+        {errorMessage && (
+          <p className="error mt-6">
+            {errorMessage}{' '}
+            <Link href="/shop">Reload</Link>
+          </p>
+        )}
+
+        <p className="muted mt-6">
+          {products.length} product{products.length === 1 ? '' : 's'}
         </p>
-      )}
 
-      <p className="muted">{products.length} product{products.length === 1 ? '' : 's'}</p>
-
-      {products.length === 0 && !errorMessage ? (
-        <p>No products match.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Price</th>
-              <th>Stock</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
+        {products.length === 0 && !errorMessage ? (
+          <div className="mt-8 rounded-2xl border border-dashed border-stone-300 bg-white px-6 py-16 text-center">
+            <p className="text-lg font-medium text-stone-700">No products match your filters</p>
+            <p className="mt-1 text-stone-500">Try a different category or search term.</p>
+            <Link href="/shop" className="mt-4 inline-block no-underline">
+              Clear filters
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:gap-6">
             {products.map((product: Product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-          </tbody>
-        </table>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

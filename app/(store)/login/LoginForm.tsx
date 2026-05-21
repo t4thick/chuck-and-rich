@@ -7,6 +7,8 @@ import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client
 import { useClientSearchParams } from '@/lib/hooks/use-client-search-params'
 import { mapSignInError } from '@/lib/auth/map-auth-error'
 import { PasswordField } from '@/components/auth/PasswordField'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const REMEMBER_EMAIL_KEY = 'lq_remember_email'
 
@@ -57,18 +59,28 @@ export function LoginForm() {
   }
 
   return (
-    <div className="stack">
-      <h2>Sign in</h2>
+    <div className="page-section">
+      <div className="auth-card">
+        <h1 className="text-2xl">Sign in</h1>
+        <p className="muted mt-1">Welcome back to Lovely Queen Market</p>
 
-      {err === 'auth' && <p className="error">That link expired or was already used. Sign in below or reset your password.</p>}
-      {err === 'configuration' && <p className="error">Sign-in is temporarily unavailable.</p>}
+        {err === 'auth' && (
+          <p className="error mt-4">
+            That link expired or was already used. Sign in below or reset your password.
+          </p>
+        )}
+        {err === 'configuration' && (
+          <p className="error mt-4">Sign-in is temporarily unavailable.</p>
+        )}
 
-      <form onSubmit={handleSubmit} className="stack">
-        <p>
-          <label>
-            Email:<br />
-            <input
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div>
+            <label htmlFor="login-email" className="form-label">
+              Email
+            </label>
+            <Input
               ref={emailRef}
+              id="login-email"
               type="email"
               inputMode="email"
               autoComplete="email"
@@ -76,41 +88,47 @@ export function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-          </label>
-        </p>
+          </div>
 
-        <PasswordField
-          label="Password"
-          value={password}
-          onChange={setPassword}
-          autoComplete="current-password"
-          disabled={loading}
-        />
+          <PasswordField
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+            disabled={loading}
+          />
 
-        <p>
-          <label>
+          <label className="flex items-center gap-2 text-sm text-stone-600">
             <input
               type="checkbox"
+              className="rounded border-stone-300"
               checked={rememberDevice}
               onChange={(e) => setRememberDevice(e.target.checked)}
-            />{' '}
+            />
             Remember my email on this device
           </label>
+
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+
+          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign in'}
+          </Button>
+        </form>
+
+        <p className="mt-6 text-center text-sm">
+          <Link href={`/forgot-password?next=${encodeURIComponent(next)}`}>Forgot password?</Link>
         </p>
-
-        {error && <p className="error" role="alert">{error}</p>}
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-
-      <p>
-        <Link href={`/forgot-password?next=${encodeURIComponent(next)}`}>Forgot password?</Link>
-      </p>
-      <p>
-        New here? <Link href={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link>
-      </p>
+        <p className="mt-2 text-center text-sm text-stone-500">
+          New here?{' '}
+          <Link href={`/signup?next=${encodeURIComponent(next)}`} className="font-semibold">
+            Create an account
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }

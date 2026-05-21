@@ -3,8 +3,16 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
-export function NavbarAuth() {
+export function NavbarAuth({
+  className,
+  onNavigate,
+}: {
+  className?: string
+  onNavigate?: () => void
+}) {
   const [ready, setReady] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
 
@@ -26,13 +34,24 @@ export function NavbarAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
-  if (!ready) return <span>—</span>
+  if (!ready) {
+    return <span className={cn('text-sm text-stone-400', className)}>…</span>
+  }
+
   if (signedIn) return null
 
   return (
-    <>
-      <Link href="/login">Sign in</Link>
-      <Link href="/signup">Sign up</Link>
-    </>
+    <div className={cn('flex items-center gap-2', className)}>
+      <Link href="/login" className="no-underline" onClick={onNavigate}>
+        <Button variant="ghost" size="sm">
+          Sign in
+        </Button>
+      </Link>
+      <Link href="/signup" className="no-underline" onClick={onNavigate}>
+        <Button variant="default" size="sm">
+          Sign up
+        </Button>
+      </Link>
+    </div>
   )
 }

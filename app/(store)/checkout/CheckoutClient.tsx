@@ -136,156 +136,176 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
 
   if (items.length === 0) {
     return (
-      <div className="stack">
-        <h2>Checkout</h2>
-        <p>Your cart is empty. <Link href="/shop">Back to shop</Link></p>
+      <div className="page-section">
+        <div className="store-container">
+          <h1 className="text-3xl">Checkout</h1>
+          <p className="mt-4 text-stone-600">
+            Your cart is empty.{' '}
+            <Link href="/shop" className="font-semibold">
+              Back to shop
+            </Link>
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="stack">
-      <h2>Checkout</h2>
-      <p className="muted">
-        Signed in as {initialAccount.email} · {totalItems} item{totalItems === 1 ? '' : 's'}
-      </p>
+    <div className="page-section pb-24 md:pb-10">
+      <div className="store-container">
+        <h1 className="text-3xl sm:text-4xl">Checkout</h1>
+        <p className="muted mt-2">
+          Signed in as {initialAccount.email} · {totalItems} item{totalItems === 1 ? '' : 's'}
+        </p>
 
-      <form ref={detailsFormRef} onSubmit={(e) => e.preventDefault()} className="stack">
-        <fieldset>
-          <legend>1. Account</legend>
-          <p>
-            <label>Email: <input type="email" name="email" value={form.email} readOnly /></label>
-          </p>
-          <p>
-            <label>Full name: <input type="text" name="name" value={form.name} onChange={handleChange} required autoComplete="name" /></label>
-          </p>
-          <p>
-            <label>Phone: <input type="tel" name="phone" value={form.phone} onChange={handleChange} required autoComplete="tel" /></label>
-          </p>
-        </fieldset>
+        <div className="mt-8 grid gap-8 lg:grid-cols-5">
+          <div className="space-y-6 lg:col-span-3">
+            <form ref={detailsFormRef} onSubmit={(e) => e.preventDefault()} className="space-y-6">
+              <fieldset>
+                <legend>1. Account</legend>
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label">Email</label>
+                    <input type="email" name="email" className="form-input bg-stone-50" value={form.email} readOnly />
+                  </div>
+                  <div>
+                    <label className="form-label">Full name</label>
+                    <input type="text" name="name" className="form-input" value={form.name} onChange={handleChange} required autoComplete="name" />
+                  </div>
+                  <div>
+                    <label className="form-label">Phone</label>
+                    <input type="tel" name="phone" className="form-input" value={form.phone} onChange={handleChange} required autoComplete="tel" />
+                  </div>
+                </div>
+              </fieldset>
 
-        <fieldset>
-          <legend>2. Delivery address</legend>
-          <p>
-            <label>Street: <input type="text" name="address1" value={form.address1} onChange={handleChange} required autoComplete="address-line1" /></label>
-          </p>
-          <p>
-            <label>Apt/Suite: <input type="text" name="address2" value={form.address2} onChange={handleChange} autoComplete="address-line2" /></label>
-          </p>
-          <p>
-            <label>City: <input type="text" name="city" value={form.city} onChange={handleChange} required autoComplete="address-level2" /></label>
-          </p>
-          <p>
-            <label>State: <input type="text" name="state" value={form.state} onChange={handleChange} required autoComplete="address-level1" /></label>
-          </p>
-          <p>
-            <label>
-              Country:{' '}
-              <select name="country" value={form.country} onChange={handleChange}>
-                {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </label>
-          </p>
-          <p>
-            <label>ZIP: <input type="text" name="postalCode" value={form.postalCode} onChange={handleChange} required autoComplete="postal-code" /></label>
-          </p>
-        </fieldset>
+              <fieldset>
+                <legend>2. Delivery address</legend>
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label">Street</label>
+                    <input type="text" name="address1" className="form-input" value={form.address1} onChange={handleChange} required autoComplete="address-line1" />
+                  </div>
+                  <div>
+                    <label className="form-label">Apt / Suite</label>
+                    <input type="text" name="address2" className="form-input" value={form.address2} onChange={handleChange} autoComplete="address-line2" />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="form-label">City</label>
+                      <input type="text" name="city" className="form-input" value={form.city} onChange={handleChange} required autoComplete="address-level2" />
+                    </div>
+                    <div>
+                      <label className="form-label">State</label>
+                      <input type="text" name="state" className="form-input" value={form.state} onChange={handleChange} required autoComplete="address-level1" />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="form-label">Country</label>
+                      <select name="country" className="form-select" value={form.country} onChange={handleChange}>
+                        {COUNTRIES.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">ZIP</label>
+                      <input type="text" name="postalCode" className="form-input" value={form.postalCode} onChange={handleChange} required autoComplete="postal-code" />
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
 
-        <fieldset>
-          <legend>3. Shipping method</legend>
-          {(['standard', 'express', 'pickup'] as ShippingMethod[]).map((method) => {
-            const quote = calculateShipping({ subtotal: totalPrice, country: form.country, state: form.state, method })
-            return (
-              <p key={method}>
-                <label>
-                  <input
-                    type="radio"
-                    name="shippingMethod"
-                    checked={shippingMethod === method}
-                    onChange={() => setShippingMethod(method)}
-                  />{' '}
-                  {SHIPPING_METHOD_LABEL[method]} — {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`} ({quote.zone})
-                </label>
+              <fieldset>
+                <legend>3. Shipping method</legend>
+                <div className="space-y-3">
+                  {(['standard', 'express', 'pickup'] as ShippingMethod[]).map((method) => {
+                    const quote = calculateShipping({ subtotal: totalPrice, country: form.country, state: form.state, method })
+                    return (
+                      <label key={method} className="flex cursor-pointer items-start gap-3 rounded-lg border border-stone-200 p-3 has-[:checked]:border-brand-400 has-[:checked]:bg-brand-50">
+                        <input
+                          type="radio"
+                          name="shippingMethod"
+                          className="mt-1"
+                          checked={shippingMethod === method}
+                          onChange={() => setShippingMethod(method)}
+                        />
+                        <span className="text-sm">
+                          <span className="font-semibold text-stone-900">{SHIPPING_METHOD_LABEL[method]}</span>
+                          <span className="text-stone-500"> — {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`} ({quote.zone})</span>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </fieldset>
+            </form>
+          </div>
+
+          <div className="space-y-6 lg:col-span-2">
+            <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
+              <h2 className="text-lg font-semibold">Order summary</h2>
+              <div className="mt-4 space-y-3 text-sm">
+                {items.map(({ product, quantity }) => (
+                  <div key={product.id} className="flex justify-between gap-2 border-b border-stone-100 pb-3">
+                    <span className="line-clamp-2 text-stone-700">{product.name} × {quantity}</span>
+                    <span className="shrink-0 font-medium">${(product.price * quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 space-y-2 border-t border-stone-100 pt-4 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-stone-500">Subtotal</span>
+                  <span>${totalPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">Shipping</span>
+                  <span>{shipping.fee === 0 ? 'Free' : `$${shipping.fee.toFixed(2)}`}</span>
+                </div>
+                <div className="flex justify-between text-base font-bold">
+                  <span>Total</span>
+                  <span>${grandTotal.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 border-t border-stone-100 pt-6">
+                <h3 className="font-semibold">Payment</h3>
+                <p className="muted mt-1">
+                  Test: <code className="rounded bg-stone-100 px-1">4242 4242 4242 4242</code>
+                </p>
+
+                {!clientSecret && (
+                  <button
+                    type="button"
+                    className="mt-4 w-full rounded-lg bg-accent-600 px-4 py-3 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50"
+                    onClick={() => void preparePayment()}
+                    disabled={loading}
+                  >
+                    {loading ? 'Preparing…' : 'Continue to payment'}
+                  </button>
+                )}
+
+                {clientSecret && returnUrl && (
+                  <div className="mt-4">
+                    <CheckoutStripePayment
+                      clientSecret={clientSecret}
+                      returnUrl={returnUrl}
+                      totalLabel={`$${grandTotal.toFixed(2)}`}
+                    />
+                  </div>
+                )}
+
+                {error && <p className="error mt-3">{error}</p>}
+              </div>
+
+              <p className="mt-4 text-center text-sm">
+                <Link href="/cart">← Back to cart</Link>
               </p>
-            )
-          })}
-        </fieldset>
-      </form>
-
-      <hr />
-
-      <h3>Order summary</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Price</th>
-            <th>Qty</th>
-            <th>Subtotal</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map(({ product, quantity }) => (
-            <tr key={product.id}>
-              <td>{product.name}</td>
-              <td>${product.price.toFixed(2)}</td>
-              <td>
-                <input
-                  type="number"
-                  min={1}
-                  value={quantity}
-                  onChange={(e) => updateQuantity(product.id, Math.max(1, parseInt(e.target.value || '1', 10)))}
-                  style={{ width: '4em' }}
-                />
-              </td>
-              <td>${(product.price * quantity).toFixed(2)}</td>
-              <td>
-                <button type="button" onClick={() => removeItem(product.id)}>Remove</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td>Subtotal</td>
-            <td colSpan={4}>${totalPrice.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>Shipping ({SHIPPING_METHOD_LABEL[shippingMethod]})</td>
-            <td colSpan={4}>{shipping.fee === 0 ? 'Free' : `$${shipping.fee.toFixed(2)}`}</td>
-          </tr>
-          <tr>
-            <td><strong>Total</strong></td>
-            <td colSpan={4}><strong>${grandTotal.toFixed(2)}</strong></td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <hr />
-
-      <h3>4. Payment</h3>
-      <p className="muted">
-        Test card: <code>4242 4242 4242 4242</code> · any future expiry · any CVC.
-      </p>
-
-      {!clientSecret && (
-        <button type="button" onClick={() => void preparePayment()} disabled={loading}>
-          {loading ? 'Preparing…' : 'Continue to payment'}
-        </button>
-      )}
-
-      {clientSecret && returnUrl && (
-        <CheckoutStripePayment
-          clientSecret={clientSecret}
-          returnUrl={returnUrl}
-          totalLabel={`$${grandTotal.toFixed(2)}`}
-        />
-      )}
-
-      {error && <p className="error">{error}</p>}
-
-      <p><Link href="/cart">← Back to cart</Link></p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
