@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Lock, Truck } from 'lucide-react'
+import { ArrowLeft, Check, Lock, MapPin, Star, Truck } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { PageHeader } from '@/components/store/PageHeader'
+import { AddressAutocomplete } from '@/components/store/AddressAutocomplete'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CheckoutStripePayment } from './CheckoutStripePayment'
@@ -23,6 +24,20 @@ type CheckoutAccount = {
   phone: string
 }
 
+export type SavedAddress = {
+  id: string
+  label: string | null
+  full_name: string
+  phone: string | null
+  line1: string
+  line2: string | null
+  city: string
+  state: string | null
+  country: string
+  postal_code: string | null
+  is_default: boolean
+}
+
 type CheckoutForm = {
   name: string
   email: string
@@ -36,6 +51,30 @@ type CheckoutForm = {
 }
 
 const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Mexico']
+
+const CHECKOUT_DRAFT_KEY = 'lq_checkout_draft_v1'
+
+function loadDraft(): Partial<CheckoutForm> | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(CHECKOUT_DRAFT_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as Partial<CheckoutForm>
+  } catch {
+    return null
+  }
+}
+
+function saveDraft(form: CheckoutForm) {
+  if (typeof window === 'undefined') return
+  try {
+    const { email: _email, ...rest } = form
+    void _email
+    localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(rest))
+  } catch {
+    /* quota or disabled storage */
+  }
+}
 
 function CheckoutStep({
   step,
@@ -59,22 +98,81 @@ function CheckoutStep({
   )
 }
 
-export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAccount }) {
+function addressToForm(
+  account: CheckoutAccount,
+  addr: SavedAddress
+): CheckoutForm {
+  return {
+    name: addr.full_name || account.fullName,
+    email: account.email,
+    phone: (addr.phone || account.phone || '').trim(),
+    address1: addr.line1,
+    address2: addr.line2 ?? '',
+    city: addr.city,
+    state: addr.state ?? '',
+    country: addr.country || 'United States',
+    postalCode: addr.postal_code ?? '',
+  }
+}
+
+export function CheckoutClient({
+  initialAccount,
+  savedAddresses = [],
+}: {
+  initialAccount: CheckoutAccount
+  savedAddresses?: SavedAddress[]
+}) {
   const { items, totalPrice, totalItems } = useCart()
   const router = useRouter()
   const detailsFormRef = useRef<HTMLFormElement>(null)
 
-  const [form, setForm] = useState<CheckoutForm>({
-    name: initialAccount.fullName,
-    email: initialAccount.email,
-    phone: initialAccount.phone,
-    address1: '',
-    address2: '',
-    city: '',
-    state: '',
-    country: 'United States',
-    postalCode: '',
+  const defaultAddress = useMemo(
+    () => savedAddresses.find((a) => a.is_default) ?? savedAddresses[0] ?? null,
+    [savedAddresses]
+  )
+
+  const [selectedAddressId, setSelectedAddressId] = useState<string | 'new'>(
+    defaultAddress?.id ?? 'new'
+  )
+
+  const [form, setForm] = useState<CheckoutForm>(() => {
+    if (defaultAddress) return addressToForm(initialAccount, defaultAddress)
+    return {
+      name: initialAccount.fullName,
+      email: initialAccount.email,
+      phone: initialAccount.phone,
+      address1: '',
+      address2: '',
+      city: '',
+      state: '',
+      country: 'United States',
+      postalCode: '',
+    }
   })
+
+  // Restore unsaved draft from previous session (only if no default address pre-filled).
+  useEffect(() => {
+    if (defaultAddress) return
+    const draft = loadDraft()
+    if (!draft) return
+    setForm((prev) => ({
+      ...prev,
+      name: draft.name || prev.name,
+      phone: draft.phone || prev.phone,
+      address1: draft.address1 ?? prev.address1,
+      address2: draft.address2 ?? prev.address2,
+      city: draft.city ?? prev.city,
+      state: draft.state ?? prev.state,
+      country: draft.country ?? prev.country,
+      postalCode: draft.postalCode ?? prev.postalCode,
+    }))
+  }, [defaultAddress])
+
+  // Persist form to localStorage on every change so phone/address survive a page reload or login flow.
+  useEffect(() => {
+    saveDraft(form)
+  }, [form])
+
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('standard')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -84,6 +182,23 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
   useEffect(() => {
     setReturnUrl(`${getAuthSiteOrigin()}/checkout/success`)
   }, [])
+
+  function pickSavedAddress(id: string) {
+    setSelectedAddressId(id)
+    if (id === 'new') {
+      setForm((prev) => ({
+        ...prev,
+        address1: '',
+        address2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+      }))
+      return
+    }
+    const addr = savedAddresses.find((a) => a.id === id)
+    if (addr) setForm(addressToForm(initialAccount, addr))
+  }
 
   const cartFingerprint = useMemo(
     () => items.map((i) => `${i.product.id}:${i.quantity}`).join('|'),
@@ -246,19 +361,88 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
             </CheckoutStep>
 
             <CheckoutStep step={2} title="Delivery address">
+              {savedAddresses.length > 0 && (
+                <div className="mb-5 space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">
+                    Saved addresses
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {savedAddresses.map((a) => {
+                      const active = selectedAddressId === a.id
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => pickSavedAddress(a.id)}
+                          className={cn(
+                            'group flex flex-col items-start gap-1 rounded-lg border p-3 text-left text-sm transition-colors',
+                            active
+                              ? 'border-brand-500 bg-brand-50/40'
+                              : 'border-earth-200 bg-white hover:border-earth-300'
+                          )}
+                        >
+                          <div className="flex w-full items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-1 font-semibold text-earth-900">
+                              <MapPin className="h-3.5 w-3.5 text-earth-400" aria-hidden />
+                              {a.label || 'Address'}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              {a.is_default && (
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+                                  <Star className="h-2.5 w-2.5 fill-current" aria-hidden /> Default
+                                </span>
+                              )}
+                              {active && (
+                                <Check className="h-4 w-4 text-brand-700" strokeWidth={2.5} aria-hidden />
+                              )}
+                            </div>
+                          </div>
+                          <span className="line-clamp-2 text-xs leading-snug text-earth-600">
+                            {a.line1}
+                            {a.line2 ? `, ${a.line2}` : ''} · {a.city}, {a.state ?? ''}{' '}
+                            {a.postal_code ?? ''}
+                          </span>
+                        </button>
+                      )
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => pickSavedAddress('new')}
+                      className={cn(
+                        'flex flex-col items-start gap-1 rounded-lg border border-dashed p-3 text-left text-sm transition-colors',
+                        selectedAddressId === 'new'
+                          ? 'border-brand-500 bg-brand-50/40 text-brand-800'
+                          : 'border-earth-300 bg-white text-earth-700 hover:border-earth-400'
+                      )}
+                    >
+                      <span className="font-semibold">+ Use a new address</span>
+                      <span className="text-xs text-earth-500">
+                        We&apos;ll save it for next time.
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="space-y-4">
                 <div>
                   <label htmlFor="checkout-address1" className="form-label">
                     Street address
                   </label>
-                  <Input
+                  <AddressAutocomplete
                     id="checkout-address1"
-                    type="text"
-                    name="address1"
                     value={form.address1}
-                    onChange={handleChange}
+                    onChange={(v) => setForm((prev) => ({ ...prev, address1: v }))}
+                    onSelect={(parsed) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        address1: parsed.line1 || prev.address1,
+                        city: parsed.city || prev.city,
+                        state: parsed.state || prev.state,
+                        country: parsed.country || prev.country,
+                        postalCode: parsed.postalCode || prev.postalCode,
+                      }))
+                    }
                     required
-                    autoComplete="address-line1"
                   />
                 </div>
                 <div>

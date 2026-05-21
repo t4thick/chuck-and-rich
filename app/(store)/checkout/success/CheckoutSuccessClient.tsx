@@ -8,6 +8,40 @@ import { useCart } from '@/context/CartContext'
 import { PageHeader } from '@/components/store/PageHeader'
 import { Button } from '@/components/ui/button'
 
+const CHECKOUT_DRAFT_KEY = 'lq_checkout_draft_v1'
+
+async function persistCheckoutInfo() {
+  if (typeof window === 'undefined') return
+  let draft: Record<string, string> | null = null
+  try {
+    const raw = localStorage.getItem(CHECKOUT_DRAFT_KEY)
+    if (!raw) return
+    draft = JSON.parse(raw) as Record<string, string>
+  } catch {
+    return
+  }
+  if (!draft?.address1 || !draft?.city) return
+  try {
+    await fetch('/api/account/save-checkout-info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        fullName: draft.name,
+        phone: draft.phone,
+        line1: draft.address1,
+        line2: draft.address2,
+        city: draft.city,
+        state: draft.state,
+        country: draft.country,
+        postalCode: draft.postalCode,
+      }),
+    })
+  } catch {
+    /* best effort */
+  }
+}
+
 export function CheckoutSuccessClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -41,6 +75,7 @@ export function CheckoutSuccessClient() {
 
       if (data.status === 'complete' && data.orderId) {
         clearCart()
+        await persistCheckoutInfo()
         router.replace(`/order-confirmation?id=${encodeURIComponent(data.orderId)}`)
         return
       }
