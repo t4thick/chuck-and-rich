@@ -1,7 +1,11 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ImagePlus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const CATEGORIES = [
   'Sample', 'Beverages', 'Bread', 'Canned', 'Caribbean product', 'Cosmetics',
@@ -37,12 +41,8 @@ export function ProductForm({ initialData, productId }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    const { name, value, type } = e.target
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-    }))
+  function update<K extends keyof FormData>(key: K, value: FormData[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }))
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -56,7 +56,7 @@ export function ProductForm({ initialData, productId }: Props) {
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
       const data = await res.json()
       if (data.url) {
-        setForm((prev) => ({ ...prev, image_url: data.url }))
+        update('image_url', data.url)
       } else {
         setError(data.error || 'Upload failed.')
       }
@@ -83,7 +83,10 @@ export function ProductForm({ initialData, productId }: Props) {
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Something went wrong.'); return }
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong.')
+        return
+      }
       router.push('/admin/products')
       router.refresh()
     } catch {
@@ -94,46 +97,131 @@ export function ProductForm({ initialData, productId }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="stack">
-      <p>
-        <label>Name <em>*</em>:<br />
-          <input name="name" value={form.name} onChange={handleChange} required style={{ width: '100%' }} />
+    <form onSubmit={handleSubmit} className="admin-card space-y-5">
+      <div className="space-y-1.5">
+        <label className="form-label" htmlFor="name">
+          Name <span className="text-red-600">*</span>
         </label>
-      </p>
-      <p>
-        <label>Description:<br />
-          <textarea name="description" value={form.description} onChange={handleChange} rows={3} style={{ width: '100%' }} />
-        </label>
-      </p>
-      <div className="row">
-        <label>Price (USD) <em>*</em>:{' '}
-          <input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleChange} required style={{ width: '8em' }} />
-        </label>
-        <label>Category:{' '}
-          <select name="category" value={form.category} onChange={handleChange} required>
-            {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-          </select>
-        </label>
+        <Input
+          id="name"
+          required
+          value={form.name}
+          onChange={(e) => update('name', e.target.value)}
+        />
       </div>
-      <p>
-        <label>Image:<br />
-          <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
-          {uploading && <em> uploading…</em>}
+
+      <div className="space-y-1.5">
+        <label className="form-label" htmlFor="description">
+          Description
         </label>
-        {form.image_url && <><br /><small>URL: {form.image_url}</small></>}
-      </p>
-      <p>
-        <label>
-          <input type="checkbox" name="in_stock" checked={form.in_stock} onChange={handleChange} />{' '}
-          In stock — visible to customers
-        </label>
-      </p>
+        <textarea
+          id="description"
+          rows={3}
+          className="form-input"
+          value={form.description}
+          onChange={(e) => update('description', e.target.value)}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="form-label" htmlFor="price">
+            Price (USD) <span className="text-red-600">*</span>
+          </label>
+          <Input
+            id="price"
+            type="number"
+            step="0.01"
+            min="0"
+            required
+            value={form.price}
+            onChange={(e) => update('price', e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="form-label" htmlFor="category">
+            Category
+          </label>
+          <select
+            id="category"
+            className="form-select"
+            value={form.category}
+            onChange={(e) => update('category', e.target.value)}
+            required
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="form-label">Image</label>
+        <div className="flex items-start gap-4">
+          <label className="flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-earth-300 bg-earth-50 text-earth-500 transition-colors hover:border-earth-400 hover:bg-earth-100">
+            {form.image_url ? (
+              <Image
+                src={form.image_url}
+                alt=""
+                width={96}
+                height={96}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <ImagePlus className="h-6 w-6" strokeWidth={1.5} aria-hidden />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleImageUpload}
+              disabled={uploading}
+            />
+          </label>
+          <div className="flex-1 text-sm text-earth-600">
+            {uploading && <p>Uploading…</p>}
+            {!uploading && form.image_url && (
+              <>
+                <p className="font-medium text-earth-700">Image set.</p>
+                <p className="mt-1 break-all font-mono text-[11px] text-earth-400">
+                  {form.image_url}
+                </p>
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-medium text-red-600 hover:text-red-700"
+                  onClick={() => update('image_url', '')}
+                >
+                  Remove
+                </button>
+              </>
+            )}
+            {!uploading && !form.image_url && (
+              <p className="text-earth-500">PNG, JPEG, WebP, or GIF.</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm text-earth-800">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-earth-300 text-brand-700 focus:ring-brand-500"
+          checked={form.in_stock}
+          onChange={(e) => update('in_stock', e.target.checked)}
+        />
+        In stock — visible to customers
+      </label>
+
       {error && <p className="error">{error}</p>}
-      <div className="row">
-        <button type="submit" disabled={loading || uploading}>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" disabled={loading || uploading}>
           {loading ? 'Saving…' : productId ? 'Update product' : 'Add product'}
-        </button>
-        <button type="button" onClick={() => router.back()}>Cancel</button>
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => router.back()}>
+          Cancel
+        </Button>
       </div>
     </form>
   )

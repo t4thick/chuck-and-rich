@@ -2,6 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export function RefundButton({ orderId, maxAmount }: { orderId: string; maxAmount: number }) {
   const router = useRouter()
@@ -36,14 +39,23 @@ export function RefundButton({ orderId, maxAmount }: { orderId: string; maxAmoun
     }
   }
 
-  if (done) return <p className="success">Refund issued.</p>
+  if (done) {
+    return (
+      <p className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+        <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Refund issued.
+      </p>
+    )
+  }
 
   return (
-    <form onSubmit={refund} className="stack">
-      <p>
-        <label>
-          Amount ($):{' '}
-          <input
+    <form onSubmit={refund} className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="form-label" htmlFor="refund-amount">
+            Amount ($) — max ${maxAmount.toFixed(2)}
+          </label>
+          <Input
+            id="refund-amount"
             type="number"
             step="0.01"
             min="0.01"
@@ -51,19 +63,26 @@ export function RefundButton({ orderId, maxAmount }: { orderId: string; maxAmoun
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             required
-            style={{ width: '8em' }}
           />
-        </label>{' '}
-        of ${maxAmount.toFixed(2)} max
-      </p>
-      <p>
-        <label>
-          Reason (optional):{' '}
-          <input type="text" value={reason} onChange={(e) => setReason(e.target.value)} style={{ width: '20em' }} />
-        </label>
-      </p>
+        </div>
+        <div className="space-y-1.5">
+          <label className="form-label" htmlFor="refund-reason">
+            Reason (optional)
+          </label>
+          <Input
+            id="refund-reason"
+            type="text"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+      </div>
+
       {error && <p className="error">{error}</p>}
-      <button type="submit" disabled={busy}>{busy ? 'Refunding…' : 'Issue refund via Stripe'}</button>
+
+      <Button type="submit" variant="destructive" disabled={busy}>
+        {busy ? 'Refunding…' : 'Issue refund via Stripe'}
+      </Button>
     </form>
   )
 }

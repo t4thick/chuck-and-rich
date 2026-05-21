@@ -1,12 +1,28 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowLeft, CheckCircle2, Circle } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { PAYMENT_LABEL, type PaymentMethod } from '@/lib/payment-methods'
 import { OrderStatusUpdater } from '@/components/admin/OrderStatusUpdater'
 import { RefundButton } from '@/components/admin/RefundButton'
-import { ORDER_STATUS_LABEL, ORDER_STATUS_FLOW, getStatusStepIndex, normalizeOrderStatus } from '@/lib/order-status'
+import {
+  ORDER_STATUS_LABEL,
+  ORDER_STATUS_FLOW,
+  getStatusStepIndex,
+  normalizeOrderStatus,
+  type OrderStatus,
+} from '@/lib/order-status'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
+
+const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
+  ordered: 'bg-blue-50 text-blue-700',
+  processing: 'bg-amber-50 text-amber-700',
+  shipped: 'bg-violet-50 text-violet-700',
+  out_for_delivery: 'bg-indigo-50 text-indigo-700',
+  delivered: 'bg-emerald-50 text-emerald-700',
+  cancelled: 'bg-red-50 text-red-700',
+}
 
 export default async function AdminOrderDetailPage({
   params,
@@ -32,128 +48,270 @@ export default async function AdminOrderDetailPage({
   const paymentLabel = PAYMENT_LABEL[pm] ?? pm
   const normalizedStatus = normalizeOrderStatus(order.status)
   const statusIndex = getStatusStepIndex(order.status)
-  const shippingMethod = (order.shipping_method as ShippingMethod | null | undefined) ?? 'standard'
+  const shippingMethod =
+    (order.shipping_method as ShippingMethod | null | undefined) ?? 'standard'
   const shippingLabel = SHIPPING_METHOD_LABEL[shippingMethod] ?? shippingMethod
   const statusLogs =
-    logsResult.error && /relation .* does not exist|could not find the table/i.test(logsResult.error.message)
+    logsResult.error &&
+    /relation .* does not exist|could not find the table/i.test(logsResult.error.message)
       ? []
       : (logsResult.data ?? [])
 
   return (
-    <div className="stack">
-      <p><Link href="/admin/orders">← Back to orders</Link></p>
+    <div className="space-y-6">
+      <div>
+        <Link
+          href="/admin/orders"
+          className="inline-flex items-center gap-1 text-sm font-medium text-earth-600 no-underline transition-colors hover:text-earth-900"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Back to orders
+        </Link>
+      </div>
 
-      <h2>Order detail</h2>
-      <p className="muted">{order.id}</p>
-      <p><strong>Status:</strong> {ORDER_STATUS_LABEL[normalizedStatus]}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="admin-page-title">Order detail</h1>
+          <p className="mt-1 font-mono text-xs text-earth-400">{order.id}</p>
+        </div>
+        <span className={`admin-status-pill self-start ${STATUS_PILL_COLORS[normalizedStatus]}`}>
+          {ORDER_STATUS_LABEL[normalizedStatus]}
+        </span>
+      </div>
 
-      <h3>Customer</h3>
-      <table>
-        <tbody>
-          <tr><th>Name</th><td>{order.customer_name}</td></tr>
-          <tr><th>Email</th><td>{order.customer_email}</td></tr>
-          {order.customer_phone && <tr><th>Phone</th><td>{order.customer_phone}</td></tr>}
-          <tr><th>Placed</th><td>{new Date(order.created_at).toLocaleString()}</td></tr>
-          <tr><th>Payment</th><td>{paymentLabel}</td></tr>
-          <tr><th>Shipping</th><td>{shippingLabel} (zone: {order.shipping_zone ?? 'n/a'})</td></tr>
-          <tr><th>Tracking #</th><td>{order.tracking_number ?? '—'}</td></tr>
-          {order.refunded_at && (
-            <tr><th>Refunded</th><td>{new Date(order.refunded_at).toLocaleString()} (${Number(order.refund_amount ?? 0).toFixed(2)})</td></tr>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          {/* Customer */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Customer</h2>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <Field label="Name" value={order.customer_name} />
+              <Field label="Email" value={order.customer_email} />
+              {order.customer_phone && (
+                <Field label="Phone" value={order.customer_phone} />
+              )}
+              <Field
+                label="Placed"
+                value={new Date(order.created_at).toLocaleString()}
+              />
+              <Field label="Payment" value={paymentLabel} />
+              <Field
+                label="Shipping"
+                value={`${shippingLabel} (zone: ${order.shipping_zone ?? 'n/a'})`}
+              />
+              <Field label="Tracking #" value={order.tracking_number ?? '—'} />
+              {order.refunded_at && (
+                <Field
+                  label="Refunded"
+                  value={`${new Date(order.refunded_at).toLocaleString()} ($${Number(order.refund_amount ?? 0).toFixed(2)})`}
+                />
+              )}
+            </dl>
+          </section>
+
+          {/* Delivery address */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Delivery address</h2>
+            <address className="mt-3 not-italic text-sm leading-relaxed text-earth-700">
+              {order.address_line}
+              <br />
+              {order.city}
+              {order.state ? `, ${order.state}` : ''}
+              {order.postal_code ? ` ${order.postal_code}` : ''}
+              <br />
+              {order.country}
+            </address>
+          </section>
+
+          {/* Items */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Items</h2>
+            {items && items.length > 0 ? (
+              <div className="mt-3 overflow-x-auto">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Qty</th>
+                      <th className="text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.id}>
+                        <td className="font-medium text-earth-900">{item.product_name}</td>
+                        <td className="tabular-nums">${Number(item.product_price ?? 0).toFixed(2)}</td>
+                        <td className="tabular-nums">{item.quantity}</td>
+                        <td className="text-right tabular-nums">
+                          ${Number(item.subtotal ?? 0).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3} className="text-right text-earth-600">
+                        Subtotal
+                      </td>
+                      <td className="text-right tabular-nums">
+                        ${Number(order.subtotal_amount ?? 0).toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan={3} className="text-right text-earth-600">
+                        Shipping
+                      </td>
+                      <td className="text-right tabular-nums">
+                        ${Number(order.shipping_fee ?? 0).toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr className="border-t border-earth-200">
+                      <td colSpan={3} className="pt-2 text-right font-semibold text-earth-900">
+                        Total
+                      </td>
+                      <td className="pt-2 text-right tabular-nums font-semibold text-earth-900">
+                        ${Number(order.total_amount ?? 0).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-earth-500">No items.</p>
+            )}
+          </section>
+        </div>
+
+        <div className="space-y-6">
+          {/* Timeline */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Delivery timeline</h2>
+            <ol className="mt-4 space-y-3">
+              {ORDER_STATUS_FLOW.map((step, index) => {
+                const done = statusIndex >= index
+                const tsColumn =
+                  step === 'ordered'
+                    ? order.ordered_at
+                    : step === 'processing'
+                      ? order.processing_at
+                      : step === 'shipped'
+                        ? order.shipped_at
+                        : step === 'out_for_delivery'
+                          ? order.out_for_delivery_at
+                          : order.delivered_at
+                return (
+                  <li key={step} className="flex items-start gap-2.5 text-sm">
+                    {done ? (
+                      <CheckCircle2
+                        className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600"
+                        aria-hidden
+                      />
+                    ) : (
+                      <Circle
+                        className="mt-0.5 h-4 w-4 flex-shrink-0 text-earth-300"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={
+                          done
+                            ? 'font-medium text-earth-900'
+                            : 'text-earth-500'
+                        }
+                      >
+                        {ORDER_STATUS_LABEL[step]}
+                      </p>
+                      {done && tsColumn && (
+                        <p className="mt-0.5 text-xs text-earth-500">
+                          {new Date(tsColumn).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </section>
+
+          {/* Status updater */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Update status</h2>
+            <div className="mt-4">
+              <OrderStatusUpdater
+                orderId={order.id}
+                currentStatus={normalizedStatus}
+                trackingNumber={order.tracking_number}
+              />
+            </div>
+          </section>
+
+          {/* Refund */}
+          {pm === 'stripe' && !order.refunded_at && (
+            <section className="admin-card">
+              <h2 className="admin-section-title">Refund</h2>
+              <div className="mt-4">
+                <RefundButton
+                  orderId={order.id}
+                  maxAmount={Number(order.total_amount ?? 0)}
+                />
+              </div>
+            </section>
           )}
-        </tbody>
-      </table>
+        </div>
+      </div>
 
-      <h3>Delivery address</h3>
-      <p>
-        {order.address_line}<br />
-        {order.city}{order.state ? `, ${order.state}` : ''}{order.postal_code ? ` ${order.postal_code}` : ''}<br />
-        {order.country}
-      </p>
-
-      <h3>Delivery timeline</h3>
-      <ol>
-        {ORDER_STATUS_FLOW.map((step, index) => {
-          const done = statusIndex >= index
-          const tsColumn =
-            step === 'ordered' ? order.ordered_at :
-            step === 'processing' ? order.processing_at :
-            step === 'shipped' ? order.shipped_at :
-            step === 'out_for_delivery' ? order.out_for_delivery_at :
-            order.delivered_at
-          return (
-            <li key={step}>
-              {done ? '✓ ' : '○ '}
-              {done ? <strong>{ORDER_STATUS_LABEL[step]}</strong> : ORDER_STATUS_LABEL[step]}
-              {done && tsColumn && <> — <span className="muted">{new Date(tsColumn).toLocaleString()}</span></>}
-            </li>
-          )
-        })}
-      </ol>
-
+      {/* Audit log — full width below */}
       {statusLogs.length > 0 && (
-        <>
-          <h3>Status logs</h3>
-          <table>
-            <thead><tr><th>When</th><th>From</th><th>To</th><th>By</th><th>Note</th></tr></thead>
-            <tbody>
-              {statusLogs.map((log) => (
-                <tr key={log.id}>
-                  <td>{new Date(log.changed_at).toLocaleString()}</td>
-                  <td>{log.from_status ? ORDER_STATUS_LABEL[normalizeOrderStatus(log.from_status)] : '—'}</td>
-                  <td>{ORDER_STATUS_LABEL[normalizeOrderStatus(log.to_status)]}</td>
-                  <td>{log.changed_by ?? '—'}</td>
-                  <td>{log.note ?? ''}</td>
+        <section>
+          <h2 className="admin-section-title mb-3">Status log</h2>
+          <div className="admin-table-wrap overflow-x-auto">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>By</th>
+                  <th>Note</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+              </thead>
+              <tbody>
+                {statusLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td className="text-earth-600">
+                      {new Date(log.changed_at).toLocaleString()}
+                    </td>
+                    <td>
+                      {log.from_status
+                        ? ORDER_STATUS_LABEL[normalizeOrderStatus(log.from_status)]
+                        : '—'}
+                    </td>
+                    <td className="font-medium text-earth-900">
+                      {ORDER_STATUS_LABEL[normalizeOrderStatus(log.to_status)]}
+                    </td>
+                    <td className="text-earth-600">{log.changed_by ?? '—'}</td>
+                    <td className="text-earth-600">{log.note ?? ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
+    </div>
+  )
+}
 
-      <h3>Items</h3>
-      {items && items.length > 0 ? (
-        <table>
-          <thead>
-            <tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td>{item.product_name}</td>
-                <td>${Number(item.product_price ?? 0).toFixed(2)}</td>
-                <td>{item.quantity}</td>
-                <td>${Number(item.subtotal ?? 0).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr><td colSpan={3}>Subtotal</td><td>${Number(order.subtotal_amount ?? 0).toFixed(2)}</td></tr>
-            <tr><td colSpan={3}>Shipping</td><td>${Number(order.shipping_fee ?? 0).toFixed(2)}</td></tr>
-            <tr><td colSpan={3}><strong>Total</strong></td><td><strong>${Number(order.total_amount ?? 0).toFixed(2)}</strong></td></tr>
-          </tfoot>
-        </table>
-      ) : (
-        <p>No items.</p>
-      )}
-
-      <hr />
-
-      <h3>Update status</h3>
-      <OrderStatusUpdater
-        orderId={order.id}
-        currentStatus={normalizedStatus}
-        trackingNumber={order.tracking_number}
-      />
-
-      {pm === 'stripe' && !order.refunded_at && (
-        <>
-          <h3>Refund</h3>
-          <RefundButton
-            orderId={order.id}
-            maxAmount={Number(order.total_amount ?? 0)}
-          />
-        </>
-      )}
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-[11px] font-semibold uppercase tracking-wider text-earth-500">
+        {label}
+      </dt>
+      <dd className="mt-0.5 text-earth-900">{value}</dd>
     </div>
   )
 }

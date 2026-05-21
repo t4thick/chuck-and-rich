@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { ProductForm } from '@/components/admin/ProductForm'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
@@ -20,9 +21,20 @@ export default async function EditProductPage({
   if (!product) notFound()
 
   return (
-    <div className="stack">
-      <h2>Edit product</h2>
-      <p className="muted">{product.name}</p>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <Link
+          href="/admin/products"
+          className="inline-flex items-center gap-1 text-sm font-medium text-earth-600 no-underline transition-colors hover:text-earth-900"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Back to products
+        </Link>
+      </div>
+      <div>
+        <h1 className="admin-page-title">Edit product</h1>
+        <p className="mt-1 text-sm text-earth-500">{product.name}</p>
+      </div>
       <ProductForm
         productId={product.id}
         initialData={{
@@ -34,7 +46,6 @@ export default async function EditProductPage({
           in_stock: product.in_stock,
         }}
       />
-      <p><Link href="/admin/products">← Back to products</Link></p>
     </div>
   )
 }

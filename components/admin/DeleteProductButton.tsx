@@ -16,7 +16,12 @@ export function DeleteProductButton({ id, name }: { id: string; name: string }) 
   }
 
   return (
-    <button type="button" onClick={handleDelete} disabled={loading}>
+    <button
+      type="button"
+      onClick={handleDelete}
+      disabled={loading}
+      className="text-sm font-medium text-red-600 transition-colors hover:text-red-700 disabled:opacity-50"
+    >
       {loading ? '…' : 'Delete'}
     </button>
   )

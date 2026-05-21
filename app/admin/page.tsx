@@ -1,7 +1,19 @@
 import Link from 'next/link'
 import { DateTime } from 'luxon'
+import {
+  AlertTriangle,
+  Box,
+  ChevronRight,
+  Clock,
+  DollarSign,
+  Package,
+  ShoppingBag,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
+import { ORDER_STATUS_LABEL, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import {
   computeRevenueSnapshot,
@@ -12,10 +24,26 @@ import {
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
+const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
+  ordered: 'bg-blue-50 text-blue-700',
+  processing: 'bg-amber-50 text-amber-700',
+  shipped: 'bg-violet-50 text-violet-700',
+  out_for_delivery: 'bg-indigo-50 text-indigo-700',
+  delivered: 'bg-emerald-50 text-emerald-700',
+  cancelled: 'bg-red-50 text-red-700',
+}
+
+function pill(status: OrderStatus) {
+  return (
+    <span className={`admin-status-pill ${STATUS_PILL_COLORS[status] ?? 'bg-earth-100 text-earth-700'}`}>
+      {ORDER_STATUS_LABEL[status]}
+    </span>
+  )
+}
+
 export default async function AdminDashboard() {
   await requireAdminPage()
   const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS).toISOString()
-
   const lookbackIso = DateTime.now().minus({ days: 420 }).toUTC().toISO()!
 
   let moneyRows: OrderMoneyRow[] = []
@@ -36,7 +64,6 @@ export default async function AdminDashboard() {
   }
 
   const revenue = computeRevenueSnapshot(moneyRows)
-
   const paceMomPct =
     revenue.priorMonthPartialThroughSameDayGross > 0
       ? ((revenue.monthToDateGross - revenue.priorMonthPartialThroughSameDayGross) /
@@ -49,172 +76,273 @@ export default async function AdminDashboard() {
     { count: ordersCount },
     { count: customersCount },
     { count: lowStockCount },
-    { data: revenueRowsAll },
     { data: weekRevenueRows },
     { data: recentOrders },
   ] = await Promise.all([
     supabaseAdmin.from('products').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
-    supabaseAdmin.from('products').select('*', { count: 'exact', head: true }).eq('in_stock', false),
-    supabaseAdmin.from('orders').select('total_amount'),
+    supabaseAdmin
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('in_stock', false),
     supabaseAdmin.from('orders').select('total_amount').gte('created_at', sevenDaysAgo),
-    supabaseAdmin.from('orders').select('*').order('created_at', { ascending: false }).limit(10),
+    supabaseAdmin
+      .from('orders')
+      .select('id, customer_name, total_amount, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(10),
   ])
 
-  const allTimeRaw = (revenueRowsAll ?? []).reduce((s, o) => s + Number(o.total_amount ?? 0), 0)
-  const weekRevenueRaw = (weekRevenueRows ?? []).reduce((s, o) => s + Number(o.total_amount ?? 0), 0)
-
+  const weekRevenueRaw = (weekRevenueRows ?? []).reduce(
+    (s, o) => s + Number(o.total_amount ?? 0),
+    0
+  )
   const openOrders = (recentOrders ?? []).filter((o) => {
     const st = normalizeOrderStatus(o.status)
     return st === 'ordered' || st === 'processing'
   }).length
 
-  return (
-    <div className="stack">
-      <h2>Dashboard</h2>
+  const todayPct =
+    revenue.yesterdayGross > 0
+      ? ((revenue.todayGross - revenue.yesterdayGross) / revenue.yesterdayGross) * 100
+      : null
 
-      <section className="stack">
-        <h3>Sales & revenue (internal)</h3>
-        <p className="muted">
-          Calendar boundaries use <strong>{getReportTimeZone()}</strong> — set <code>STORE_REPORT_TIMEZONE</code>{' '}
-          (IANA, e.g. <code>America/New_York</code>) to match your books. Gross excludes{' '}
-          <strong>cancelled</strong> orders and rows with <strong>refunded_at</strong> set (when that column
-          exists). Not audited net revenue — operations snapshot only.
+  return (
+    <div className="space-y-6 sm:space-y-8">
+      <header>
+        <h1 className="admin-page-title">Dashboard</h1>
+        <p className="mt-1 text-sm text-earth-500">
+          Calendar boundaries: <code className="rounded bg-earth-100 px-1 py-0.5 text-[11px] text-earth-700">{getReportTimeZone()}</code>
+          {' '}· Gross excludes cancelled & refunded orders.
         </p>
-        <table>
-          <tbody>
-            <tr>
-              <th>Today ({revenue.todayKey})</th>
-              <td>{money(revenue.todayGross)}</td>
-            </tr>
-            <tr>
-              <th>Yesterday</th>
-              <td>{money(revenue.yesterdayGross)}</td>
-            </tr>
-            <tr>
-              <th>Trailing 7 days</th>
-              <td>{money(revenue.trailing7Gross)}</td>
-            </tr>
-            <tr>
-              <th>Trailing 30 days</th>
-              <td>{money(revenue.trailing30Gross)}</td>
-            </tr>
-            <tr>
-              <th>Avg daily gross (÷30)</th>
-              <td>{money(revenue.averageDailyGrossTrailing30)}</td>
-            </tr>
-            <tr>
-              <th>Orders (trailing 30 days)</th>
-              <td>{revenue.orderCountTrailing30}</td>
-            </tr>
-            <tr>
-              <th>Avg order value (trailing 30)</th>
-              <td>{money(revenue.averageOrderValueTrailing30)}</td>
-            </tr>
-            <tr>
-              <th>Month-to-date gross</th>
-              <td>{money(revenue.monthToDateGross)}</td>
-            </tr>
-            <tr>
-              <th>Prior month (same # of days elapsed)</th>
-              <td>{money(revenue.priorMonthPartialThroughSameDayGross)}</td>
-            </tr>
-            <tr>
-              <th>MTD vs prior-month pace</th>
-              <td>
-                {paceMomPct == null ? '—' : `${paceMomPct >= 0 ? '+' : ''}${paceMomPct.toFixed(1)}%`}
-              </td>
-            </tr>
-            <tr>
-              <th>Last complete calendar month</th>
-              <td>{money(revenue.priorCalendarMonthGross)}</td>
-            </tr>
-          </tbody>
-        </table>
+      </header>
+
+      <section>
+        <h2 className="admin-section-title mb-3">Revenue</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          <Kpi
+            icon={DollarSign}
+            label="Today"
+            value={money(revenue.todayGross)}
+            delta={todayPct}
+            deltaLabel="vs yesterday"
+          />
+          <Kpi
+            icon={Clock}
+            label="Trailing 7d"
+            value={money(revenue.trailing7Gross)}
+            sub={`AOV ${money(revenue.averageOrderValueTrailing30)}`}
+          />
+          <Kpi
+            icon={TrendingUp}
+            label="Trailing 30d"
+            value={money(revenue.trailing30Gross)}
+            sub={`${revenue.orderCountTrailing30} orders`}
+          />
+          <Kpi
+            icon={TrendingUp}
+            label="Month-to-date"
+            value={money(revenue.monthToDateGross)}
+            delta={paceMomPct}
+            deltaLabel="vs prior month pace"
+          />
+        </div>
       </section>
 
-      <h3>Operations</h3>
-      <table>
-        <tbody>
-          <tr>
-            <th>Products</th>
-            <td>{productsCount ?? 0}</td>
-            <td>
-              <Link href="/admin/products">Manage</Link>
-            </td>
-          </tr>
-          <tr>
-            <th>Out of stock</th>
-            <td>{lowStockCount ?? 0}</td>
-            <td>
-              <Link href="/admin/products">Restock</Link>
-            </td>
-          </tr>
-          <tr>
-            <th>Orders (all time, raw)</th>
-            <td>{ordersCount ?? 0}</td>
-            <td>
-              <Link href="/admin/orders">View</Link>
-            </td>
-          </tr>
-          <tr>
-            <th>Gross all orders (all time, raw)</th>
-            <td>{money(allTimeRaw)}</td>
-            <td className="muted">
-              includes cancelled/refunded — use Sales section for comparable gross
-            </td>
-          </tr>
-          <tr>
-            <th>Gross last 7 days (raw)</th>
-            <td>{money(weekRevenueRaw)}</td>
-            <td />
-          </tr>
-          <tr>
-            <th>Open orders (recent sample)</th>
-            <td>{openOrders}</td>
-            <td>
-              <Link href="/admin/orders?status=ordered">Process</Link>
-            </td>
-          </tr>
-          <tr>
-            <th>Customers</th>
-            <td>{customersCount ?? 0}</td>
-            <td>
-              <Link href="/admin/customers">View</Link>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <section>
+        <h2 className="admin-section-title mb-3">Operations</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          <OpCard
+            icon={Package}
+            label="Products"
+            value={productsCount ?? 0}
+            href="/admin/products"
+            cta="Manage"
+          />
+          <OpCard
+            icon={AlertTriangle}
+            label="Out of stock"
+            value={lowStockCount ?? 0}
+            href="/admin/products"
+            cta="Restock"
+            tone={Number(lowStockCount ?? 0) > 0 ? 'warning' : 'neutral'}
+          />
+          <OpCard
+            icon={ShoppingBag}
+            label="Orders (all-time)"
+            value={ordersCount ?? 0}
+            href="/admin/orders"
+            cta="View"
+            sub={`${money(weekRevenueRaw)} last 7d`}
+          />
+          <OpCard
+            icon={Box}
+            label="Open orders"
+            value={openOrders}
+            href="/admin/orders?status=ordered"
+            cta="Process"
+            tone={openOrders > 0 ? 'attention' : 'neutral'}
+          />
+          <OpCard
+            icon={Users}
+            label="Customers"
+            value={customersCount ?? 0}
+            href="/admin/customers"
+            cta="View"
+          />
+          <OpCard
+            label="Prior month gross"
+            value={money(revenue.priorCalendarMonthGross)}
+            sub="Last complete calendar month"
+          />
+        </div>
+      </section>
 
-      <h3>Recent orders</h3>
-      {!recentOrders || recentOrders.length === 0 ? (
-        <p>No orders yet.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Customer</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentOrders.map((order) => (
-              <tr key={order.id}>
-                <td>{order.customer_name ?? '—'}</td>
-                <td>{money(Number(order.total_amount ?? 0))}</td>
-                <td>{ORDER_STATUS_LABEL[normalizeOrderStatus(order.status)]}</td>
-                <td>{new Date(order.created_at).toLocaleString()}</td>
-                <td>
-                  <Link href={`/admin/orders/${order.id}`}>View</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="admin-section-title">Recent orders</h2>
+          <Link
+            href="/admin/orders"
+            className="inline-flex items-center gap-0.5 text-sm font-medium text-brand-700 no-underline hover:text-brand-800"
+          >
+            View all <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+        {!recentOrders || recentOrders.length === 0 ? (
+          <div className="admin-card text-center">
+            <p className="text-sm text-earth-600">No orders yet.</p>
+          </div>
+        ) : (
+          <div className="admin-table-wrap overflow-x-auto">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th aria-label="Actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentOrders.map((order) => {
+                  const st = normalizeOrderStatus(order.status)
+                  return (
+                    <tr key={order.id}>
+                      <td className="font-medium text-earth-900">{order.customer_name ?? '—'}</td>
+                      <td className="tabular-nums">{money(Number(order.total_amount ?? 0))}</td>
+                      <td>{pill(st)}</td>
+                      <td className="text-earth-600">
+                        {new Date(order.created_at).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </td>
+                      <td className="text-right">
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="text-sm font-medium text-brand-700 no-underline hover:text-brand-800"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
+
+type IconCmp = React.ComponentType<{ className?: string; strokeWidth?: number; 'aria-hidden'?: boolean }>
+
+function Kpi({
+  icon: Icon,
+  label,
+  value,
+  delta,
+  deltaLabel,
+  sub,
+}: {
+  icon: IconCmp
+  label: string
+  value: string
+  delta?: number | null
+  deltaLabel?: string
+  sub?: string
+}) {
+  const positive = typeof delta === 'number' && delta >= 0
+  const DeltaIcon = positive ? TrendingUp : TrendingDown
+  return (
+    <div className="admin-kpi">
+      <div className="flex items-center justify-between">
+        <p className="admin-kpi-label">{label}</p>
+        <Icon className="h-4 w-4 text-earth-400" strokeWidth={1.75} aria-hidden />
+      </div>
+      <p className="admin-kpi-value">{value}</p>
+      {typeof delta === 'number' && (
+        <p
+          className={`admin-kpi-delta inline-flex items-center gap-1 ${
+            positive ? 'text-emerald-700' : 'text-red-700'
+          }`}
+        >
+          <DeltaIcon className="h-3 w-3" strokeWidth={2} aria-hidden />
+          {positive ? '+' : ''}
+          {delta.toFixed(1)}%
+          {deltaLabel && <span className="font-normal text-earth-500"> {deltaLabel}</span>}
+        </p>
+      )}
+      {sub && !delta && <p className="admin-kpi-delta text-earth-500">{sub}</p>}
+    </div>
+  )
+}
+
+function OpCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  href,
+  cta,
+  tone = 'neutral',
+}: {
+  icon?: IconCmp
+  label: string
+  value: number | string
+  sub?: string
+  href?: string
+  cta?: string
+  tone?: 'neutral' | 'warning' | 'attention'
+}) {
+  const toneClass =
+    tone === 'warning'
+      ? 'text-amber-700'
+      : tone === 'attention'
+        ? 'text-blue-700'
+        : 'text-earth-900'
+
+  return (
+    <div className="admin-kpi flex flex-col">
+      <div className="flex items-center justify-between">
+        <p className="admin-kpi-label">{label}</p>
+        {Icon && <Icon className="h-4 w-4 text-earth-400" strokeWidth={1.75} aria-hidden />}
+      </div>
+      <p className={`admin-kpi-value ${toneClass}`}>{value}</p>
+      {sub && <p className="admin-kpi-delta text-earth-500">{sub}</p>}
+      {href && cta && (
+        <Link
+          href={href}
+          className="mt-3 inline-flex items-center gap-0.5 text-xs font-semibold text-brand-700 no-underline hover:text-brand-800"
+        >
+          {cta} <ChevronRight className="h-3 w-3" />
+        </Link>
       )}
     </div>
   )

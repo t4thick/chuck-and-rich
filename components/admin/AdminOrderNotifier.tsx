@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { Bell, BellOff, ShoppingBag, X } from 'lucide-react'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 
 type OrderRow = {
@@ -30,7 +31,10 @@ function formatMoney(n: number | null): string {
 function playChime() {
   try {
     type AudioContextCtor = typeof AudioContext
-    const w = window as unknown as { AudioContext?: AudioContextCtor; webkitAudioContext?: AudioContextCtor }
+    const w = window as unknown as {
+      AudioContext?: AudioContextCtor
+      webkitAudioContext?: AudioContextCtor
+    }
     const Ctor = w.AudioContext ?? w.webkitAudioContext
     if (!Ctor) return
     const ctx = new Ctor()
@@ -53,7 +57,9 @@ function playChime() {
       osc.stop(t.start + t.dur + 0.02)
     }
     setTimeout(() => void ctx.close(), 1000)
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 function maybeShowSystemNotification(order: OrderRow) {
@@ -68,7 +74,9 @@ function maybeShowSystemNotification(order: OrderRow) {
       window.focus()
       window.location.href = `/admin/orders/${order.id}`
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function AdminOrderNotifier() {
@@ -108,20 +116,31 @@ export function AdminOrderNotifier() {
           lastSeenRef.current = Math.max(lastSeenRef.current, ts)
           try {
             localStorage.setItem(STORAGE_LAST_SEEN, String(lastSeenRef.current))
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
 
-          setToasts((prev) => [{
-            id: row.id,
-            customerName: row.customer_name ?? 'Customer',
-            total: Number(row.total_amount ?? 0),
-            shownAt: Date.now(),
-          }, ...prev].slice(0, 3))
+          setToasts((prev) =>
+            [
+              {
+                id: row.id,
+                customerName: row.customer_name ?? 'Customer',
+                total: Number(row.total_amount ?? 0),
+                shownAt: Date.now(),
+              },
+              ...prev,
+            ].slice(0, 3)
+          )
 
           let allow = true
-          try { allow = localStorage.getItem(STORAGE_SOUND_ON) !== '0' } catch { /* ignore */ }
+          try {
+            allow = localStorage.getItem(STORAGE_SOUND_ON) !== '0'
+          } catch {
+            /* ignore */
+          }
           if (allow) playChime()
           maybeShowSystemNotification(row)
-        },
+        }
       )
       .subscribe()
 
@@ -148,34 +167,100 @@ export function AdminOrderNotifier() {
     try {
       const result = await Notification.requestPermission()
       setPermission(result)
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   function toggleSound() {
     setSoundOn((prev) => {
       const next = !prev
-      try { localStorage.setItem(STORAGE_SOUND_ON, next ? '1' : '0') } catch { /* ignore */ }
+      try {
+        localStorage.setItem(STORAGE_SOUND_ON, next ? '1' : '0')
+      } catch {
+        /* ignore */
+      }
       return next
     })
   }
 
   return (
-    <div>
-      <div role="status" aria-live="polite">
+    <>
+      <div
+        role="status"
+        aria-live="polite"
+        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2 sm:bottom-6 sm:right-6"
+      >
         {toasts.map((t) => (
-          <p key={t.id}>
-            <strong>NEW ORDER:</strong> {t.customerName} · {formatMoney(t.total)} ·{' '}
-            <Link href={`/admin/orders/${t.id}`} onClick={() => dismiss(t.id)}>Open</Link>{' '}
-            <button type="button" onClick={() => dismiss(t.id)}>Dismiss</button>
-          </p>
+          <div
+            key={t.id}
+            className="pointer-events-auto flex items-start gap-3 rounded-xl border border-earth-200 bg-white p-4 shadow-[var(--shadow-elev)] animate-pop"
+          >
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+              <ShoppingBag className="h-4 w-4" strokeWidth={2} aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-earth-900">New order</p>
+              <p className="mt-0.5 truncate text-sm text-earth-600">
+                {t.customerName} ·{' '}
+                <span className="tabular-nums font-medium text-earth-900">
+                  {formatMoney(t.total)}
+                </span>
+              </p>
+              <Link
+                href={`/admin/orders/${t.id}`}
+                onClick={() => dismiss(t.id)}
+                className="mt-2 inline-block text-xs font-semibold text-brand-700 no-underline hover:text-brand-800"
+              >
+                Open order →
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={() => dismiss(t.id)}
+              className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-earth-400 transition-colors hover:bg-earth-100 hover:text-earth-700"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
         ))}
       </div>
-      <p className="muted">
-        Alerts:{' '}
-        {permission === 'default' && <button type="button" onClick={() => void requestPerm()}>Enable browser notifications</button>}
-        {permission === 'granted' && <em>browser notifications enabled · </em>}
-        <button type="button" onClick={toggleSound}>{soundOn ? 'Mute chime' : 'Unmute chime'}</button>
-      </p>
-    </div>
+
+      <div className="border-b border-earth-100 bg-white/60">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-1.5 text-[11px] text-earth-500 sm:px-6 lg:px-8">
+          <span className="font-medium uppercase tracking-wider">Live alerts:</span>
+          {permission === 'default' && (
+            <button
+              type="button"
+              onClick={() => void requestPerm()}
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-earth-700 transition-colors hover:bg-earth-100"
+            >
+              <Bell className="h-3 w-3" aria-hidden />
+              Enable browser alerts
+            </button>
+          )}
+          {permission === 'granted' && (
+            <span className="inline-flex items-center gap-1 text-emerald-700">
+              <Bell className="h-3 w-3" aria-hidden />
+              Browser alerts on
+            </span>
+          )}
+          <span className="text-earth-300">·</span>
+          <button
+            type="button"
+            onClick={toggleSound}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-earth-700 transition-colors hover:bg-earth-100"
+          >
+            {soundOn ? (
+              <Bell className="h-3 w-3" aria-hidden />
+            ) : (
+              <BellOff className="h-3 w-3" aria-hidden />
+            )}
+            {soundOn ? 'Chime on' : 'Chime muted'}
+          </button>
+        </div>
+      </div>
+    </>
   )
 }

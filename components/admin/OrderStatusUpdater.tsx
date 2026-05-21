@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Check } from 'lucide-react'
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-status'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const STATUSES: OrderStatus[] = [...ORDER_STATUS_FLOW, 'cancelled']
 
@@ -16,14 +19,19 @@ export function OrderStatusUpdater({
   trackingNumber?: string | null
 }) {
   const router = useRouter()
-  const [selected, setSelected] = useState<OrderStatus>((currentStatus as OrderStatus) ?? 'ordered')
+  const [selected, setSelected] = useState<OrderStatus>(
+    (currentStatus as OrderStatus) ?? 'ordered'
+  )
   const [tracking, setTracking] = useState(trackingNumber ?? '')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
-  const dirty = selected !== currentStatus || (tracking ?? '') !== (trackingNumber ?? '') || note.trim() !== ''
+  const dirty =
+    selected !== currentStatus ||
+    (tracking ?? '') !== (trackingNumber ?? '') ||
+    note.trim() !== ''
 
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault()
@@ -35,7 +43,11 @@ export function OrderStatusUpdater({
       const res = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: selected, trackingNumber: tracking, note: note || undefined }),
+        body: JSON.stringify({
+          status: selected,
+          trackingNumber: tracking,
+          note: note || undefined,
+        }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -51,40 +63,64 @@ export function OrderStatusUpdater({
   }
 
   return (
-    <form onSubmit={handleUpdate} className="stack">
-      <p>
-        <label>
-          Status:{' '}
-          <select value={selected} onChange={(e) => setSelected(e.target.value as OrderStatus)}>
+    <form onSubmit={handleUpdate} className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="form-label" htmlFor="status">
+            Status
+          </label>
+          <select
+            id="status"
+            className="form-select"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value as OrderStatus)}
+          >
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>
+              <option key={s} value={s}>
+                {ORDER_STATUS_LABEL[s]}
+              </option>
             ))}
           </select>
-        </label>
-      </p>
-      <p>
-        <label>
-          Tracking number:{' '}
-          <input
+        </div>
+        <div className="space-y-1.5">
+          <label className="form-label" htmlFor="tracking">
+            Tracking number
+          </label>
+          <Input
+            id="tracking"
             type="text"
             value={tracking}
             onChange={(e) => setTracking(e.target.value)}
             placeholder="e.g. LQAM-2026-00124"
-            style={{ width: '20em' }}
           />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="form-label" htmlFor="note">
+          Note (optional, recorded in audit log)
         </label>
-      </p>
-      <p>
-        <label>
-          Note (optional, logged):<br />
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} style={{ width: '100%' }} />
-        </label>
-      </p>
+        <textarea
+          id="note"
+          rows={2}
+          className="form-input"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          maxLength={500}
+        />
+        <p className="text-[11px] text-earth-400">{note.length}/500 characters</p>
+      </div>
+
       {error && <p className="error">{error}</p>}
-      {saved && <p className="success">Saved.</p>}
-      <button type="submit" disabled={loading || !dirty}>
+      {saved && (
+        <p className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700">
+          <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Saved
+        </p>
+      )}
+
+      <Button type="submit" disabled={loading || !dirty}>
         {loading ? 'Saving…' : 'Update order'}
-      </button>
+      </Button>
     </form>
   )
 }
