@@ -114,19 +114,23 @@
   }
 
   .section-title {
-    @apply font-display text-3xl font-bold text-earth-900 sm:text-4xl;
+    @apply font-display text-3xl font-bold text-earth-900 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.12];
   }
 
   .section-subtitle {
-    @apply mt-2 max-w-2xl text-base leading-relaxed text-earth-600;
+    @apply mt-3 max-w-2xl text-base leading-relaxed text-earth-600 sm:text-lg;
+  }
+
+  .hero-title {
+    @apply font-display font-bold tracking-tight;
   }
 
   .premium-card {
-    @apply overflow-hidden rounded-lg border border-earth-200 bg-white shadow-[var(--shadow-card)] transition-shadow duration-200;
+    @apply overflow-hidden rounded-lg border border-earth-200 bg-white shadow-[var(--shadow-card)] transition-all duration-300;
   }
 
   .premium-card-hover {
-    @apply hover:shadow-[var(--shadow-card-hover)];
+    @apply hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)];
   }
 
   .product-image-frame {
@@ -134,7 +138,24 @@
   }
 
   .asafo-category-tile {
-    @apply relative block overflow-hidden rounded-lg border border-earth-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-card-hover)];
+    @apply relative block overflow-hidden rounded-lg border border-earth-200 bg-white shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)];
+  }
+
+  /* Subtle African-inspired geometric texture */
+  .kente-overlay {
+    background-image:
+      linear-gradient(135deg, rgb(201 162 39 / 0.08) 25%, transparent 25%),
+      linear-gradient(225deg, rgb(0 107 62 / 0.06) 25%, transparent 25%),
+      linear-gradient(45deg, rgb(244 113 75 / 0.05) 25%, transparent 25%),
+      linear-gradient(315deg, rgb(201 162 39 / 0.06) 25%, transparent 25%);
+    background-size: 24px 24px;
+  }
+
+  .kente-band {
+    background-image:
+      linear-gradient(180deg, rgb(246 244 241) 0%, rgb(255 255 255) 100%),
+      linear-gradient(135deg, rgb(0 107 62 / 0.04) 25%, transparent 25%);
+    background-size: auto, 20px 20px;
   }
 
   .form-label {

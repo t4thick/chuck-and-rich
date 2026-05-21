@@ -19,9 +19,9 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="section-eyebrow">Shop by department</p>
-              <h2 className="section-title mt-2">Product categories</h2>
+              <h2 className="section-title mt-2">Everything for your kitchen</h2>
               <p className="section-subtitle">
-                Same layout as our partner stores — tap a category to start shopping.
+                Photo-forward categories — the same departments you know from a full African market.
               </p>
             </div>
             <Link

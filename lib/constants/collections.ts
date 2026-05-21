@@ -37,21 +37,51 @@ export const FEATURED_COLLECTIONS = [
 export const COOK_TONIGHT_BUNDLES = [
   {
     title: 'Jollof Night',
-    description: 'Rice, tomato paste, spices & pepper — shop flours & grains.',
+    description: 'Rice, tomato paste, spices & pepper — everything for the pot.',
     href: '/shop?category=Flours%20%26%20Rice',
-    tag: '42 items',
+    tag: 'Best for Jollof',
+    image: 'https://images.unsplash.com/photo-1586201378083-7d759022257d?w=800&q=80',
   },
   {
     title: 'Egusi Soup Kit',
     description: 'Palm oil, spices, stockfish & seasonings from our pantry.',
     href: '/shop?category=Spices',
-    tag: 'Pantry',
+    tag: 'Cook tonight',
+    image: 'https://images.unsplash.com/photo-1596040035739-62d3p17a625?w=800&q=80',
   },
   {
     title: 'Weekend Snacks',
-    description: 'Chips, biscuits, drinks & treats for the family.',
+    description: 'Chips, biscuits, drinks & treats for the family table.',
     href: '/shop?category=Snack',
-    tag: '11 items',
+    tag: 'Trending',
+    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80',
+  },
+] as const
+
+export const SHOP_BY_COUNTRY = [
+  {
+    country: 'Ghana',
+    flag: '🇬🇭',
+    label: 'Spices & grains',
+    href: '/shop?category=Spices',
+  },
+  {
+    country: 'Nigeria',
+    flag: '🇳🇬',
+    label: 'Rice & pantry',
+    href: '/shop?category=Flours%20%26%20Rice',
+  },
+  {
+    country: 'Caribbean',
+    flag: '🇯🇲',
+    label: 'Island favorites',
+    href: '/shop?category=Caribbean%20product',
+  },
+  {
+    country: 'West Africa',
+    flag: '🌍',
+    label: 'Motherland picks',
+    href: '/shop?category=Motherland',
   },
 ] as const
 

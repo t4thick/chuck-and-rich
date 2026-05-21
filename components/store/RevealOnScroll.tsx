@@ -35,7 +35,7 @@ export function RevealOnScroll({ children, className, delay = 0 }: RevealOnScrol
     <div
       ref={ref}
       className={cn(
-        'transition-all duration-700 ease-out motion-reduce:transition-none',
+        'transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
         visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0',
         className
       )}
