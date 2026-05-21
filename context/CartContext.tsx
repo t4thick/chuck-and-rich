@@ -19,6 +19,10 @@ type CartContextType = {
   clearCart: () => void
   totalItems: number
   totalPrice: number
+  cartOpen: boolean
+  openCart: () => void
+  closeCart: () => void
+  setCartOpen: (open: boolean) => void
 }
 
 const CartContext = createContext<CartContextType | null>(null)
@@ -37,6 +41,10 @@ function parseCart(raw: string | null): CartItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [cartOpen, setCartOpen] = useState(false)
+
+  const openCart = useCallback(() => setCartOpen(true), [])
+  const closeCart = useCallback(() => setCartOpen(false), [])
 
   useEffect(() => {
     const hydrate = () => setItems(parseCart(localStorage.getItem(STORAGE_KEY)))
@@ -146,8 +154,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearCart,
       totalItems,
       totalPrice,
+      cartOpen,
+      openCart,
+      closeCart,
+      setCartOpen,
     }),
-    [items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice]
+    [items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, cartOpen, openCart, closeCart]
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
@@ -165,6 +177,10 @@ export function useCart() {
       clearCart: () => {},
       totalItems: 0,
       totalPrice: 0,
+      cartOpen: false,
+      openCart: () => {},
+      closeCart: () => {},
+      setCartOpen: () => {},
     }
   }
   return ctx

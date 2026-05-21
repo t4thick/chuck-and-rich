@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 export function AddToCartButton({ product }: { product: import('@/types').Product }) {
-  const { addItem } = useCart()
+  const { addItem, openCart } = useCart()
   const toast = useToast()
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
@@ -24,6 +24,7 @@ export function AddToCartButton({ product }: { product: import('@/types').Produc
   function handleAdd() {
     addItem(product, quantity)
     toast?.show(`Added ${quantity} × ${product.name}`)
+    openCart()
     setAdded(true)
     setTimeout(() => setAdded(false), 1800)
   }

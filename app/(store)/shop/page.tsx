@@ -32,9 +32,12 @@ export default async function ShopPage({
   return (
     <div className="page-section">
       <div className="store-container">
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl">Shop</h1>
-          <p className="mt-2 text-stone-500">{title}</p>
+        <div className="mb-10">
+          <p className="section-eyebrow">Shop all</p>
+          <h1 className="section-title mt-2">{title === 'All products' ? 'Our marketplace' : title}</h1>
+          <p className="section-subtitle">
+            Premium African & Caribbean groceries — filter by category, price, or search.
+          </p>
         </div>
 
         <Suspense fallback={<p className="muted">Loading filters…</p>}>
