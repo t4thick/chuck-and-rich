@@ -7,7 +7,7 @@ import {
   ShopFiltersSidebar,
 } from '@/components/shop/ShopFilters'
 import { PageHeader } from '@/components/store/PageHeader'
-import { fetchProductsForShop } from '@/lib/supabase/products'
+import { fetchCategoryCounts, fetchProductsForShop } from '@/lib/supabase/products'
 import type { Product } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -21,12 +21,15 @@ export default async function ShopPage({
   const minN = p.minPrice ? parseFloat(p.minPrice) : NaN
   const maxN = p.maxPrice ? parseFloat(p.maxPrice) : NaN
 
-  const { products, errorMessage } = await fetchProductsForShop({
-    q: p.q,
-    category: p.category,
-    minPrice: Number.isNaN(minN) ? undefined : minN,
-    maxPrice: Number.isNaN(maxN) ? undefined : maxN,
-  })
+  const [{ products, errorMessage }, categoryCount] = await Promise.all([
+    fetchProductsForShop({
+      q: p.q,
+      category: p.category,
+      minPrice: Number.isNaN(minN) ? undefined : minN,
+      maxPrice: Number.isNaN(maxN) ? undefined : maxN,
+    }),
+    fetchCategoryCounts(),
+  ])
 
   const title = p.category ? p.category : p.q ? `Results for “${p.q}”` : 'All groceries'
 
@@ -43,14 +46,14 @@ export default async function ShopPage({
           <aside className="hidden lg:block">
             <div className="sticky top-24">
               <Suspense fallback={<p className="muted">Loading filters…</p>}>
-                <ShopFiltersSidebar />
+                <ShopFiltersSidebar categoryCount={categoryCount} />
               </Suspense>
             </div>
           </aside>
 
           <div>
             <Suspense fallback={null}>
-              <ShopFiltersBar />
+              <ShopFiltersBar categoryCount={categoryCount} />
             </Suspense>
 
             <Suspense fallback={null}>

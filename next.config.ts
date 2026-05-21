@@ -40,6 +40,16 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'lovelyqueenmart.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.lovelyqueenmart.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: '**.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },

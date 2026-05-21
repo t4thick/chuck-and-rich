@@ -70,6 +70,28 @@ export async function fetchProductsForShop(options?: {
   }
 }
 
+export async function fetchCategoryCounts(): Promise<Record<string, number>> {
+  const { configured } = getSupabasePublicConfig()
+  if (!configured) return {}
+
+  try {
+    const supabase = await createClientOptional()
+    if (!supabase) return {}
+    const { data } = await supabase.from('products').select('category').eq('in_stock', true)
+    return ((data ?? []) as { category: string | null }[]).reduce<Record<string, number>>(
+      (acc, row) => {
+        const name = row.category?.trim()
+        if (!name) return acc
+        acc[name] = (acc[name] ?? 0) + 1
+        return acc
+      },
+      {}
+    )
+  } catch {
+    return {}
+  }
+}
+
 export async function fetchHomepageProducts(): Promise<{
   bestSellers: Product[]
   categoryCount: Record<string, number>

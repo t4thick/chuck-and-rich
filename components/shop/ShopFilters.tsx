@@ -128,10 +128,18 @@ function PriceFields({
 function CategoryList({
   activeCategory,
   onSelect,
+  categoryCount,
 }: {
   activeCategory: string | null
   onSelect: (cat: string) => void
+  categoryCount?: Record<string, number>
 }) {
+  const categories = categoryCount
+    ? [...PRODUCT_CATEGORIES]
+        .filter((c) => (categoryCount[c] ?? 0) > 0)
+        .sort((a, b) => (categoryCount[b] ?? 0) - (categoryCount[a] ?? 0))
+    : PRODUCT_CATEGORIES
+
   return (
     <ul className="space-y-1">
       <li>
@@ -151,7 +159,7 @@ function CategoryList({
           All products
         </button>
       </li>
-      {PRODUCT_CATEGORIES.map((c) => (
+      {categories.map((c) => (
         <li key={c}>
           <button
             type="button"
@@ -166,7 +174,10 @@ function CategoryList({
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sand">
               <CategoryIcon category={c} className="h-4 w-4" />
             </span>
-            <span className="line-clamp-1">{c}</span>
+            <span className="line-clamp-1 flex-1">{c}</span>
+            {categoryCount?.[c] != null && (
+              <span className="shrink-0 text-xs tabular-nums text-earth-400">{categoryCount[c]}</span>
+            )}
           </button>
         </li>
       ))}
@@ -174,7 +185,7 @@ function CategoryList({
   )
 }
 
-export function ShopFiltersSidebar() {
+export function ShopFiltersSidebar({ categoryCount }: { categoryCount?: Record<string, number> }) {
   const state = useShopFilterState()
 
   return (
@@ -201,7 +212,11 @@ export function ShopFiltersSidebar() {
 
         <div>
           <p className="form-label mb-2">Category</p>
-          <CategoryList activeCategory={state.activeCategory} onSelect={state.setCategoryAndGo} />
+          <CategoryList
+            activeCategory={state.activeCategory}
+            onSelect={state.setCategoryAndGo}
+            categoryCount={categoryCount}
+          />
         </div>
 
         <div>
@@ -229,8 +244,13 @@ export function ShopFiltersSidebar() {
   )
 }
 
-export function ShopFiltersBar() {
+export function ShopFiltersBar({ categoryCount }: { categoryCount?: Record<string, number> }) {
   const state = useShopFilterState()
+  const mobileCategories = categoryCount
+    ? [...PRODUCT_CATEGORIES]
+        .filter((c) => (categoryCount[c] ?? 0) > 0)
+        .sort((a, b) => (categoryCount[b] ?? 0) - (categoryCount[a] ?? 0))
+    : PRODUCT_CATEGORIES
 
   return (
     <div className="space-y-4 lg:hidden">
@@ -273,9 +293,9 @@ export function ShopFiltersBar() {
                 onChange={(e) => state.setCategory(e.target.value)}
               >
                 <option value="">All categories</option>
-                {PRODUCT_CATEGORIES.map((c) => (
+                {mobileCategories.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    {categoryCount?.[c] != null ? `${c} (${categoryCount[c]})` : c}
                   </option>
                 ))}
               </select>
@@ -306,7 +326,7 @@ export function ShopFiltersBar() {
         >
           All
         </button>
-        {PRODUCT_CATEGORIES.slice(0, 10).map((c) => (
+        {mobileCategories.slice(0, 10).map((c) => (
           <button
             key={c}
             type="button"
