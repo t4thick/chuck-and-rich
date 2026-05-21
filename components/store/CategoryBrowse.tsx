@@ -38,7 +38,7 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
               <li key={cat}>
                 <Link
                   href={`/shop?category=${encodeURIComponent(cat)}`}
-                  className="asafo-category-tile group block no-underline"
+                  className="category-tile group block no-underline"
                 >
                   <div className="relative aspect-square overflow-hidden bg-earth-50">
                     {imageUrl ? (

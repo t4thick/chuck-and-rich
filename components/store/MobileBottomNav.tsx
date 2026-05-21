@@ -83,7 +83,7 @@ export function MobileBottomNav() {
                 </span>
                 <span
                   className={cn(
-                    'text-[10px] font-medium leading-none tracking-tight',
+                    'text-[11px] font-medium leading-none tracking-tight',
                     active && 'font-semibold'
                   )}
                 >

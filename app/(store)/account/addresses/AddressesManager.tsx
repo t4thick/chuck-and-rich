@@ -198,7 +198,7 @@ export function AddressesManager({ userId, initial }: { userId: string; initial:
                       <Star className="h-3 w-3 fill-current" /> Default
                     </span>
                   )}
-                  <p className="mt-2 font-display font-bold text-earth-950">
+                  <p className="mt-2 text-base font-semibold text-earth-900">
                     {a.label || 'Address'}
                   </p>
                 </div>
@@ -252,7 +252,7 @@ export function AddressesManager({ userId, initial }: { userId: string; initial:
 
       {draft && (
         <form onSubmit={save} className="premium-card space-y-4 p-6 sm:p-8">
-          <h3 className="font-display text-lg font-bold text-earth-950">
+          <h3 className="text-base font-semibold text-earth-900">
             {draft.id ? 'Edit address' : 'New address'}
           </h3>
           <div className="grid gap-4 sm:grid-cols-2">

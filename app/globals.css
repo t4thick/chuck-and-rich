@@ -1,7 +1,6 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-display: var(--font-cormorant), Georgia, serif;
   --font-sans: var(--font-montserrat), system-ui, sans-serif;
 
   /* Brand green */
@@ -145,7 +144,7 @@
     @apply relative aspect-square overflow-hidden bg-earth-50;
   }
 
-  .asafo-category-tile {
+  .category-tile {
     @apply relative block overflow-hidden rounded-xl border border-earth-200 bg-white shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-[2px] hover:border-earth-300 hover:shadow-[var(--shadow-card-hover)];
   }
 

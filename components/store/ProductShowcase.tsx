@@ -12,6 +12,8 @@ type ProductShowcaseProps = {
   eyebrow?: string
   viewAllHref?: string
   loading?: boolean
+  /** Number of leading product cards to mark as priority (LCP candidates above the fold). */
+  priorityCount?: number
 }
 
 export function ProductShowcase({
@@ -21,6 +23,7 @@ export function ProductShowcase({
   errorMessage,
   viewAllHref = '/shop',
   loading,
+  priorityCount = 0,
 }: ProductShowcaseProps) {
   return (
     <section className="page-section bg-white">
@@ -62,8 +65,8 @@ export function ProductShowcase({
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products.map((product, i) => (
+              <ProductCard key={product.id} product={product} priority={i < priorityCount} />
             ))}
           </div>
         )}

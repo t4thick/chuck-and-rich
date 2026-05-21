@@ -11,7 +11,7 @@
 
 const ENCODER_VERSION = 'v1'
 export const ADMIN_COOKIE_NAME = 'admin_session'
-export const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7 // 7 days
+export const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 8 // 8 hours
 
 function getSecret(): string {
   // Prefer a dedicated secret; fall back to ADMIN_PASSWORD only so existing deployments keep working.

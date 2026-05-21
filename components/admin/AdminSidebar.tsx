@@ -25,7 +25,7 @@ export function AdminSidebar() {
     <header className="border-b border-stone-200 bg-white">
       <div className="store-container flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-display text-lg font-bold text-brand-900">Admin</span>
+          <span className="text-base font-semibold text-earth-900">Admin</span>
           <nav className="flex flex-wrap gap-1" aria-label="Admin">
             {NAV.map(({ href, label, ...rest }) => {
               const exact = 'exact' in rest && rest.exact

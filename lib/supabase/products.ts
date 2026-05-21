@@ -44,7 +44,7 @@ export async function fetchProductsForShop(options?: {
         configured: false,
       }
     }
-    let query = supabase.from('products').select('*')
+    let query = supabase.from('products').select('id,name,price,image_url,category,in_stock,description,created_at')
     if (options?.q) query = query.ilike('name', `%${options.q}%`)
     if (options?.category) query = query.eq('category', options.category)
     if (options?.minPrice != null && !Number.isNaN(options.minPrice)) {
@@ -140,7 +140,7 @@ export async function fetchFrequentlyBoughtTogether(
     if (!supabase) return []
     const { data } = await supabase
       .from('products')
-      .select('*')
+      .select('id,name,price,image_url,category,in_stock,description,created_at')
       .eq('category', category)
       .eq('in_stock', true)
       .neq('id', excludeId)
@@ -169,12 +169,13 @@ export async function fetchHomepageProducts(): Promise<{
       return { bestSellers: [], categoryCount: {}, configured: false, errorMessage: formatCatalogError(null, false) }
     }
     const [bestRes, catRes] = await Promise.all([
+      // Fetch 16 so we can split into two non-overlapping showcase sections (trending + new arrivals).
       supabase
         .from('products')
-        .select('*')
+        .select('id,name,price,image_url,category,in_stock,description,created_at')
         .eq('in_stock', true)
         .order('created_at', { ascending: false })
-        .limit(12),
+        .limit(16),
       supabase.from('products').select('category').eq('in_stock', true),
     ])
 

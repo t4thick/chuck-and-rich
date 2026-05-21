@@ -15,8 +15,11 @@ export default async function Home() {
   const displayCategories =
     topCategories.length > 0 ? topCategories : PRODUCT_CATEGORIES.slice(0, 10)
 
+  // Split the 16 fetched products into two non-overlapping groups so both
+  // showcase sections display distinct products. "Trending" shows the 8 newest;
+  // "New arrivals" shows the next 8 (different products, not a reversed duplicate).
   const trending = bestSellers.slice(0, 8)
-  const newArrivals = [...bestSellers].reverse().slice(0, 8)
+  const newArrivals = bestSellers.slice(8, 16)
 
   return (
     <>
@@ -27,6 +30,7 @@ export default async function Home() {
         subtitle="What customers are buying right now."
         products={trending}
         errorMessage={errorMessage}
+        priorityCount={4}
       />
       <FeaturedCollections />
       <ProductShowcase

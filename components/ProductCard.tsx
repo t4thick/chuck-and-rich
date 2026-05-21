@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/utils'
 import type { Product } from '@/types'
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, priority }: { product: Product; priority?: boolean }) {
   const { addItem } = useCart()
   const toast = useToast()
   const [justAdded, setJustAdded] = useState(false)
@@ -39,6 +39,7 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             className="rounded-none"
             sizes="(max-width:640px) 50vw, 25vw"
+            priority={priority}
           />
           {!product.in_stock && (
             <span className="absolute left-2 top-2 rounded-md bg-earth-900/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">

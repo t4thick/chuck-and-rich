@@ -162,7 +162,7 @@ export function TrackOrderClient() {
           <div className="mt-10 grid gap-8 lg:grid-cols-2 lg:gap-12">
             <div className="premium-card p-6 sm:p-8">
               <p className="text-xs font-bold uppercase tracking-wider text-earth-500">Status</p>
-              <p className="mt-2 font-display text-2xl font-bold text-earth-950">
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-earth-900">
                 {ORDER_STATUS_LABEL[status]}
               </p>
               <p className="mt-1 font-mono text-xs text-earth-400">{data.order.id}</p>
@@ -174,7 +174,7 @@ export function TrackOrderClient() {
 
             <div className="space-y-6">
               <div className="premium-card p-6">
-                <h3 className="font-display font-bold text-earth-950">Delivery details</h3>
+                <h3 className="text-base font-semibold text-earth-900">Delivery details</h3>
                 <dl className="mt-4 space-y-3 text-sm">
                   <div className="flex justify-between gap-4">
                     <dt className="text-earth-500">Shipping</dt>
@@ -205,7 +205,7 @@ export function TrackOrderClient() {
 
               {data.items.length > 0 && (
                 <div className="premium-card p-6">
-                  <h3 className="font-display font-bold text-earth-950">Items</h3>
+                  <h3 className="text-base font-semibold text-earth-900">Items</h3>
                   <ul className="mt-4 space-y-3">
                     {data.items.map((item) => (
                       <li

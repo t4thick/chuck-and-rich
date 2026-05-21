@@ -15,32 +15,35 @@ test.describe('Navbar', () => {
 
   test('desktop header has search, Home, Shop, and cart', async ({ page }) => {
     const header = page.locator('header').first()
-    await expect(header.getByPlaceholder(/Search groceries/i)).toBeVisible()
+    await expect(
+      header.getByRole('searchbox', { name: /search products/i }).first()
+    ).toBeVisible()
     await expect(header.getByRole('link', { name: 'Home', exact: true })).toBeVisible()
     await expect(header.getByRole('link', { name: 'Shop', exact: true })).toBeVisible()
-    await expect(header.getByRole('link', { name: /Cart/i })).toBeVisible()
+    await expect(header.getByRole('button', { name: /^Cart/i })).toBeVisible()
   })
 
   test('Shop navigates to shop page', async ({ page }) => {
     await page.locator('header').getByRole('link', { name: 'Shop', exact: true }).click()
     await expect(page).toHaveURL(/\/shop/)
-    await expect(page.getByRole('heading', { name: 'Shop', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /All products/i })).toBeVisible()
   })
 
-  test('cart icon links to cart page', async ({ page }) => {
-    const cartLink = page.locator('header').getByRole('link', { name: /Cart/i }).first()
-    await expect(cartLink).toBeVisible()
-    await cartLink.click()
-    await expect(page).toHaveURL(/\/cart/)
+  test('Cart button opens the cart drawer', async ({ page }) => {
+    await page
+      .locator('header')
+      .getByRole('button', { name: /^Cart/i })
+      .first()
+      .click()
+    await expect(page.getByRole('dialog', { name: /shopping cart/i })).toBeVisible()
   })
 })
 
 test.describe('Mobile bottom navigation', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('shows Amazon-style tab bar with Home', async ({ page }) => {
+  test('shows tab bar with all 5 tabs', async ({ page }) => {
     await page.goto('/shop')
-
     const nav = page.getByRole('navigation', { name: 'Mobile navigation' })
     await expect(nav).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Home' })).toBeVisible()
@@ -52,7 +55,10 @@ test.describe('Mobile bottom navigation', () => {
 
   test('Home tab returns to homepage', async ({ page }) => {
     await page.goto('/shop')
-    await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Home' }).click()
+    await page
+      .getByRole('navigation', { name: 'Mobile navigation' })
+      .getByRole('link', { name: 'Home' })
+      .click()
     await expect(page).toHaveURL('/')
   })
 })

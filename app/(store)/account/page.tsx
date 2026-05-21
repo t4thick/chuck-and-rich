@@ -64,14 +64,14 @@ export default async function AccountPage() {
             className="premium-card premium-card-hover block p-5 no-underline"
           >
             <Icon className="h-5 w-5 text-brand-700" aria-hidden />
-            <p className="mt-3 font-display font-bold text-earth-950">{label}</p>
+            <p className="mt-3 text-sm font-semibold text-earth-900">{label}</p>
             <p className="mt-1 text-sm text-earth-600">{desc}</p>
           </Link>
         ))}
       </div>
 
       <div className="premium-card mt-10 p-6">
-        <h2 className="font-display text-lg font-bold text-earth-950">Profile</h2>
+        <h2 className="text-base font-semibold text-earth-900">Profile</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-3">
           <div>
             <dt className="text-xs font-bold uppercase tracking-wider text-earth-500">Name</dt>
@@ -90,7 +90,7 @@ export default async function AccountPage() {
 
       <div className="mt-10">
         <div className="flex items-end justify-between gap-4">
-          <h2 className="font-display text-xl font-bold text-earth-950">Recent orders</h2>
+          <h2 className="text-lg font-semibold text-earth-900">Recent orders</h2>
           <Link href="/shop" className="text-sm font-semibold text-brand-700 no-underline">
             Shop again
           </Link>
@@ -124,7 +124,7 @@ export default async function AccountPage() {
                         year: 'numeric',
                       })}
                     </p>
-                    <p className="mt-1 font-display font-bold text-earth-950">
+                    <p className="mt-1 text-base font-semibold text-earth-900 tabular-nums">
                       {formatMoney(Number(o.total_amount))}
                     </p>
                     <p className="mt-1 text-sm text-earth-600">{ORDER_STATUS_LABEL[st]}</p>

@@ -17,7 +17,11 @@ export async function PATCH(
 
   try {
     const { id } = await params
-    const { status, trackingNumber, note } = await req.json()
+    const body = await req.json()
+    const { status, trackingNumber } = body
+    // Cap note length to prevent oversized payloads from reaching the DB.
+    const noteRaw = typeof body.note === 'string' ? body.note.slice(0, 500) : ''
+    const note = noteRaw
     const normalized = normalizeOrderStatus(status)
     const nowIso = new Date().toISOString()
 

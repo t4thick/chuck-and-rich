@@ -44,7 +44,29 @@ export async function generateMetadata({
   const { id } = await params
   const product = await loadProduct(id)
   if (!product) return { title: 'Product not found', robots: { index: false } }
-  return { title: product.name, description: product.description ?? undefined }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
+  const productUrl = `${siteUrl}/products/${product.id}`
+  const description = product.description ?? `${product.name} — ${product.category} from Lovely Queen Market, Columbus OH.`
+
+  return {
+    title: product.name,
+    description,
+    openGraph: {
+      type: 'website',
+      url: productUrl,
+      title: product.name,
+      description,
+      siteName: 'Lovely Queen Market',
+      ...(product.image_url ? { images: [{ url: product.image_url, alt: product.name }] } : {}),
+    },
+    twitter: {
+      card: product.image_url ? 'summary_large_image' : 'summary',
+      title: product.name,
+      description,
+      ...(product.image_url ? { images: [product.image_url] } : {}),
+    },
+  }
 }
 
 const TRUST = [
@@ -67,8 +89,43 @@ export default async function ProductPage({
     fetchFrequentlyBoughtTogether(product.category, product.id, 3),
   ])
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description ?? undefined,
+    image: product.image_url ?? undefined,
+    url: `${siteUrl}/products/${product.id}`,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'USD',
+      price: product.price.toFixed(2),
+      availability: product.in_stock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'LocalBusiness',
+        name: 'Lovely Queen Market',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: '1668 E Dublin Granville Rd',
+          addressLocality: 'Columbus',
+          addressRegion: 'OH',
+          postalCode: '43229',
+          addressCountry: 'US',
+        },
+      },
+    },
+  }
+
   return (
     <div className="bg-white">
+      {/* JSON-LD for Google Shopping / rich results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <RecordRecentlyViewed product={product} />
       <div className="store-container py-6 sm:py-8 lg:py-10">
         <Link

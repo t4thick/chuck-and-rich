@@ -25,23 +25,30 @@ export function ProductImage({
     return (
       <div
         className={cn(
-          framed ? 'product-image-frame' : 'flex aspect-square items-center justify-center bg-sand',
+          framed
+            ? 'product-image-frame'
+            : 'flex aspect-square items-center justify-center bg-earth-50',
           className
         )}
         aria-hidden
       >
-        <Package className="h-10 w-10 text-brand-400/60 sm:h-12 sm:w-12" strokeWidth={1.25} />
+        <Package className="h-10 w-10 text-earth-400 sm:h-12 sm:w-12" strokeWidth={1.25} />
       </div>
     )
   }
 
   return (
-    <div className={cn(framed ? 'product-image-frame' : 'relative aspect-square bg-sand', className)}>
+    <div
+      className={cn(
+        framed ? 'product-image-frame' : 'relative aspect-square bg-earth-50',
+        className
+      )}
+    >
       <Image
         src={src}
         alt={alt}
         fill
-        className="object-contain p-1 transition-transform duration-500 group-hover:scale-[1.04]"
+        className="object-contain p-1 transition-transform duration-200 ease-out group-hover:scale-[1.03]"
         sizes={sizes}
         priority={priority}
       />

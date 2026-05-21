@@ -52,7 +52,7 @@ function CheckoutStep({
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-sm font-bold text-white">
           {step}
         </span>
-        <h2 className="font-display text-lg font-bold text-earth-950">{title}</h2>
+        <h2 className="text-base font-semibold text-earth-900">{title}</h2>
       </div>
       {children}
     </section>
@@ -385,7 +385,7 @@ export function CheckoutClient({ initialAccount }: { initialAccount: CheckoutAcc
 
           <div className="lg:col-span-2">
             <div className="premium-card sticky top-24 p-6">
-              <h2 className="font-display text-lg font-bold text-earth-950">Order summary</h2>
+              <h2 className="text-base font-semibold text-earth-900">Order summary</h2>
               <ul className="mt-4 space-y-3 text-sm">
                 {items.map(({ product, quantity }) => (
                   <li

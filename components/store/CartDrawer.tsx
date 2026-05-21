@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Minus, Plus, ShoppingBag, X } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useCart } from '@/context/CartContext'
 import { ProductImage } from '@/components/store/ProductImage'
 import { Button } from '@/components/ui/button'
@@ -21,16 +21,73 @@ export function CartDrawer() {
     totalPrice,
   } = useCart()
 
+  const drawerRef = useRef<HTMLElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  // ---------------------------------------------------------------------------
+  // Scroll lock — iOS-safe (position:fixed) instead of overflow:hidden
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (cartOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    if (!cartOpen) return
+
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, scrollY)
     }
   }, [cartOpen])
+
+  // ---------------------------------------------------------------------------
+  // Focus trap — keep Tab/Shift+Tab inside the drawer when it's open
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!cartOpen) return
+
+    // Move initial focus to the close button.
+    closeButtonRef.current?.focus()
+
+    const drawer = drawerRef.current
+    if (!drawer) return
+
+    const FOCUSABLE =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        closeCart()
+        return
+      }
+
+      if (e.key !== 'Tab') return
+
+      const focusable = Array.from(drawer!.querySelectorAll<HTMLElement>(FOCUSABLE))
+      if (focusable.length === 0) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [cartOpen, closeCart])
 
   if (!cartOpen) return null
 
@@ -39,13 +96,21 @@ export function CartDrawer() {
 
   return (
     <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Shopping cart">
+      {/* Backdrop */}
       <button
         type="button"
         className="animate-fade-in absolute inset-0 bg-earth-950/45"
         aria-label="Close cart"
         onClick={closeCart}
+        tabIndex={-1}
       />
-      <aside className="animate-slide-in-right absolute bottom-0 right-0 top-0 flex w-full max-w-md flex-col bg-white shadow-[var(--shadow-premium)] sm:max-w-lg">
+
+      {/* Drawer */}
+      <aside
+        ref={drawerRef}
+        className="animate-slide-in-right absolute bottom-0 right-0 top-0 flex w-full max-w-md flex-col bg-white shadow-[var(--shadow-premium)] sm:max-w-lg"
+      >
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-earth-200 px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <ShoppingBag className="h-5 w-5 text-earth-700" aria-hidden />
@@ -53,11 +118,19 @@ export function CartDrawer() {
               Cart {totalItems > 0 && <span className="text-earth-500">({totalItems})</span>}
             </h2>
           </div>
-          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={closeCart} aria-label="Close">
+          <Button
+            ref={closeButtonRef}
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={closeCart}
+            aria-label="Close cart"
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
+        {/* Free-shipping progress */}
         {items.length > 0 && (
           <div className="border-b border-earth-100 bg-earth-50 px-5 py-3">
             {remaining > 0 ? (
@@ -77,6 +150,7 @@ export function CartDrawer() {
           </div>
         )}
 
+        {/* Empty state */}
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-earth-100">
@@ -90,6 +164,7 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
+            {/* Item list */}
             <ul className="flex-1 space-y-2 overflow-y-auto p-4">
               {items.map(({ product, quantity }) => (
                 <li
@@ -109,6 +184,7 @@ export function CartDrawer() {
                       framed={false}
                     />
                   </Link>
+
                   <div className="flex min-w-0 flex-1 flex-col">
                     <Link
                       href={`/products/${product.id}`}
@@ -120,29 +196,32 @@ export function CartDrawer() {
                     <p className="mt-0.5 text-sm font-semibold text-earth-900">
                       {formatMoney(product.price)}
                     </p>
+
                     <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                      {/* Quantity controls — min 44×44 tap target per AGENTS.md */}
                       <div className="inline-flex items-center rounded-md border border-earth-200">
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50 disabled:opacity-40"
-                          aria-label="Decrease"
+                          className="flex h-11 w-11 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50 disabled:opacity-40"
+                          aria-label={`Decrease quantity of ${product.name}`}
                           disabled={quantity <= 1}
                           onClick={() => updateQuantity(product.id, Math.max(1, quantity - 1))}
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums">
+                        <span className="min-w-[2rem] text-center text-sm font-semibold tabular-nums">
                           {quantity}
                         </span>
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50"
-                          aria-label="Increase"
+                          className="flex h-11 w-11 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50"
+                          aria-label={`Increase quantity of ${product.name}`}
                           onClick={() => updateQuantity(product.id, Math.min(99, quantity + 1))}
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
+
                       <button
                         type="button"
                         className="text-xs font-medium text-earth-500 transition-colors hover:text-red-600"
@@ -156,6 +235,7 @@ export function CartDrawer() {
               ))}
             </ul>
 
+            {/* Footer */}
             <div className="border-t border-earth-200 bg-white p-5">
               <div className="flex items-baseline justify-between">
                 <span className="text-sm text-earth-600">Subtotal</span>
