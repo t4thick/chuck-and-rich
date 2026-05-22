@@ -15,19 +15,12 @@ const montserrat = Montserrat({
   display: 'swap',
 })
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://lovely-queen-market.vercel.app'
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
   title: {
     default: STORE.shortName,
     template: `%s · ${STORE.shortName}`,
   },
   description: STORE.tagline,
-  icons: {
-    apple: '/brand/apple-touch-icon.png',
-  },
   openGraph: {
     type: 'website',
     siteName: STORE.name,
