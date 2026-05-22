@@ -1,22 +1,23 @@
-const U = (id: string) =>
-  `https://images.unsplash.com/photo-${id}?w=420&h=420&fit=crop&q=80`
+// Real food photography from Unsplash free tier (images.unsplash.com, not plus.unsplash.com).
+// CDN IDs verified — these are NOT the short page slugs, they are the actual image IDs.
+const U = (cdnId: string) =>
+  `https://images.unsplash.com/${cdnId}?w=420&h=420&fit=crop&q=80`
 
 export const CATEGORY_IMAGES: Record<string, string> = {
-  // Real food photography — no composites or AI imagery
-  Beverages:       U('X21UfqJwpuk'), // grocery shelf stocked with bottled drinks
-  Bread:           U('uGopmYwL7TI'), // two artisan loaves on a cutting board
-  Canned:          U('78sgLm2QGP4'), // vintage canned goods on store shelves
-  'Caribbean product': U('gw0_4PckI8Q'), // pile of ripe mangoes
-  Cosmetics:       U('4rO9pYB_hgw'), // natural skincare products on wood
-  'Dairy And Tea': U('Zzc9i7GUz50'), // eggs and glass of milk on linen
-  'Flours & Rice': U('E85Jb-wW7Tg'), // wooden scoop resting on a pile of rice
-  'Fresh Produce': U('k0MigzUz-vI'), // pile of sweet potatoes / yams
-  'Frozen foods':  U('r4AaDhoKcO8'), // shrimp on ice
-  'Meat and Seafood': U('DCC6qE0RAps'), // fresh seafood displayed at a market
-  Motherland:      U('e6PwBakXOJM'), // jars of pantry staples on a shelf
-  'Non food':      U('48gk2I7mRs8'), // cleaning-products display in a store
-  Snack:           U('7urn4fbk6yo'), // chips and dips on a tray
-  Spices:          U('O6nOEZcLCWQ'), // bowls of colourful spices
+  Beverages:           U('photo-1755752919046-a6543db419cc'), // grocery shelf with bottled drinks
+  Bread:               U('photo-1725297952102-ab28892a31ab'), // assorted breads on a table
+  Canned:              U('photo-1760926548218-086f0f60e778'), // vintage canned goods on shelves
+  'Caribbean product': U('photo-1617631716600-6a454b430367'), // green bananas / plantains
+  Cosmetics:           U('photo-1580870069867-74c57ee1bb07'), // skincare bottles on surface
+  'Dairy And Tea':     U('photo-1552593050-477020c5af3f'), // eggs and glass of milk
+  'Flours & Rice':     U('photo-1686820740687-426a7b9b2043'), // pile of white rice
+  'Fresh Produce':     U('photo-1730815048561-45df6f7f331d'), // sweet potatoes / yams
+  'Frozen foods':      U('photo-1601599967100-f16100982063'), // commercial refrigerator
+  'Meat and Seafood':  U('photo-1754587489041-9fc8301f4c98'), // fresh seafood at market
+  Motherland:          U('photo-1645567454567-901dc409551b'), // jars of pantry staples
+  'Non food':          U('photo-1643107303813-077f2061cec1'), // cleaning products in store
+  Snack:               U('photo-1644447393594-86ac32d94a09'), // chips and dips on tray
+  Spices:              U('photo-1524593481568-2e46b9ffcd16'), // colourful spice bowls
 }
 
 export function getCategoryImage(category: string): string | undefined {
