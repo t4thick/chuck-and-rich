@@ -24,7 +24,7 @@ function LogoContent({ variant }: { variant: 'nav' | 'footer' }) {
     <div className="flex items-center gap-2.5 sm:gap-3">
       <QueenTiaraMark
         uid={isFooter ? 'lq-footer' : 'lq-nav'}
-        className={cn(isFooter ? 'w-12 sm:w-14' : undefined)}
+        className={cn(isFooter ? 'h-12 w-auto sm:h-14' : 'h-9 w-auto sm:h-10')}
       />
 
       <div className="flex min-w-0 flex-col leading-none">

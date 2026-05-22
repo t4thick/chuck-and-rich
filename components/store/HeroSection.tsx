@@ -60,7 +60,7 @@ export function HeroSection() {
         {/* Mobile content */}
         <div className="store-container pb-8 pt-0 text-center">
           <div className="flex items-center justify-center gap-2">
-            <QueenTiaraMark uid="lq-hero-m" className="w-7" />
+            <QueenTiaraMark uid="lq-hero-m" className="h-8 w-auto" />
             <p className="text-[11px] font-bold uppercase tracking-[0.12em]">
               <span className="text-queen-red">Lovely Queen</span>
               <span className="text-earth-400"> · </span>
@@ -158,7 +158,7 @@ export function HeroSection() {
         <div className="hero-split__content store-container">
           <div className="mx-auto w-full max-w-3xl text-center">
             <div className="flex items-center justify-center gap-2">
-              <QueenTiaraMark uid="lq-hero-d" className="w-8" />
+              <QueenTiaraMark uid="lq-hero-d" className="h-9 w-auto" />
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] sm:text-xs">
                 <span className="text-queen-red">Lovely Queen</span>
                 <span className="text-earth-400"> · </span>

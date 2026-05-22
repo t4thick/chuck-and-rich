@@ -16,10 +16,10 @@ export function QueenTiaraMark({ className }: QueenTiaraMarkProps) {
     <Image
       src="/brand/crown-mark.png"
       alt=""
-      width={440}
-      height={390}
-      sizes="(max-width: 640px) 42px, 52px"
-      className={cn('h-auto w-[2.625rem] shrink-0 object-contain sm:w-[3.125rem]', className)}
+      width={385}
+      height={182}
+      sizes="(max-width: 640px) 72px, 80px"
+      className={cn('h-8 w-auto shrink-0 object-contain sm:h-9', className)}
       priority
     />
   )
