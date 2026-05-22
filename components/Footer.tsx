@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { Lock, MapPin, Phone, ShieldCheck, Store } from 'lucide-react'
+import { Lock, MapPin, Phone, ShieldCheck } from 'lucide-react'
 import { STORE } from '@/lib/constants/store'
+import { StoreLogo } from '@/components/ui/StoreLogo'
 
 const SHOP_LINKS = [
   { href: '/shop', label: 'All products' },
@@ -28,14 +29,10 @@ export function Footer() {
       <div className="store-container py-12 sm:py-14">
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-4 lg:gap-10">
           <div className="lg:col-span-1">
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-700 text-white">
-                <Store className="h-4 w-4" aria-hidden />
-              </span>
-              <p className="text-base font-semibold text-earth-900">{STORE.shortName}</p>
-            </div>
+            <StoreLogo variant="footer" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-earth-600">
-              African & Caribbean groceries shipped fast from Columbus, Ohio.
+              Columbus, Ohio&apos;s home for authentic African &amp; Caribbean groceries — pickup,
+              delivery, and nationwide shipping.
             </p>
             <div className="mt-5 flex flex-wrap gap-3 text-xs font-medium text-earth-500">
               <span className="inline-flex items-center gap-1.5">
