@@ -3,12 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Menu, ShoppingBag, Store, X } from 'lucide-react'
+import { Menu, ShoppingBag, X } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { NavbarAuth } from '@/components/NavbarAuth'
 import { ShopSearchBar } from '@/components/store/ShopSearchBar'
 import { Button } from '@/components/ui/button'
-import { STORE } from '@/lib/constants/store'
+import { StoreLogo } from '@/components/ui/StoreLogo'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
@@ -62,18 +62,7 @@ export function Navbar() {
       >
         <div className="store-container">
           <div className="flex h-14 items-center justify-between gap-3 sm:h-16">
-            <Link
-              href="/"
-              className="flex shrink-0 items-center gap-2 no-underline"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-700 text-white">
-                <Store className="h-4 w-4" aria-hidden />
-              </span>
-              <span className="text-base font-semibold tracking-tight text-earth-900 sm:text-[17px]">
-                <span className="hidden sm:inline">{STORE.shortName}</span>
-                <span className="sm:hidden">Lovely Queen</span>
-              </span>
-            </Link>
+            <StoreLogo />
 
             <div className="hidden flex-1 px-4 md:block md:max-w-md lg:max-w-xl">
               <ShopSearchBar compact />
