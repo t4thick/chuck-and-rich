@@ -1,36 +1,22 @@
-/**
- * Category hero images from asafointernational.com (same taxonomy as Lovely Queen).
- * Used for WooCommerce-style category tiles on home and shop.
- */
+const U = (id: string) =>
+  `https://images.unsplash.com/photo-${id}?w=420&h=420&fit=crop&q=80`
+
 export const CATEGORY_IMAGES: Record<string, string> = {
-  Beverages:
-    'https://asafointernational.com/wp-content/uploads/2025/01/Beverages-2-min-420x420.jpg',
-  Bread:
-    'https://asafointernational.com/wp-content/uploads/2025/01/Bread-Display-1-420x420.png',
-  Canned:
-    'https://asafointernational.com/wp-content/uploads/2025/01/Motherland-canned-images-420x420.jpeg',
-  'Caribbean product':
-    'https://asafointernational.com/wp-content/uploads/2025/01/Carribean-Display-min-420x420.png',
-  Cosmetics:
-    'https://asafointernational.com/wp-content/uploads/2025/01/cosmetics-420x420.jpeg',
-  'Dairy And Tea':
-    'https://asafointernational.com/wp-content/uploads/2025/01/asafo-international-Diary-420x420.jpeg',
-  'Flours & Rice':
-    'https://asafointernational.com/wp-content/uploads/2025/01/Rice-and-Flour-Display-420x420.png',
-  'Fresh Produce':
-    'https://asafointernational.com/wp-content/uploads/2025/01/yam-display-420x420.jpg',
-  'Frozen foods':
-    'https://asafointernational.com/wp-content/uploads/2025/01/Frozen-Foods-min-420x420.jpg',
-  'Meat and Seafood':
-    'https://asafointernational.com/wp-content/uploads/2025/01/meat-420x420.jpeg',
-  Motherland:
-    'https://asafointernational.com/wp-content/uploads/2025/01/Motherland-Product-display-420x420.jpg',
-  'Non food':
-    'https://asafointernational.com/wp-content/uploads/2025/02/Non-Food-420x420.jpg',
-  Snack:
-    'https://asafointernational.com/wp-content/uploads/2024/10/Asafo-International-Snacks-420x420.jpg',
-  Spices:
-    'https://asafointernational.com/wp-content/uploads/2024/11/42-tm_home_default.png',
+  // Real food photography — no composites or AI imagery
+  Beverages:       U('X21UfqJwpuk'), // grocery shelf stocked with bottled drinks
+  Bread:           U('uGopmYwL7TI'), // two artisan loaves on a cutting board
+  Canned:          U('78sgLm2QGP4'), // vintage canned goods on store shelves
+  'Caribbean product': U('gw0_4PckI8Q'), // pile of ripe mangoes
+  Cosmetics:       U('4rO9pYB_hgw'), // natural skincare products on wood
+  'Dairy And Tea': U('Zzc9i7GUz50'), // eggs and glass of milk on linen
+  'Flours & Rice': U('E85Jb-wW7Tg'), // wooden scoop resting on a pile of rice
+  'Fresh Produce': U('k0MigzUz-vI'), // pile of sweet potatoes / yams
+  'Frozen foods':  U('r4AaDhoKcO8'), // shrimp on ice
+  'Meat and Seafood': U('DCC6qE0RAps'), // fresh seafood displayed at a market
+  Motherland:      U('e6PwBakXOJM'), // jars of pantry staples on a shelf
+  'Non food':      U('48gk2I7mRs8'), // cleaning-products display in a store
+  Snack:           U('7urn4fbk6yo'), // chips and dips on a tray
+  Spices:          U('O6nOEZcLCWQ'), // bowls of colourful spices
 }
 
 export function getCategoryImage(category: string): string | undefined {
