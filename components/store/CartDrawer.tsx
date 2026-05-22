@@ -122,7 +122,7 @@ export function CartDrawer() {
             ref={closeButtonRef}
             variant="ghost"
             size="icon"
-            className="h-9 w-9"
+            className="h-11 w-11"
             onClick={closeCart}
             aria-label="Close cart"
           >

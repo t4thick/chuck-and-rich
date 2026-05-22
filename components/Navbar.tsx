@@ -41,117 +41,45 @@ export function Navbar() {
     setBadgeKey(totalItems)
   }, [totalItems])
 
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-50 border-b transition-colors duration-150',
-        scrolled
-          ? 'glass-nav border-earth-200'
-          : 'border-earth-100 bg-white'
-      )}
-    >
-      <div className="store-container">
-        <div className="flex h-14 items-center justify-between gap-3 sm:h-16">
-          <Link
-            href="/"
-            className="flex shrink-0 items-center gap-2 no-underline"
-            onClick={() => setOpen(false)}
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-700 text-white">
-              <Store className="h-4 w-4" aria-hidden />
-            </span>
-            <span className="text-base font-semibold tracking-tight text-earth-900 sm:text-[17px]">
-              <span className="hidden sm:inline">{STORE.shortName}</span>
-              <span className="sm:hidden">Lovely Queen</span>
-            </span>
-          </Link>
-
-          <div className="hidden flex-1 px-4 md:block md:max-w-md lg:max-w-xl">
-            <ShopSearchBar compact />
-          </div>
-
-          <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Main">
-            {NAV_LINKS.map(({ href, label }) => {
-              const active = isActive(pathname, href)
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    'rounded-md px-3 py-1.5 text-sm font-medium no-underline transition-colors duration-150',
-                    active
-                      ? 'bg-earth-100 text-earth-900'
-                      : 'text-earth-600 hover:bg-earth-50 hover:text-earth-900'
-                  )}
-                >
-                  {label}
-                </Link>
-              )
-            })}
-            <NavbarAuth className="ml-1" />
-            <Button
-              type="button"
-              size="sm"
-              className="relative ml-2 h-9 gap-1.5 px-3.5"
-              onClick={openCart}
+    <>
+      <header
+        className={cn(
+          'sticky top-0 z-50 border-b transition-colors duration-150',
+          scrolled
+            ? 'glass-nav border-earth-200'
+            : 'border-earth-100 bg-white'
+        )}
+      >
+        <div className="store-container">
+          <div className="flex h-14 items-center justify-between gap-3 sm:h-16">
+            <Link
+              href="/"
+              className="flex shrink-0 items-center gap-2 no-underline"
             >
-              <ShoppingBag className="h-4 w-4" aria-hidden />
-              Cart
-              {totalItems > 0 && (
-                <span
-                  key={badgeKey}
-                  className="animate-pop flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-[11px] font-semibold leading-none text-white"
-                >
-                  {totalItems > 99 ? '99+' : totalItems}
-                </span>
-              )}
-            </Button>
-          </nav>
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-700 text-white">
+                <Store className="h-4 w-4" aria-hidden />
+              </span>
+              <span className="text-base font-semibold tracking-tight text-earth-900 sm:text-[17px]">
+                <span className="hidden sm:inline">{STORE.shortName}</span>
+                <span className="sm:hidden">Lovely Queen</span>
+              </span>
+            </Link>
 
-          <div className="flex items-center gap-1 lg:hidden">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="relative h-10 w-10"
-              aria-label={`Cart, ${totalItems} items`}
-              onClick={openCart}
-            >
-              <ShoppingBag className="h-5 w-5" />
-              {totalItems > 0 && (
-                <span
-                  key={badgeKey}
-                  className="animate-pop absolute right-0.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-0.5 text-[10px] font-semibold leading-none text-white"
-                >
-                  {totalItems > 99 ? '99+' : totalItems}
-                </span>
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10"
-              aria-expanded={open}
-              aria-controls="mobile-nav"
-              aria-label={open ? 'Close menu' : 'Open menu'}
-              onClick={() => setOpen((v) => !v)}
-            >
-              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
+            <div className="hidden flex-1 px-4 md:block md:max-w-md lg:max-w-xl">
+              <ShopSearchBar compact />
+            </div>
 
-        <div className="pb-3 md:hidden">
-          <ShopSearchBar compact />
-        </div>
-
-        {open && (
-          <nav
-            id="mobile-nav"
-            className="animate-fade-in border-t border-earth-100 pb-4 pt-2 lg:hidden"
-            aria-label="Mobile"
-          >
-            <div className="flex flex-col gap-0.5">
+            <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Main">
               {NAV_LINKS.map(({ href, label }) => {
                 const active = isActive(pathname, href)
                 return (
@@ -159,24 +87,130 @@ export function Navbar() {
                     key={href}
                     href={href}
                     className={cn(
-                      'rounded-md px-3 py-2.5 text-[15px] font-medium no-underline transition-colors duration-150',
+                      'rounded-md px-3 py-1.5 text-sm font-medium no-underline transition-colors duration-150',
                       active
                         ? 'bg-earth-100 text-earth-900'
-                        : 'text-earth-700 hover:bg-earth-50'
+                        : 'text-earth-600 hover:bg-earth-50 hover:text-earth-900'
                     )}
-                    onClick={() => setOpen(false)}
                   >
                     {label}
                   </Link>
                 )
               })}
-              <div className="mt-3 flex flex-col gap-2 border-t border-earth-100 px-2 pt-3">
+              <NavbarAuth className="ml-1" />
+              <Button
+                type="button"
+                size="sm"
+                className="relative ml-2 h-9 gap-1.5 px-3.5"
+                onClick={openCart}
+              >
+                <ShoppingBag className="h-4 w-4" aria-hidden />
+                Cart
+                {totalItems > 0 && (
+                  <span
+                    key={badgeKey}
+                    className="animate-pop flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-[11px] font-semibold leading-none text-white"
+                  >
+                    {totalItems > 99 ? '99+' : totalItems}
+                  </span>
+                )}
+              </Button>
+            </nav>
+
+            {/* Mobile: cart + hamburger */}
+            <div className="flex items-center gap-0.5 lg:hidden">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="relative h-11 w-11"
+                aria-label={`Cart, ${totalItems} items`}
+                onClick={openCart}
+              >
+                <ShoppingBag className="h-5 w-5" />
+                {totalItems > 0 && (
+                  <span
+                    key={badgeKey}
+                    className="animate-pop absolute right-1 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-0.5 text-[10px] font-semibold leading-none text-white"
+                  >
+                    {totalItems > 99 ? '99+' : totalItems}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11"
+                aria-expanded={open}
+                aria-controls="mobile-nav"
+                aria-label={open ? 'Close menu' : 'Open menu'}
+                onClick={() => setOpen((v) => !v)}
+              >
+                {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile search — sits flush under the icon row */}
+          <div className="pb-2.5 md:hidden">
+            <ShopSearchBar compact />
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile menu: backdrop + slide-in drawer */}
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 z-[60] bg-black/25 lg:hidden"
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <nav
+            id="mobile-nav"
+            className="animate-slide-in-right fixed inset-y-0 right-0 z-[70] flex w-72 flex-col bg-white shadow-2xl lg:hidden"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            aria-label="Mobile"
+          >
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-earth-100 px-4">
+              <span className="text-sm font-semibold text-earth-900">Menu</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11"
+                onClick={() => setOpen(false)}
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="flex flex-col gap-1 overflow-y-auto p-3">
+              {NAV_LINKS.map(({ href, label }) => {
+                const active = isActive(pathname, href)
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex h-12 items-center rounded-lg px-4 text-[15px] font-medium no-underline transition-colors duration-150',
+                      active
+                        ? 'bg-brand-50 text-brand-800'
+                        : 'text-earth-700 hover:bg-earth-50 hover:text-earth-900'
+                    )}
+                  >
+                    {label}
+                  </Link>
+                )
+              })}
+
+              <div className="mt-2 border-t border-earth-100 pt-3 px-1">
                 <NavbarAuth onNavigate={() => setOpen(false)} />
               </div>
             </div>
           </nav>
-        )}
-      </div>
-    </header>
+        </>
+      )}
+    </>
   )
 }

@@ -168,11 +168,12 @@
   }
 
   .form-input {
-    @apply w-full rounded-lg border border-earth-200 bg-white px-3 py-2.5 text-sm text-earth-900 transition placeholder:text-earth-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
+    /* text-base (16px) prevents iOS Safari from auto-zooming on focus; sm+ drops back to 14px */
+    @apply w-full rounded-lg border border-earth-200 bg-white px-3 py-2.5 text-base text-earth-900 transition placeholder:text-earth-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 sm:text-sm;
   }
 
   .form-select {
-    @apply w-full appearance-none rounded-lg border border-earth-200 bg-white px-3 py-2.5 pr-10 text-sm text-earth-900 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
+    @apply w-full appearance-none rounded-lg border border-earth-200 bg-white px-3 py-2.5 pr-10 text-base text-earth-900 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 sm:text-sm;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2378716c'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
     background-size: 1rem;
     background-position: right 0.75rem center;
@@ -247,16 +248,10 @@
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold;
   }
 
-  /* Split-store hero: sharp linear masks only — no backdrop-filter / blur */
+  /* Desktop-only split hero — applied to the sm+ wrapper div inside HeroSection */
   .hero-split {
-    @apply relative overflow-hidden border-b border-earth-200;
-    min-height: min(92vh, 720px);
-  }
-
-  @media (min-width: 640px) {
-    .hero-split {
-      min-height: min(88vh, 680px);
-    }
+    @apply relative overflow-hidden;
+    min-height: min(88vh, 680px);
   }
 
   @media (min-width: 1024px) {
@@ -266,7 +261,14 @@
   }
 
   .hero-split__panel {
-    @apply absolute inset-y-0 w-[50%] sm:w-[46%] lg:w-[42%];
+    @apply absolute inset-y-0;
+    width: 46%;
+  }
+
+  @media (min-width: 1024px) {
+    .hero-split__panel {
+      width: 42%;
+    }
   }
 
   .hero-split__panel--left {
@@ -314,16 +316,16 @@
     .hero-split__center-band {
       background: linear-gradient(
         180deg,
-        rgb(255 255 255 / 0.94) 0%,
-        #fff 18%,
-        #fff 82%,
-        rgb(255 255 255 / 0.92) 100%
+        rgb(255 255 255 / 0.96) 0%,
+        #fff 20%,
+        #fff 80%,
+        rgb(255 255 255 / 0.94) 100%
       );
     }
   }
 
   .hero-split__content {
-    @apply relative z-10 flex min-h-[inherit] flex-col justify-center py-12 sm:py-14 lg:py-16;
+    @apply relative z-10 flex min-h-[inherit] flex-col justify-center py-14 lg:py-16;
   }
 
   .stack > * + * {
@@ -427,6 +429,15 @@
   }
 }
 
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @keyframes skeleton-shimmer {
   0% {
     transform: translateX(-100%);
@@ -462,6 +473,10 @@
 
 .animate-pop {
   animation: pop 0.18s var(--ease-out-quart);
+}
+
+.animate-slide-up {
+  animation: slide-up 0.22s ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

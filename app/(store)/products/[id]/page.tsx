@@ -5,6 +5,7 @@ import { ArrowLeft, CreditCard, MapPin, RotateCcw, Truck } from 'lucide-react'
 import { createClientOptional } from '@/lib/supabase/server'
 import { fetchFrequentlyBoughtTogether } from '@/lib/supabase/products'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { ProductStickyBar } from '@/components/store/ProductStickyBar'
 import { ProductCard } from '@/components/ProductCard'
 import { ProductImage } from '@/components/store/ProductImage'
 import { RecordRecentlyViewed } from '@/components/store/RecordRecentlyViewed'
@@ -173,9 +174,10 @@ export default async function ProductPage({
               </p>
             )}
 
-            <div className="mt-7 rounded-xl border border-earth-200 bg-white p-5 lg:sticky lg:top-24">
+            <div id="product-cta" className="mt-7 rounded-xl border border-earth-200 bg-white p-5 lg:sticky lg:top-24">
               <AddToCartButton product={product} />
             </div>
+            <ProductStickyBar product={product} sentinelId="product-cta" />
 
             <ul className="mt-6 grid gap-2 sm:grid-cols-3">
               {TRUST.map(({ icon: Icon, label }) => (

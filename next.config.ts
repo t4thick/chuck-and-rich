@@ -9,9 +9,10 @@ const nextConfig: NextConfig = {
   async headers() {
     // CSP: Next.js App Router requires 'unsafe-inline' for its own hydration scripts.
     // A full nonce-based CSP would need custom middleware; this is the practical baseline.
+    const isDev = process.env.NODE_ENV === 'development'
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://asafointernational.com https://lovelyqueenmart.com https://www.lovelyqueenmart.com",
@@ -48,6 +49,7 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    qualities: [75, 90],
     remotePatterns: [
       {
         protocol: 'https',

@@ -42,7 +42,7 @@ export function AddToCartButton({ product }: { product: Product }) {
         <div className="inline-flex items-center rounded-md border border-earth-200 bg-white">
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50 disabled:opacity-40"
+            className="flex h-11 w-11 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50 disabled:opacity-40"
             aria-label="Decrease quantity"
             disabled={quantity <= 1}
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -54,7 +54,7 @@ export function AddToCartButton({ product }: { product: Product }) {
           </span>
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50"
+            className="flex h-11 w-11 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50"
             aria-label="Increase quantity"
             onClick={() => setQuantity((q) => Math.min(99, q + 1))}
           >

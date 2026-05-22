@@ -408,6 +408,21 @@ export function ShopFiltersBar({
   categoryCount?: Record<string, number>
 }) {
   const state = useShopFilterState()
+
+  useEffect(() => {
+    if (!state.mobileOpen) return
+    const y = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${y}px`
+    document.body.style.width = '100%'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, y)
+    }
+  }, [state.mobileOpen])
+
   const mobileCategories = categoryCount
     ? [...PRODUCT_CATEGORIES]
         .filter((c) => (categoryCount[c] ?? 0) > 0)
@@ -466,36 +481,60 @@ export function ShopFiltersBar({
       </div>
 
       {state.mobileOpen && (
-        <form
-          onSubmit={state.apply}
-          className="animate-fade-in space-y-4 rounded-xl border border-earth-200 bg-white p-4"
-        >
-          <StockToggle checked={state.inStockOnly} onChange={state.toggleStockAndGo} />
-          <div>
-            <p className="form-label mb-1.5">Price</p>
-            <PriceFields
-              minPrice={state.minPrice}
-              maxPrice={state.maxPrice}
-              setMinPrice={state.setMinPrice}
-              setMaxPrice={state.setMaxPrice}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" size="sm" className="flex-1">
-              Apply
-            </Button>
-            {state.hasFilters && (
-              <Button
+        <>
+          <button
+            type="button"
+            className="animate-fade-in fixed inset-0 z-40 bg-earth-950/45"
+            onClick={() => state.setMobileOpen(false)}
+            aria-hidden
+            tabIndex={-1}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filters"
+            className="animate-slide-up fixed inset-x-0 bottom-0 z-50 flex max-h-[80dvh] flex-col rounded-t-2xl border-t border-earth-200 bg-white shadow-[var(--shadow-premium)]"
+          >
+            <div className="flex shrink-0 flex-col items-center pb-1 pt-3">
+              <div className="h-1 w-10 rounded-full bg-earth-200" />
+            </div>
+            <div className="flex shrink-0 items-center justify-between border-b border-earth-100 px-5 py-3">
+              <p className="text-sm font-semibold text-earth-900">Filters</p>
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
-                onClick={state.reset}
+                className="flex h-11 w-11 items-center justify-center rounded-md text-earth-600 transition-colors hover:bg-earth-50"
+                onClick={() => state.setMobileOpen(false)}
+                aria-label="Close filters"
               >
-                Clear
-              </Button>
-            )}
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={state.apply} className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex-1 space-y-5 overflow-y-auto p-5">
+                <StockToggle checked={state.inStockOnly} onChange={state.toggleStockAndGo} />
+                <div>
+                  <p className="form-label mb-1.5">Price range</p>
+                  <PriceFields
+                    minPrice={state.minPrice}
+                    maxPrice={state.maxPrice}
+                    setMinPrice={state.setMinPrice}
+                    setMaxPrice={state.setMaxPrice}
+                  />
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2 border-t border-earth-100 p-4">
+                <Button type="submit" size="lg" className="h-11 flex-1">
+                  Apply filters
+                </Button>
+                {state.hasFilters && (
+                  <Button type="button" size="lg" variant="outline" className="h-11 px-5" onClick={state.reset}>
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </form>
           </div>
-        </form>
+        </>
       )}
     </div>
   )

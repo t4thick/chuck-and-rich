@@ -21,28 +21,31 @@ export function FeaturedCollections() {
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURED_COLLECTIONS.map((col) => (
-            <Link
-              key={col.id}
-              href={col.href}
-              className="group relative block aspect-[4/3] overflow-hidden rounded-xl border border-earth-200 bg-white shadow-[var(--shadow-card)] no-underline transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[var(--shadow-card-hover)]"
-            >
-              <Image
-                src={col.image}
-                alt=""
-                fill
-                className="object-cover transition-transform duration-200 group-hover:scale-[1.03]"
-                sizes="(max-width:640px) 100vw, 25vw"
-                aria-hidden
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-earth-950/80 via-earth-950/20 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <h3 className="text-base font-semibold text-white">{col.title}</h3>
-                <p className="mt-0.5 text-xs text-white/80">{col.subtitle}</p>
-              </div>
-            </Link>
-          ))}
+        {/* Mobile: horizontal scroll. sm+: 2-col grid → lg: 4-col */}
+        <div className="-mx-4 mt-8 sm:mx-0">
+          <div className="flex gap-4 overflow-x-auto scrollbar-none px-4 pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+            {FEATURED_COLLECTIONS.map((col) => (
+              <Link
+                key={col.id}
+                href={col.href}
+                className="group relative block aspect-[4/3] min-w-[260px] shrink-0 overflow-hidden rounded-xl border border-earth-200 bg-white shadow-[var(--shadow-card)] no-underline transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[var(--shadow-card-hover)] sm:min-w-0 sm:shrink"
+              >
+                <Image
+                  src={col.image}
+                  alt=""
+                  fill
+                  className="object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+                  sizes="(max-width:640px) 75vw, 25vw"
+                  aria-hidden
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-earth-950/80 via-earth-950/20 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <h3 className="text-base font-semibold text-white">{col.title}</h3>
+                  <p className="mt-0.5 text-xs text-white/80">{col.subtitle}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>

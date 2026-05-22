@@ -26,7 +26,7 @@ export function Footer() {
   return (
     <footer className="mt-auto border-t border-earth-200 bg-white text-earth-700">
       <div className="store-container py-12 sm:py-14">
-        <div className="grid gap-10 lg:grid-cols-4">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-4 lg:gap-10">
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-700 text-white">
