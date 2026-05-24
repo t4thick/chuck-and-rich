@@ -8,6 +8,7 @@ import {
   LogOut,
   Package,
   ShoppingBag,
+  Truck,
   Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,6 +17,7 @@ const NAV = [
   { href: '/admin', label: 'Dashboard', icon: BarChart3, exact: true },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+  { href: '/admin/shipping', label: 'Shipping', icon: Truck },
   { href: '/admin/customers', label: 'Customers', icon: Users },
 ] as const
 

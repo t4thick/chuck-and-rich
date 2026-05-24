@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { PAYMENT_LABEL, type PaymentMethod } from '@/lib/payment-methods'
 import { OrderStatusUpdater } from '@/components/admin/OrderStatusUpdater'
 import { RefundButton } from '@/components/admin/RefundButton'
+import { ShippingLabelPanel } from '@/components/admin/ShippingLabelPanel'
 import {
   ORDER_STATUS_LABEL,
   ORDER_STATUS_FLOW,
@@ -15,6 +16,10 @@ import {
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { formatOrderNumber } from '@/lib/orders/order-number'
+import {
+  getDefaultParcel,
+  isShippoConfigured,
+} from '@/lib/shipping/label-config'
 
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
@@ -57,6 +62,9 @@ export default async function AdminOrderDetailPage({
     /relation .* does not exist|could not find the table/i.test(logsResult.error.message)
       ? []
       : (logsResult.data ?? [])
+
+  const defaultParcel = getDefaultParcel()
+  const orderRecord = order as Record<string, unknown>
 
   return (
     <div className="space-y-6">
@@ -237,6 +245,35 @@ export default async function AdminOrderDetailPage({
                 )
               })}
             </ol>
+          </section>
+
+          {/* Shipping label */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Print shipping label</h2>
+            <div className="mt-4">
+              <ShippingLabelPanel
+                orderId={order.id}
+                isPickup={shippingMethod === 'pickup'}
+                initialLabelUrl={
+                  typeof orderRecord.shipping_label_url === 'string'
+                    ? orderRecord.shipping_label_url
+                    : null
+                }
+                initialTracking={order.tracking_number}
+                initialCarrier={
+                  typeof orderRecord.shipping_carrier === 'string'
+                    ? orderRecord.shipping_carrier
+                    : null
+                }
+                initialService={
+                  typeof orderRecord.shipping_service === 'string'
+                    ? orderRecord.shipping_service
+                    : null
+                }
+                defaultParcel={defaultParcel}
+                configured={isShippoConfigured()}
+              />
+            </div>
           </section>
 
           {/* Status updater */}
