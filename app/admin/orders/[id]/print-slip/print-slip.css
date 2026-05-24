@@ -1,0 +1,26 @@
+@media print {
+  .admin-shell > header,
+  .print-slip-toolbar {
+    display: none !important;
+  }
+
+  .admin-content {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .admin-shell {
+    background: white !important;
+  }
+
+  .print-slip-doc {
+    max-width: none !important;
+    padding: 0.25in !important;
+    margin: 0 !important;
+  }
+
+  @page {
+    margin: 0.4in;
+    size: letter;
+  }
+}

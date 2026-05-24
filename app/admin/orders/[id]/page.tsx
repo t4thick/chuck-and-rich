@@ -6,6 +6,7 @@ import { PAYMENT_LABEL, type PaymentMethod } from '@/lib/payment-methods'
 import { OrderStatusUpdater } from '@/components/admin/OrderStatusUpdater'
 import { RefundButton } from '@/components/admin/RefundButton'
 import { ShippingLabelPanel } from '@/components/admin/ShippingLabelPanel'
+import { PrintAddressSlipLink } from '@/components/admin/PrintAddressSlipLink'
 import {
   ORDER_STATUS_LABEL,
   ORDER_STATUS_FLOW,
@@ -248,9 +249,13 @@ export default async function AdminOrderDetailPage({
           </section>
 
           {/* Shipping label */}
-          <section className="admin-card">
-            <h2 className="admin-section-title">Print shipping label</h2>
-            <div className="mt-4">
+          <section className="admin-card space-y-4">
+            <PrintAddressSlipLink orderId={order.id} isPickup={shippingMethod === 'pickup'} />
+
+            <div>
+              <h2 className="admin-section-title">Buy USPS / UPS label online (Shippo)</h2>
+              <p className="mt-1 text-sm text-earth-500">Optional — pay postage here and print a carrier label.</p>
+              <div className="mt-4">
               <ShippingLabelPanel
                 orderId={order.id}
                 isPickup={shippingMethod === 'pickup'}
@@ -273,6 +278,7 @@ export default async function AdminOrderDetailPage({
                 defaultParcel={defaultParcel}
                 configured={isShippoConfigured()}
               />
+              </div>
             </div>
           </section>
 
