@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Clock, Package, Search, Truck } from 'lucide-react'
-import { QueenTiaraMark } from '@/components/ui/QueenTiaraMark'
+import { StoreLogo } from '@/components/ui/StoreLogo'
 import { Button } from '@/components/ui/button'
 import { SearchAutocomplete } from '@/components/store/SearchAutocomplete'
 
@@ -59,13 +59,8 @@ export function HeroSection() {
 
         {/* Mobile content */}
         <div className="store-container pb-8 pt-0 text-center">
-          <div className="flex items-center justify-center gap-2">
-            <QueenTiaraMark uid="lq-hero-m" className="h-8 w-auto" />
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em]">
-              <span className="text-queen-red">Lovely Queen</span>
-              <span className="text-earth-400"> · </span>
-              <span className="text-earth-700">African Market</span>
-            </p>
+          <div className="flex justify-center">
+            <StoreLogo variant="mark" linked={false} className="mx-auto" />
           </div>
           <h1 className="mt-2 text-balance text-[1.875rem] font-semibold leading-[1.12] tracking-tight text-earth-900">
             African &amp; Caribbean groceries,{' '}
@@ -157,13 +152,8 @@ export function HeroSection() {
 
         <div className="hero-split__content store-container">
           <div className="mx-auto w-full max-w-3xl text-center">
-            <div className="flex items-center justify-center gap-2">
-              <QueenTiaraMark uid="lq-hero-d" className="h-9 w-auto" />
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] sm:text-xs">
-                <span className="text-queen-red">Lovely Queen</span>
-                <span className="text-earth-400"> · </span>
-                <span className="text-earth-700">African Market</span>
-              </p>
+            <div className="flex justify-center">
+              <StoreLogo variant="mark" linked={false} />
             </div>
             <h1 className="mt-4 text-balance text-5xl font-semibold tracking-tight text-earth-900 lg:text-[3.25rem] lg:leading-[1.08]">
               African &amp; Caribbean groceries,
