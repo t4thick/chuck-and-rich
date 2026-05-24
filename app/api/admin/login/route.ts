@@ -1,62 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isSupabaseAdminRoleBypassEnabled } from '@/lib/auth/admin-access-mode'
 import {
   ADMIN_COOKIE_NAME,
   ADMIN_SESSION_TTL_SECONDS,
   constantTimeEquals,
   createAdminSessionToken,
 } from '@/lib/auth/admin-session'
+import {
+  clearLoginFailures,
+  isLoginAllowed,
+  recordFailedLogin,
+} from '@/lib/security/login-rate-limit'
 import { assertSameOrigin } from '@/lib/security/same-origin'
 
 export const runtime = 'nodejs'
 
-// ---------------------------------------------------------------------------
-// In-process rate limiter
-// Best-effort on serverless (one instance = one bucket). For multi-instance
-// production deploy, replace with Upstash Redis or similar distributed store.
-// ---------------------------------------------------------------------------
-const WINDOW_MS = 15 * 60 * 1000 // 15-minute window
-const MAX_ATTEMPTS = 5            // max failed attempts before lock-out
-
-interface RateEntry { count: number; resetAt: number }
-const _attempts = new Map<string, RateEntry>()
-
 function getClientIp(req: NextRequest): string {
-  // Vercel sets x-forwarded-for; fall back to a constant so the limiter
-  // still works even if the header is missing (e.g. local dev).
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 }
 
-function checkRateLimit(ip: string): { allowed: boolean; retryAfterSecs: number } {
-  const now = Date.now()
-  const entry = _attempts.get(ip)
+function warnProductionMisconfig() {
+  if (process.env.NODE_ENV !== 'production') return
 
-  if (!entry || now > entry.resetAt) {
-    _attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS })
-    return { allowed: true, retryAfterSecs: 0 }
+  if (!process.env.ADMIN_SESSION_SECRET?.trim()) {
+    console.warn(
+      '[admin-login] ADMIN_SESSION_SECRET is not set — session cookies are signed with ADMIN_PASSWORD. Set a dedicated secret in production.'
+    )
   }
 
-  entry.count += 1
-  if (entry.count > MAX_ATTEMPTS) {
-    const retryAfterSecs = Math.ceil((entry.resetAt - now) / 1000)
-    return { allowed: false, retryAfterSecs }
+  if (isSupabaseAdminRoleBypassEnabled()) {
+    console.warn(
+      '[admin-login] ADMIN_ALLOW_SUPABASE_ROLE=1 is enabled in production — password cookie is not required for Supabase admin profiles.'
+    )
   }
-
-  return { allowed: true, retryAfterSecs: 0 }
-}
-
-// Reset counter on successful login so a typo doesn't lock out the real admin.
-function resetRateLimit(ip: string) {
-  _attempts.delete(ip)
 }
 
 export async function POST(req: NextRequest) {
   const originCheck = assertSameOrigin(req)
   if (!originCheck.ok) return originCheck.response
 
+  warnProductionMisconfig()
+
   const ip = getClientIp(req)
-  // Skip rate limiting in dev so you can iterate locally without getting locked out.
+
   if (process.env.NODE_ENV === 'production') {
-    const { allowed, retryAfterSecs } = checkRateLimit(ip)
+    const { allowed, retryAfterSecs } = await isLoginAllowed(ip)
     if (!allowed) {
       return NextResponse.json(
         { error: `Too many login attempts. Try again in ${Math.ceil(retryAfterSecs / 60)} minute(s).` },
@@ -84,9 +72,9 @@ export async function POST(req: NextRequest) {
   const expectedNorm = expected.normalize('NFKC')
 
   if (supplied.length === 0 || !constantTimeEquals(supplied, expectedNorm)) {
-    if (process.env.NODE_ENV !== 'production') {
-      // Local-only diagnostic — never logs the actual password, just shape clues
-      // that let you figure out if you're typing it wrong or the env var is stale.
+    if (process.env.NODE_ENV === 'production') {
+      await recordFailedLogin(ip)
+    } else {
       const maskedSupplied =
         supplied.length === 0
           ? '(empty)'
@@ -99,8 +87,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid password.' }, { status: 401 })
   }
 
-  // Successful auth — clear the attempt counter.
-  resetRateLimit(ip)
+  await clearLoginFailures(ip)
 
   const { token } = await createAdminSessionToken()
 

@@ -26,7 +26,7 @@ export async function POST(
 
     const { data: order, error: fetchErr } = await supabaseAdmin
       .from('orders')
-      .select('id, payment_intent_id, total_amount, refunded_at, payment_method')
+      .select('id, payment_intent_id, total_amount, refund_amount, refunded_at, payment_method, status')
       .eq('id', id)
       .single()
 
@@ -36,9 +36,28 @@ export async function POST(
       return NextResponse.json({ error: 'Order has no Stripe payment to refund.' }, { status: 400 })
     }
 
+    const orderTotalCents = Math.round(Number(order.total_amount) * 100)
+    if (!Number.isFinite(orderTotalCents) || orderTotalCents <= 0) {
+      return NextResponse.json({ error: 'Order total is invalid.' }, { status: 400 })
+    }
+
+    const alreadyRefundedCents = Math.round(Number(order.refund_amount ?? 0) * 100)
+    const remainingCents = orderTotalCents - alreadyRefundedCents
+    if (remainingCents <= 0) {
+      return NextResponse.json({ error: 'Nothing left to refund on this order.' }, { status: 400 })
+    }
+
     const amountCents = Math.round(Number(amount) * 100)
     if (!Number.isFinite(amountCents) || amountCents <= 0) {
       return NextResponse.json({ error: 'Invalid refund amount.' }, { status: 400 })
+    }
+    if (amountCents > remainingCents) {
+      return NextResponse.json(
+        {
+          error: `Refund amount exceeds remaining balance ($${(remainingCents / 100).toFixed(2)}).`,
+        },
+        { status: 400 }
+      )
     }
 
     const refund = await stripe.refunds.create({
@@ -47,21 +66,24 @@ export async function POST(
       reason: 'requested_by_customer',
     })
 
+    const isFullRefund = amountCents >= remainingCents
+    const newRefundTotal = (alreadyRefundedCents + amountCents) / 100
+
     await supabaseAdmin
       .from('orders')
       .update({
-        refunded_at: new Date().toISOString(),
-        refund_amount: Number(amount),
+        refunded_at: isFullRefund ? new Date().toISOString() : order.refunded_at,
+        refund_amount: newRefundTotal,
         refund_stripe_id: refund.id,
       })
       .eq('id', id)
 
     await supabaseAdmin.from('order_status_logs').insert({
       order_id: id,
-      from_status: null,
-      to_status: 'cancelled',
+      from_status: order.status ?? null,
+      to_status: isFullRefund ? 'cancelled' : (order.status ?? 'processing'),
       changed_by: 'admin',
-      note: `Refunded $${Number(amount).toFixed(2)}${reason ? ` — ${reason}` : ''}`,
+      note: `Refunded $${(amountCents / 100).toFixed(2)}${reason ? ` — ${reason}` : ''}`,
     })
 
     return NextResponse.json({ ok: true, refundId: refund.id })
