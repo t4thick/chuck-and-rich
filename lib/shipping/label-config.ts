@@ -1,7 +1,9 @@
 /**
  * Store ship-from address and default parcel — set in Vercel / .env.local.
- * Used when buying USPS / UPS labels via Shippo.
+ * Falls back to STORE.shipFrom when env vars are not set.
  */
+
+import { STORE } from '@/lib/constants/store'
 
 export type ShipFromAddress = {
   name: string
@@ -39,12 +41,13 @@ function parseNum(v: string | undefined, fallback: number): number {
 }
 
 export function getShipFromAddress(): ShipFromAddress | null {
-  const name = trim(process.env.SHIP_FROM_NAME)
-  const street1 = trim(process.env.SHIP_FROM_STREET1)
-  const city = trim(process.env.SHIP_FROM_CITY)
-  const state = trim(process.env.SHIP_FROM_STATE)
-  const zip = trim(process.env.SHIP_FROM_ZIP)
-  const phone = trim(process.env.SHIP_FROM_PHONE)
+  const name = trim(process.env.SHIP_FROM_NAME) || STORE.name
+  const street1 = trim(process.env.SHIP_FROM_STREET1) || STORE.shipFrom.street1
+  const city = trim(process.env.SHIP_FROM_CITY) || STORE.shipFrom.city
+  const state = trim(process.env.SHIP_FROM_STATE) || STORE.shipFrom.state
+  const zip = trim(process.env.SHIP_FROM_ZIP) || STORE.shipFrom.zip
+  const phone =
+    trim(process.env.SHIP_FROM_PHONE) || STORE.shipFrom.phone
 
   if (!name || !street1 || !city || !state || !zip || !phone) {
     return null
@@ -53,11 +56,11 @@ export function getShipFromAddress(): ShipFromAddress | null {
   return {
     name,
     street1,
-    street2: trim(process.env.SHIP_FROM_STREET2) || undefined,
+    street2: trim(process.env.SHIP_FROM_STREET2) || STORE.shipFrom.street2 || undefined,
     city,
     state,
     zip,
-    country: trim(process.env.SHIP_FROM_COUNTRY) || 'US',
+    country: trim(process.env.SHIP_FROM_COUNTRY) || STORE.shipFrom.country,
     phone,
     email: trim(process.env.SHIP_FROM_EMAIL) || trim(process.env.MERCHANT_ORDER_EMAIL) || 'orders@lovelyqueenmarket.com',
   }
