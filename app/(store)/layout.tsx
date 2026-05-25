@@ -5,12 +5,11 @@ import { MobileBottomNav } from '@/components/store/MobileBottomNav'
 import { MobileCartBar } from '@/components/store/MobileCartBar'
 import { CartDrawer } from '@/components/store/CartDrawer'
 import { AnnouncementBar } from '@/components/store/AnnouncementBar'
-import { MOBILE_BOTTOM_NAV_CLASS } from '@/lib/constants/mobile-nav'
-import { cn } from '@/lib/utils'
+import { StoreMobileChrome } from '@/components/store/StoreMobileChrome'
 
 export default function StoreLayout({ children }: { children: ReactNode }) {
   return (
-    <div className={cn('flex min-h-screen flex-col', MOBILE_BOTTOM_NAV_CLASS)}>
+    <StoreMobileChrome>
       <AnnouncementBar />
       <Navbar />
       <main className="flex-1">{children}</main>
@@ -18,6 +17,6 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
       <CartDrawer />
       <MobileCartBar />
       <MobileBottomNav />
-    </div>
+    </StoreMobileChrome>
   )
 }

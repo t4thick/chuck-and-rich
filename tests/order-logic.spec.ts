@@ -41,4 +41,23 @@ test.describe('Order Logic', () => {
     expect(quote.zone).toBe('local')
     expect(quote.fee).toBe(7)
   })
+
+  test('standard US shipping is free at configured subtotal threshold', () => {
+    const below = calculateShipping({
+      subtotal: 149.99,
+      country: 'US',
+      state: 'Texas',
+      method: 'standard',
+    })
+    const at = calculateShipping({
+      subtotal: 150,
+      country: 'US',
+      state: 'Texas',
+      method: 'standard',
+    })
+
+    expect(below.fee).toBeGreaterThan(0)
+    expect(at.fee).toBe(0)
+    expect(at.zone).toBe('national')
+  })
 })

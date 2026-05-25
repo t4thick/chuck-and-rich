@@ -29,10 +29,10 @@ export function AnnouncementBar() {
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1.5 opacity-60 transition-opacity duration-150 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md opacity-70 transition-opacity duration-150 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
         aria-label="Dismiss announcement"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-4 w-4" aria-hidden />
       </button>
     </div>
   )

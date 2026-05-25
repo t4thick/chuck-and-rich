@@ -6,6 +6,10 @@ import { CartProvider } from '@/context/CartContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { RecentlyViewedProvider } from '@/context/RecentlyViewedContext'
 import { STORE } from '@/lib/constants/store'
+import { getPublicSiteUrl } from '@/lib/site-url'
+
+const siteUrl = getPublicSiteUrl()
+const googleVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim()
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -16,11 +20,13 @@ const montserrat = Montserrat({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: STORE.shortName,
     template: `%s · ${STORE.shortName}`,
   },
   description: STORE.tagline,
+  ...(googleVerification ? { verification: { google: googleVerification } } : {}),
   openGraph: {
     type: 'website',
     siteName: STORE.name,

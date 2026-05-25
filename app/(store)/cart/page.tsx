@@ -5,9 +5,8 @@ import { ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { Button } from '@/components/ui/button'
 import { ProductImage } from '@/components/store/ProductImage'
+import { FreeShippingProgress } from '@/components/store/FreeShippingProgress'
 import { formatMoney } from '@/lib/utils'
-
-const FREE_SHIPPING_THRESHOLD = 75
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, totalPrice, totalItems, clearCart } = useCart()
@@ -35,11 +34,8 @@ export default function CartPage() {
     )
   }
 
-  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - totalPrice)
-  const progress = Math.min(100, (totalPrice / FREE_SHIPPING_THRESHOLD) * 100)
-
   return (
-    <div className="min-h-screen bg-white pb-24 md:pb-12" suppressHydrationWarning>
+    <div className="min-h-screen bg-white md:pb-12" suppressHydrationWarning>
       <div className="border-b border-earth-200 bg-white">
         <div className="store-container py-6 sm:py-8">
           <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">Your order</p>
@@ -84,7 +80,7 @@ export default function CartPage() {
                     <div className="inline-flex items-center rounded-md border border-earth-200">
                       <button
                         type="button"
-                        className="flex h-8 w-8 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50 disabled:opacity-40"
+                        className="flex h-11 w-11 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50 disabled:opacity-40"
                         aria-label="Decrease quantity"
                         disabled={quantity <= 1}
                         onClick={() => updateQuantity(product.id, Math.max(1, quantity - 1))}
@@ -96,7 +92,7 @@ export default function CartPage() {
                       </span>
                       <button
                         type="button"
-                        className="flex h-8 w-8 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50"
+                        className="flex h-11 w-11 items-center justify-center text-earth-700 transition-colors hover:bg-earth-50"
                         aria-label="Increase quantity"
                         onClick={() => updateQuantity(product.id, Math.min(99, quantity + 1))}
                       >
@@ -108,7 +104,7 @@ export default function CartPage() {
                     </span>
                     <button
                       type="button"
-                      className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-earth-500 transition-colors hover:text-red-600"
+                      className="ml-auto inline-flex min-h-11 items-center gap-1 px-2 text-xs font-medium text-earth-500 transition-colors hover:text-red-600"
                       onClick={() => removeItem(product.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -124,24 +120,8 @@ export default function CartPage() {
             <div className="sticky top-24 rounded-xl border border-earth-200 bg-white p-5 shadow-[var(--shadow-card)]">
               <h2 className="text-base font-semibold text-earth-900">Order summary</h2>
 
-              <div className="mt-4 rounded-md bg-earth-50 p-3">
-                {remaining > 0 ? (
-                  <p className="text-xs text-earth-700">
-                    Add{' '}
-                    <span className="font-semibold text-earth-900 tabular-nums">
-                      {formatMoney(remaining)}
-                    </span>{' '}
-                    for free shipping
-                  </p>
-                ) : (
-                  <p className="text-xs font-semibold text-brand-700">Free shipping unlocked</p>
-                )}
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-earth-200">
-                  <div
-                    className="h-full rounded-full bg-brand-600 transition-[width] duration-300"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
+              <div className="mt-4">
+                <FreeShippingProgress subtotal={totalPrice} />
               </div>
 
               <dl className="mt-4 space-y-2 text-sm">

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { createClientOptional } from '@/lib/supabase/server'
+import { createCatalogClient } from '@/lib/supabase/catalog-client'
 import { getPublicSiteUrl } from '@/lib/site-url'
 
 /**
@@ -13,26 +13,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getPublicSiteUrl()
   const now = new Date()
 
+  // Only public, indexable pages (matches disallow rules in robots.ts).
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
     { url: `${baseUrl}/shop`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${baseUrl}/login`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${baseUrl}/signup`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${baseUrl}/track-order`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${baseUrl}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${baseUrl}/forgot-password`, lastModified: now, changeFrequency: 'yearly', priority: 0.1 },
   ]
 
   let productEntries: MetadataRoute.Sitemap = []
   try {
-    const supabase = await createClientOptional()
+    const supabase = createCatalogClient()
     if (!supabase) return staticEntries
 
-    const { data: products } = await supabase
+    const { data: products, error } = await supabase
       .from('products')
       .select('id, category, created_at')
       .order('created_at', { ascending: false })
+
+    if (error) throw error
 
     type ProductSitemapRow = { id: string; category: string | null; created_at: string | null }
 

@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// Default 3002 for a dedicated test server; set PLAYWRIGHT_PORT=3000 to reuse `npm run dev`.
 const devPort = process.env.PLAYWRIGHT_PORT ?? '3002'
-const defaultBase = `http://127.0.0.1:${devPort}`
+const defaultBase = process.env.PLAYWRIGHT_TEST_BASE_URL ?? `http://127.0.0.1:${devPort}`
 const useProdServer =
   process.env.PLAYWRIGHT_NEXT_START === '1' || process.env.CI === 'true'
 
@@ -19,14 +20,16 @@ export default defineConfig({
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
     // Default 3002 so Playwright’s webServer does not collide with a normal `next dev` on 3000.
-    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL ?? defaultBase,
+    baseURL: defaultBase,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
-  webServer: {
+  webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1'
+    ? undefined
+    : {
     command: useProdServer
       ? `npx next start -p ${devPort}`
       : `npx next dev -p ${devPort}`,

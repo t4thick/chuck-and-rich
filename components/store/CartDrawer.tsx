@@ -6,9 +6,8 @@ import { useEffect, useRef } from 'react'
 import { useCart } from '@/context/CartContext'
 import { ProductImage } from '@/components/store/ProductImage'
 import { Button } from '@/components/ui/button'
+import { FreeShippingProgress } from '@/components/store/FreeShippingProgress'
 import { formatMoney } from '@/lib/utils'
-
-const FREE_SHIPPING_THRESHOLD = 75
 
 export function CartDrawer() {
   const {
@@ -91,9 +90,6 @@ export function CartDrawer() {
 
   if (!cartOpen) return null
 
-  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - totalPrice)
-  const progress = Math.min(100, (totalPrice / FREE_SHIPPING_THRESHOLD) * 100)
-
   return (
     <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Shopping cart">
       {/* Backdrop */}
@@ -132,21 +128,8 @@ export function CartDrawer() {
 
         {/* Free-shipping progress */}
         {items.length > 0 && (
-          <div className="border-b border-earth-100 bg-earth-50 px-5 py-3">
-            {remaining > 0 ? (
-              <p className="text-xs text-earth-700">
-                Add <span className="font-semibold text-earth-900">{formatMoney(remaining)}</span> for
-                free shipping
-              </p>
-            ) : (
-              <p className="text-xs font-semibold text-brand-700">You unlocked free shipping</p>
-            )}
-            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-earth-200">
-              <div
-                className="h-full rounded-full bg-brand-600 transition-[width] duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+          <div className="border-b border-earth-100 px-5 py-3">
+            <FreeShippingProgress subtotal={totalPrice} />
           </div>
         )}
 
@@ -224,7 +207,7 @@ export function CartDrawer() {
 
                       <button
                         type="button"
-                        className="text-xs font-medium text-earth-500 transition-colors hover:text-red-600"
+                        className="inline-flex min-h-11 items-center px-2 text-xs font-medium text-earth-500 transition-colors hover:text-red-600"
                         onClick={() => removeItem(product.id)}
                       >
                         Remove

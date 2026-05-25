@@ -64,7 +64,7 @@ export function ProductCard({ product, priority }: { product: Product; priority?
           type="button"
           variant={product.in_stock ? 'default' : 'outline'}
           size="sm"
-          className="h-9 w-full gap-1.5 text-[13px]"
+          className="h-11 w-full gap-1.5 text-[13px]"
           disabled={!product.in_stock}
           onClick={handleAdd}
           aria-label={product.in_stock ? `Add ${product.name} to cart` : 'Unavailable'}
@@ -99,7 +99,7 @@ export function ProductCardSkeleton() {
         <div className="skeleton mt-auto h-5 w-1/3 rounded pt-3" />
       </div>
       <div className="border-t border-earth-100 p-2">
-        <div className="skeleton h-9 w-full rounded-md" />
+        <div className="skeleton h-11 w-full rounded-md" />
       </div>
     </div>
   )

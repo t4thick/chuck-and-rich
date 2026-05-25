@@ -268,7 +268,7 @@ function StockToggle({
   onChange: (v: boolean) => void
 }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-md border border-earth-200 bg-white px-3 py-2.5 transition-colors hover:border-earth-300">
+    <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-md border border-earth-200 bg-white px-3 py-2.5 transition-colors hover:border-earth-300">
       <span className="text-sm font-medium text-earth-900">In stock only</span>
       <span
         className={cn(
@@ -313,7 +313,7 @@ export function SortMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md border border-earth-200 bg-white px-3 text-sm font-medium text-earth-700 transition-colors hover:border-earth-300 hover:bg-earth-50"
+        className="inline-flex h-11 min-h-11 items-center gap-1.5 rounded-md border border-earth-200 bg-white px-3 text-sm font-medium text-earth-700 transition-colors hover:border-earth-300 hover:bg-earth-50"
       >
         Sort: <span className="text-earth-900">{SORT_LABELS[current] ?? 'Featured'}</span>
         <ChevronDown className="h-3.5 w-3.5 text-earth-500" aria-hidden />
@@ -328,7 +328,7 @@ export function SortMenu() {
                 type="button"
                 onClick={() => select(value)}
                 className={cn(
-                  'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-earth-50',
+                  'flex min-h-11 w-full items-center justify-between px-3 py-3 text-left text-sm transition-colors hover:bg-earth-50',
                   current === value
                     ? 'font-semibold text-earth-900'
                     : 'text-earth-700'
@@ -436,7 +436,7 @@ export function ShopFiltersBar({
           type="button"
           onClick={() => state.setCategoryAndGo('')}
           className={cn(
-            'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
+            'shrink-0 rounded-full px-4 py-2.5 text-xs font-medium transition-colors min-h-11',
             !state.activeCategory
               ? 'bg-earth-900 text-white'
               : 'border border-earth-200 bg-white text-earth-700 hover:border-earth-300'
@@ -450,7 +450,7 @@ export function ShopFiltersBar({
             type="button"
             onClick={() => state.setCategoryAndGo(c)}
             className={cn(
-              'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
+              'shrink-0 rounded-full px-4 py-2.5 text-xs font-medium transition-colors min-h-11',
               state.activeCategory === c
                 ? 'bg-earth-900 text-white'
                 : 'border border-earth-200 bg-white text-earth-700 hover:border-earth-300'
@@ -466,7 +466,7 @@ export function ShopFiltersBar({
           type="button"
           variant="outline"
           size="sm"
-          className="h-9 gap-1.5 text-xs"
+          className="h-11 gap-1.5 text-xs"
           onClick={() => state.setMobileOpen((v) => !v)}
         >
           <Filter className="h-3.5 w-3.5" />

@@ -4,15 +4,17 @@ import { usePathname } from 'next/navigation'
 import { ShoppingBag } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { Button } from '@/components/ui/button'
-import { MOBILE_BOTTOM_NAV_OFFSET } from '@/lib/constants/mobile-nav'
+import {
+  MOBILE_BOTTOM_NAV_OFFSET,
+  shouldShowMobileCartBar,
+} from '@/lib/constants/mobile-nav'
 import { formatMoney } from '@/lib/utils'
 
 export function MobileCartBar() {
   const { totalItems, totalPrice, openCart } = useCart()
   const pathname = usePathname()
 
-  if (totalItems === 0) return null
-  if (pathname.startsWith('/cart') || pathname.startsWith('/checkout')) return null
+  if (!shouldShowMobileCartBar(pathname, totalItems)) return null
 
   return (
     <div

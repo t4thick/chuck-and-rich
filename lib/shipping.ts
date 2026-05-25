@@ -50,6 +50,19 @@ export const SHIPPING_METHOD_LABEL: Record<ShippingMethod, string> = {
   pickup: 'Store Pickup',
 }
 
+/** Subtotal for $0 standard US shipping at checkout (see calculateShipping). */
+export const FREE_STANDARD_SHIPPING_SUBTOTAL = 150
+
+export function freeStandardShippingRemaining(subtotal: number): number {
+  const safe = Number.isFinite(subtotal) ? Math.max(0, subtotal) : 0
+  return Math.max(0, FREE_STANDARD_SHIPPING_SUBTOTAL - safe)
+}
+
+export function freeStandardShippingProgress(subtotal: number): number {
+  const safe = Number.isFinite(subtotal) ? Math.max(0, subtotal) : 0
+  return Math.min(100, (safe / FREE_STANDARD_SHIPPING_SUBTOTAL) * 100)
+}
+
 export function normalizeShippingMethod(value: string | null | undefined): ShippingMethod {
   if (value === 'express' || value === 'pickup' || value === 'standard') return value
   return 'standard'
@@ -91,7 +104,7 @@ export function calculateShipping(input: ShippingQuoteInput): ShippingQuote {
     return { method, fee: base, zone: 'international', label: SHIPPING_METHOD_LABEL[method] }
   }
 
-  if (method === 'standard' && subtotal >= 150) {
+  if (method === 'standard' && subtotal >= FREE_STANDARD_SHIPPING_SUBTOTAL) {
     return { method, fee: 0, zone: 'national', label: SHIPPING_METHOD_LABEL[method] }
   }
 

@@ -292,7 +292,7 @@ export function CheckoutClient({
   }
 
   return (
-    <div className="min-h-screen bg-cream pb-24 md:pb-12">
+    <div className="min-h-screen bg-cream md:pb-12">
       <PageHeader
         eyebrow="Secure checkout"
         title="Complete your order"

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, Plus } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
+import { useToast } from '@/context/ToastContext'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/utils'
 import { MOBILE_BOTTOM_NAV_OFFSET } from '@/lib/constants/mobile-nav'
@@ -17,7 +18,8 @@ export function ProductStickyBar({
 }) {
   const [visible, setVisible] = useState(false)
   const [added, setAdded] = useState(false)
-  const { addItem, openCart } = useCart()
+  const { addItem } = useCart()
+  const toast = useToast()
 
   useEffect(() => {
     const el = document.getElementById(sentinelId)
@@ -61,7 +63,7 @@ export function ProductStickyBar({
           onClick={() => {
             addItem(product, 1)
             setAdded(true)
-            openCart()
+            toast?.show(`Added: ${product.name}`)
           }}
         >
           {added ? (

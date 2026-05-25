@@ -15,6 +15,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "node -e \"require('./scripts/next-dist-dir.cjs').cleanNextTypes()\" && tsc --noEmit",
+    "check:env": "node --env-file=.env.local scripts/check-env.mjs",
+    "check:env:prod": "node --env-file=.env.local scripts/check-env.mjs --production",
     "test:e2e": "playwright test",
     "test:e2e:ci": "next build && playwright test",
     "test:e2e:ui": "playwright test --ui",

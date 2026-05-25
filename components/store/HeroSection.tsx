@@ -110,7 +110,7 @@ export function HeroSection() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="shrink-0 rounded-full border border-earth-200 bg-white px-3.5 py-2 text-xs font-medium text-earth-700 no-underline shadow-sm transition-colors duration-150 active:bg-brand-50 active:text-brand-800"
+                  className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-earth-200 bg-white px-4 py-2.5 text-xs font-medium text-earth-700 no-underline shadow-sm transition-colors duration-150 active:bg-brand-50 active:text-brand-800"
                 >
                   {link.label}
                 </Link>
@@ -197,7 +197,7 @@ export function HeroSection() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="rounded-full border border-earth-200 bg-white px-3 py-1.5 text-xs font-medium text-earth-700 no-underline shadow-sm transition-colors duration-150 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+                  className="inline-flex min-h-11 items-center rounded-full border border-earth-200 bg-white px-4 py-2.5 text-xs font-medium text-earth-700 no-underline shadow-sm transition-colors duration-150 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
                 >
                   {link.label}
                 </Link>

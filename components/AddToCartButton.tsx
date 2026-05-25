@@ -9,7 +9,7 @@ import { formatMoney } from '@/lib/utils'
 import type { Product } from '@/types'
 
 export function AddToCartButton({ product }: { product: Product }) {
-  const { addItem, openCart } = useCart()
+  const { addItem } = useCart()
   const toast = useToast()
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
@@ -32,7 +32,6 @@ export function AddToCartButton({ product }: { product: Product }) {
     addItem(product, quantity)
     toast?.show(`Added ${quantity} × ${product.name}`)
     setAdded(true)
-    openCart()
   }
 
   return (
