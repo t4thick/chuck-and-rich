@@ -11,6 +11,9 @@ type ProductImageProps = {
   sizes?: string
   priority?: boolean
   framed?: boolean
+  /** Subtle zoom on card hover (off by default per design system). */
+  hoverZoom?: boolean
+  showPlaceholderHint?: boolean
 }
 
 export function ProductImage({
@@ -20,6 +23,8 @@ export function ProductImage({
   sizes = '(max-width:640px) 50vw, 25vw',
   priority,
   framed = true,
+  hoverZoom = false,
+  showPlaceholderHint = false,
 }: ProductImageProps) {
   if (!src?.trim()) {
     return (
@@ -27,12 +32,16 @@ export function ProductImage({
         className={cn(
           framed
             ? 'product-image-frame'
-            : 'flex aspect-square items-center justify-center bg-earth-50',
+            : 'flex aspect-square flex-col items-center justify-center gap-1 bg-earth-50',
           className
         )}
-        aria-hidden
+        role="img"
+        aria-label={alt}
       >
-        <Package className="h-10 w-10 text-earth-400 sm:h-12 sm:w-12" strokeWidth={1.25} />
+        <Package className="h-10 w-10 text-earth-400 sm:h-12 sm:w-12" strokeWidth={1.25} aria-hidden />
+        {showPlaceholderHint && (
+          <span className="text-[10px] font-medium text-earth-400">Photo soon</span>
+        )}
       </div>
     )
   }
@@ -48,7 +57,10 @@ export function ProductImage({
         src={src}
         alt={alt}
         fill
-        className="object-contain p-1 transition-transform duration-200 ease-out group-hover:scale-[1.03]"
+        className={cn(
+          'object-contain p-1',
+          hoverZoom && 'transition-transform duration-150 ease-out group-hover:scale-[1.02]'
+        )}
         sizes={sizes}
         priority={priority}
       />

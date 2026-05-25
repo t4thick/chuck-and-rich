@@ -62,7 +62,7 @@ export default async function ShopPage({
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-earth-900 sm:text-3xl">
                 {title}
               </h1>
-              <p className="mt-1 text-sm text-earth-600">{subtitle}</p>
+              <p className="mt-1.5 text-base font-semibold tabular-nums text-earth-900">{subtitle}</p>
             </div>
             <div className="hidden lg:block">
               <SortMenu />
@@ -82,9 +82,11 @@ export default async function ShopPage({
           </aside>
 
           <div>
-            <Suspense fallback={null}>
-              <ShopFiltersBar categoryCount={categoryCount} />
-            </Suspense>
+            <div className="sticky top-14 z-40 -mx-4 border-b border-earth-200 bg-white/95 px-4 py-2.5 backdrop-blur-sm sm:top-16 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+              <Suspense fallback={null}>
+                <ShopFiltersBar categoryCount={categoryCount} />
+              </Suspense>
+            </div>
 
             <Suspense fallback={null}>
               <div className="mt-4 hidden lg:block">

@@ -11,7 +11,8 @@ import { ProductImage } from '@/components/store/ProductImage'
 import { RecordRecentlyViewed } from '@/components/store/RecordRecentlyViewed'
 import { RecentlyViewed } from '@/components/store/RecentlyViewed'
 import { FrequentlyBoughtTogether } from '@/components/store/FrequentlyBoughtTogether'
-import { Badge } from '@/components/ui/badge'
+import { ProductStockLabel } from '@/components/store/ProductStockLabel'
+import { extractPackSize } from '@/lib/product-display'
 import { formatMoney } from '@/lib/utils'
 import type { Product } from '@/types'
 
@@ -75,6 +76,43 @@ const TRUST = [
   { icon: Truck, label: 'Pickup & delivery' },
   { icon: RotateCcw, label: 'Easy returns' },
 ] as const
+
+function ProductPurchaseBlock({ product }: { product: Product }) {
+  const packSize = extractPackSize(product)
+
+  return (
+    <>
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <p className="text-3xl font-semibold tracking-tight text-earth-900 tabular-nums sm:text-4xl">
+          {formatMoney(product.price)}
+        </p>
+        {packSize && (
+          <span className="text-sm font-medium text-earth-500">{packSize}</span>
+        )}
+      </div>
+
+      <div className="mt-3">
+        <ProductStockLabel inStock={product.in_stock} />
+      </div>
+
+      <div id="product-cta" className="mt-5 rounded-xl border border-earth-200 bg-white p-5 lg:sticky lg:top-24">
+        <AddToCartButton product={product} />
+      </div>
+
+      <ul className="mt-4 flex flex-wrap gap-2">
+        {TRUST.map(({ icon: Icon, label }) => (
+          <li
+            key={label}
+            className="inline-flex items-center gap-1.5 rounded-md border border-earth-200 bg-earth-50 px-2.5 py-1.5 text-[11px] font-medium text-earth-700"
+          >
+            <Icon className="h-3 w-3 shrink-0 text-brand-600" aria-hidden />
+            {label}
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
 
 export default async function ProductPage({
   params,
@@ -156,40 +194,14 @@ export default async function ProductPage({
               {product.name}
             </h1>
 
-            <p className="mt-5 text-3xl font-semibold tracking-tight text-earth-900 tabular-nums sm:text-4xl">
-              {formatMoney(product.price)}
-            </p>
-
-            <div className="mt-3 flex items-center gap-2">
-              {product.in_stock ? (
-                <Badge variant="success">In stock · ships in 24h</Badge>
-              ) : (
-                <Badge variant="danger">Out of stock</Badge>
-              )}
-            </div>
+            <ProductPurchaseBlock product={product} />
+            <ProductStickyBar product={product} sentinelId="product-cta" />
 
             {product.description && (
               <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-earth-600">
                 {product.description}
               </p>
             )}
-
-            <div id="product-cta" className="mt-7 rounded-xl border border-earth-200 bg-white p-5 lg:sticky lg:top-24">
-              <AddToCartButton product={product} />
-            </div>
-            <ProductStickyBar product={product} sentinelId="product-cta" />
-
-            <ul className="mt-6 grid gap-2 sm:grid-cols-3">
-              {TRUST.map(({ icon: Icon, label }) => (
-                <li
-                  key={label}
-                  className="flex items-center gap-2 rounded-lg border border-earth-200 bg-white px-3 py-2.5 text-xs font-medium text-earth-700"
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-brand-600" aria-hidden />
-                  {label}
-                </li>
-              ))}
-            </ul>
 
             <p className="mt-5 flex items-center gap-2 text-xs text-earth-500">
               <MapPin className="h-3.5 w-3.5 text-brand-600" aria-hidden />

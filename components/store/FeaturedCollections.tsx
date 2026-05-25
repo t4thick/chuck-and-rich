@@ -34,7 +34,7 @@ export function FeaturedCollections() {
                   src={col.image}
                   alt=""
                   fill
-                  className="object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+                  className="object-cover transition-opacity duration-150 group-hover:opacity-95"
                   sizes="(max-width:640px) 75vw, 25vw"
                   aria-hidden
                 />

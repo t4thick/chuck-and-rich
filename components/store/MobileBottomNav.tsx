@@ -75,7 +75,7 @@ export function MobileBottomNav() {
                   {isCart && totalItems > 0 && (
                     <span
                       key={totalItems}
-                      className="animate-pop absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-0.5 text-[10px] font-semibold leading-none text-white"
+                      className="animate-pop absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-700 px-0.5 text-[10px] font-semibold leading-none text-white"
                     >
                       {totalItems > 99 ? '99+' : totalItems}
                     </span>

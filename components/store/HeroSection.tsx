@@ -1,18 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Clock, Package, Search, Truck } from 'lucide-react'
+import { Clock, Package, Truck } from 'lucide-react'
 import { StoreLogo } from '@/components/ui/StoreLogo'
 import { Button } from '@/components/ui/button'
 import { SearchAutocomplete } from '@/components/store/SearchAutocomplete'
-
-const QUICK_LINKS = [
-  { label: 'Rice & Grains', href: '/shop?category=Rice%20%26%20Grains' },
-  { label: 'Spices & Seasonings', href: '/shop?category=Spices%20%26%20Seasonings' },
-  { label: 'Frozen', href: '/shop?category=Frozen' },
-  { label: 'Beverages', href: '/shop?category=Beverages' },
-  { label: 'Snacks', href: '/shop?category=Snacks' },
-  { label: 'Beauty & Personal Care', href: '/shop?category=Beauty%20%26%20Personal%20Care' },
-]
 
 const HERO_STATS = [
   { icon: Package, label: '170+ products in stock' },
@@ -24,11 +15,9 @@ export function HeroSection() {
   return (
     <section className="overflow-hidden border-b border-earth-200" aria-label="Welcome to Lovely Queen Market">
 
-      {/* ── MOBILE LAYOUT (hidden on sm+) ──────────────────────────────────── */}
+      {/* ── MOBILE ─────────────────────────────────────────────────────────── */}
       <div className="sm:hidden">
-
-        {/* Real store photo strip */}
-        <div className="relative flex h-[210px]" aria-hidden>
+        <div className="relative flex h-[180px]" aria-hidden>
           <div className="relative flex-1 overflow-hidden">
             <Image
               src="/images/hero/grocery-aisle.png"
@@ -51,13 +40,10 @@ export function HeroSection() {
               className="object-cover object-center"
             />
           </div>
-          {/* Subtle center seam */}
           <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-px bg-white/60" />
-          {/* Fade photo strip into white content area */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-white" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-white" />
         </div>
 
-        {/* Mobile content */}
         <div className="store-container pb-8 pt-0 text-center">
           <div className="flex justify-center">
             <StoreLogo variant="mark" linked={false} className="mx-auto" />
@@ -66,30 +52,30 @@ export function HeroSection() {
             African &amp; Caribbean groceries,{' '}
             <span className="text-brand-700">delivered fast.</span>
           </h1>
-          <p className="mx-auto mt-2.5 text-sm leading-relaxed text-earth-600">
-            Search 170+ products across 14 departments. Pickup in Columbus or shipped to your door.
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-earth-600">
+            Search 170+ products. Pickup in Columbus or shipped nationwide.
           </p>
 
-          {/* Search — full width */}
           <div className="mt-4 w-full">
             <SearchAutocomplete placeholder="Search for jollof rice, palm oil, plantain…" />
           </div>
 
-          {/* CTA buttons — full width stacked */}
-          <div className="mt-3 flex flex-col gap-2.5">
+          <div className="mt-4">
             <Link href="/shop" className="no-underline">
               <Button size="lg" className="h-12 w-full text-[15px] font-semibold">
                 Shop all products
               </Button>
             </Link>
-            <Link href="/shop#categories" className="no-underline">
-              <Button size="lg" variant="outline" className="h-12 w-full border-earth-300 bg-white text-[15px]">
-                Browse categories
-              </Button>
-            </Link>
+            <p className="mt-3">
+              <Link
+                href="/shop#categories"
+                className="text-sm font-semibold text-brand-700 no-underline hover:text-brand-800"
+              >
+                Browse categories →
+              </Link>
+            </p>
           </div>
 
-          {/* Stats */}
           <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-earth-500">
             {HERO_STATS.map(({ icon: Icon, label }) => (
               <li key={label} className="inline-flex items-center gap-1.5">
@@ -98,29 +84,10 @@ export function HeroSection() {
               </li>
             ))}
           </ul>
-
-          {/* Horizontal-scroll category pills */}
-          <div className="-mx-4 mt-5">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-4 pb-2">
-              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-earth-400">
-                <Search className="h-3 w-3" aria-hidden />
-                Popular
-              </span>
-              {QUICK_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-earth-200 bg-white px-4 py-2.5 text-xs font-medium text-earth-700 no-underline shadow-sm transition-colors duration-150 active:bg-brand-50 active:text-brand-800"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* ── DESKTOP LAYOUT (sm+, hidden on mobile) ─────────────────────────── */}
+      {/* ── DESKTOP ────────────────────────────────────────────────────────── */}
       <div className="hero-split hidden sm:block">
         <div className="hero-split__panel hero-split__panel--left" aria-hidden>
           <Image
@@ -168,14 +135,17 @@ export function HeroSection() {
               <SearchAutocomplete placeholder="Search for jollof rice, palm oil, plantain…" />
             </div>
 
-            <div className="mt-5 flex items-center justify-center gap-3">
+            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link href="/shop" className="no-underline">
-                <Button size="lg" className="h-11 px-8">Shop all products</Button>
-              </Link>
-              <Link href="/shop#categories" className="no-underline">
-                <Button size="lg" variant="outline" className="h-11 border-earth-300 bg-white px-8">
-                  Browse categories
+                <Button size="lg" className="h-11 min-w-[200px] px-8">
+                  Shop all products
                 </Button>
+              </Link>
+              <Link
+                href="/shop#categories"
+                className="text-sm font-semibold text-brand-700 no-underline hover:text-brand-800"
+              >
+                Browse categories →
               </Link>
             </div>
 
@@ -187,22 +157,6 @@ export function HeroSection() {
                 </li>
               ))}
             </ul>
-
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-earth-500">
-                <Search className="h-3.5 w-3.5" aria-hidden />
-                Popular
-              </span>
-              {QUICK_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="inline-flex min-h-11 items-center rounded-full border border-earth-200 bg-white px-4 py-2.5 text-xs font-medium text-earth-700 no-underline shadow-sm transition-colors duration-150 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
           </div>
         </div>
       </div>

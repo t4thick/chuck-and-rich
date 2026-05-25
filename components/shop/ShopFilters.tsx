@@ -313,9 +313,10 @@ export function SortMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-11 min-h-11 items-center gap-1.5 rounded-md border border-earth-200 bg-white px-3 text-sm font-medium text-earth-700 transition-colors hover:border-earth-300 hover:bg-earth-50"
+        className="inline-flex h-11 min-h-11 w-full items-center justify-between gap-1.5 rounded-md border border-earth-200 bg-white px-3 text-sm font-medium text-earth-700 transition-colors hover:border-earth-300 hover:bg-earth-50 sm:w-auto sm:justify-start"
       >
-        Sort: <span className="text-earth-900">{SORT_LABELS[current] ?? 'Featured'}</span>
+        <span className="text-earth-500">Sort</span>
+        <span className="truncate text-earth-900">{SORT_LABELS[current] ?? 'Featured'}</span>
         <ChevronDown className="h-3.5 w-3.5 text-earth-500" aria-hidden />
       </button>
       {open && (
@@ -430,8 +431,8 @@ export function ShopFiltersBar({
     : PRODUCT_CATEGORIES
 
   return (
-    <div className="space-y-3 lg:hidden">
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+    <div className="space-y-2 lg:hidden">
+      <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
         <button
           type="button"
           onClick={() => state.setCategoryAndGo('')}
@@ -466,7 +467,7 @@ export function ShopFiltersBar({
           type="button"
           variant="outline"
           size="sm"
-          className="h-11 gap-1.5 text-xs"
+          className="h-11 flex-1 gap-1.5 text-xs sm:flex-none"
           onClick={() => state.setMobileOpen((v) => !v)}
         >
           <Filter className="h-3.5 w-3.5" />
@@ -477,7 +478,9 @@ export function ShopFiltersBar({
             </span>
           )}
         </Button>
-        <SortMenu />
+        <div className="min-w-0 flex-1 sm:flex-none">
+          <SortMenu />
+        </div>
       </div>
 
       {state.mobileOpen && (

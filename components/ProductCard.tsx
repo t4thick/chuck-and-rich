@@ -7,6 +7,8 @@ import { useCart } from '@/context/CartContext'
 import { useToast } from '@/context/ToastContext'
 import { ProductImage } from '@/components/store/ProductImage'
 import { Button } from '@/components/ui/button'
+import { ProductStockLabel } from '@/components/store/ProductStockLabel'
+import { extractPackSize } from '@/lib/product-display'
 import { formatMoney } from '@/lib/utils'
 import type { Product } from '@/types'
 
@@ -20,6 +22,8 @@ export function ProductCard({ product, priority }: { product: Product; priority?
     const t = setTimeout(() => setJustAdded(false), 900)
     return () => clearTimeout(t)
   }, [justAdded])
+
+  const packSize = extractPackSize(product)
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
@@ -40,12 +44,8 @@ export function ProductCard({ product, priority }: { product: Product; priority?
             className="rounded-none"
             sizes="(max-width:640px) 50vw, 25vw"
             priority={priority}
+            showPlaceholderHint
           />
-          {!product.in_stock && (
-            <span className="absolute left-2 top-2 rounded-md bg-earth-900/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-              Out of stock
-            </span>
-          )}
         </div>
         <div className="flex flex-1 flex-col p-3 sm:p-3.5">
           <p className="line-clamp-1 text-[11px] font-medium uppercase tracking-wider text-earth-500">
@@ -54,7 +54,13 @@ export function ProductCard({ product, priority }: { product: Product; priority?
           <h3 className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-snug text-earth-900 transition-colors duration-150 group-hover:text-brand-700 sm:text-[15px]">
             {product.name}
           </h3>
-          <p className="mt-auto pt-3 text-[17px] font-semibold tracking-tight text-earth-900">
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <ProductStockLabel inStock={product.in_stock} compact />
+            {packSize && (
+              <span className="text-[11px] font-medium text-earth-500">{packSize}</span>
+            )}
+          </div>
+          <p className="mt-auto pt-2.5 text-[17px] font-semibold tabular-nums tracking-tight text-earth-900">
             {formatMoney(product.price)}
           </p>
         </div>
