@@ -13,7 +13,7 @@ export default function CheckoutCancelPage() {
       />
       <div className="store-container flex flex-col items-center gap-4 py-12 sm:flex-row sm:justify-center">
         <Link href="/checkout" className="no-underline">
-          <Button variant="accent" size="lg" className="rounded-xl">
+          <Button size="lg" className="rounded-xl">
             Back to checkout
           </Button>
         </Link>

@@ -149,7 +149,7 @@
   }
 
   .premium-card-hover {
-    @apply hover:-translate-y-[2px] hover:border-earth-300 hover:shadow-[var(--shadow-card-hover)];
+    @apply hover:border-earth-300 hover:shadow-[var(--shadow-card-hover)];
   }
 
   .product-image-frame {

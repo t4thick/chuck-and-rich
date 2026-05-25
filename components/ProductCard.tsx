@@ -37,7 +37,12 @@ export function ProductCard({ product, priority }: { product: Product; priority?
   return (
     <article className="group premium-card premium-card-hover flex h-full flex-col">
       <Link href={`/products/${product.id}`} className="flex flex-1 flex-col no-underline">
-        <div className="product-image-frame">
+        <div className="product-image-frame relative">
+          {!product.in_stock && (
+            <span className="absolute left-2 top-2 z-10 rounded-md bg-earth-900/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+              Out of stock
+            </span>
+          )}
           <ProductImage
             src={product.image_url}
             alt={product.name}
@@ -54,12 +59,14 @@ export function ProductCard({ product, priority }: { product: Product; priority?
           <h3 className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-snug text-earth-900 transition-colors duration-150 group-hover:text-brand-700 sm:text-[15px]">
             {product.name}
           </h3>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <ProductStockLabel inStock={product.in_stock} compact />
-            {packSize && (
-              <span className="text-[11px] font-medium text-earth-500">{packSize}</span>
-            )}
-          </div>
+          {(product.in_stock || packSize) && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+              {product.in_stock && <ProductStockLabel inStock compact />}
+              {packSize && (
+                <span className="text-[11px] font-medium text-earth-500">{packSize}</span>
+              )}
+            </div>
+          )}
           <p className="mt-auto pt-2.5 text-[17px] font-semibold tabular-nums tracking-tight text-earth-900">
             {formatMoney(product.price)}
           </p>

@@ -104,7 +104,7 @@ export default async function AccountPage() {
             <p className="mt-4 font-medium text-earth-800">No orders yet</p>
             <p className="mt-1 text-sm text-earth-600">When you place an order, it will show up here.</p>
             <Link href="/shop" className="mt-6 inline-block no-underline">
-              <Button variant="accent" className="rounded-xl">
+              <Button className="rounded-xl">
                 Start shopping
               </Button>
             </Link>

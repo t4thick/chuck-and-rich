@@ -282,7 +282,7 @@ export function CheckoutClient({
         <PageHeader eyebrow="Checkout" title="Your cart is empty" subtitle="Add groceries before checking out." />
         <div className="store-container py-12 text-center">
           <Link href="/shop" className="no-underline">
-            <Button size="lg" variant="accent" className="rounded-xl">
+            <Button size="lg" className="rounded-xl">
               Browse shop
             </Button>
           </Link>
@@ -614,7 +614,6 @@ export function CheckoutClient({
                 {!clientSecret && (
                   <Button
                     type="button"
-                    variant="accent"
                     size="lg"
                     className="mt-4 h-12 w-full rounded-xl"
                     onClick={() => void preparePayment()}

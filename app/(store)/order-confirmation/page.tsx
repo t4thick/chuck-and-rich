@@ -159,7 +159,7 @@ export default async function OrderConfirmationPage({
             </Button>
           </Link>
           <Link href="/shop" className="no-underline">
-            <Button variant="accent" className="h-12 w-full rounded-xl sm:w-auto">
+            <Button className="h-12 w-full rounded-xl sm:w-auto">
               Continue shopping
             </Button>
           </Link>

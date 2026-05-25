@@ -221,7 +221,7 @@ function CategoryList({
           type="button"
           onClick={() => onSelect('')}
           className={cn(
-            'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors duration-150',
+            'flex min-h-11 w-full items-center justify-between gap-2 rounded-md px-2.5 py-2.5 text-left text-[13px] font-medium transition-colors duration-150',
             !activeCategory
               ? 'bg-earth-100 text-earth-900'
               : 'text-earth-700 hover:bg-earth-50 hover:text-earth-900'
@@ -241,7 +241,7 @@ function CategoryList({
             type="button"
             onClick={() => onSelect(c)}
             className={cn(
-              'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors duration-150',
+              'flex min-h-11 w-full items-center justify-between gap-2 rounded-md px-2.5 py-2.5 text-left text-[13px] font-medium transition-colors duration-150',
               activeCategory === c
                 ? 'bg-earth-100 text-earth-900'
                 : 'text-earth-700 hover:bg-earth-50 hover:text-earth-900'
@@ -382,7 +382,7 @@ export function ShopFiltersSidebar({
               setMinPrice={state.setMinPrice}
               setMaxPrice={state.setMaxPrice}
             />
-            <Button type="submit" size="sm" className="mt-2 h-8 w-full text-xs">
+            <Button type="submit" size="sm" className="mt-2 h-11 w-full text-xs">
               Apply price
             </Button>
           </div>
