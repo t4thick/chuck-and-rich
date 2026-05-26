@@ -1,7 +1,24 @@
+/** Public inbox for customer contact & feedback (override with NEXT_PUBLIC_SUPPORT_EMAIL). */
+export const DEFAULT_SUPPORT_EMAIL = 'kkras5050@gmail.com'
+
+export function getSupportEmail(): string {
+  return process.env.NEXT_PUBLIC_SUPPORT_EMAIL?.trim() || DEFAULT_SUPPORT_EMAIL
+}
+
+/** Where feedback form submissions are delivered (server-only env). */
+export function getFeedbackInbox(): string {
+  return (
+    process.env.FEEDBACK_TO_EMAIL?.trim() ||
+    process.env.MERCHANT_ORDER_EMAIL?.trim() ||
+    getSupportEmail()
+  )
+}
+
 export const STORE = {
   name: 'Lovely Queen African Market',
   shortName: 'Lovely Queen Market',
   tagline: 'African & Caribbean groceries, delivered fast.',
+  supportEmail: DEFAULT_SUPPORT_EMAIL,
   address: '1668 E Dublin Granville Rd, Columbus, OH 43229',
   /** Ship-from for USPS/UPS labels (Shippo). Env vars override these. */
   shipFrom: {

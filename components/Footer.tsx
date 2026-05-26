@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Lock, MapPin, Phone, ShieldCheck } from 'lucide-react'
-import { STORE } from '@/lib/constants/store'
+import { getSupportEmail, STORE } from '@/lib/constants/store'
 import { StoreLogo } from '@/components/ui/StoreLogo'
 
 const SHOP_LINKS = [
@@ -18,16 +18,22 @@ const ACCOUNT_LINKS = [
   { href: '/checkout', label: 'Checkout' },
 ] as const
 
+const HELP_LINKS = [
+  { href: '/feedback', label: 'Website feedback' },
+  { href: '/track-order', label: 'Track order' },
+] as const
+
 const LEGAL_LINKS = [
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
 ] as const
 
 export function Footer() {
+  const supportEmail = getSupportEmail()
   return (
     <footer className="mt-auto border-t border-earth-200 bg-white text-earth-700">
       <div className="store-container py-12 sm:py-14">
-        <div className="grid gap-6 sm:gap-8 lg:grid-cols-4 lg:gap-10">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-5 lg:gap-8">
           <div className="lg:col-span-1">
             <StoreLogo variant="footer" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-earth-600">
@@ -73,6 +79,30 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">Help</p>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              {HELP_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-earth-700 no-underline hover:text-brand-700"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <a
+                  href={`mailto:${supportEmail}`}
+                  className="text-earth-700 no-underline hover:text-brand-700"
+                >
+                  {supportEmail}
+                </a>
+              </li>
             </ul>
           </div>
 

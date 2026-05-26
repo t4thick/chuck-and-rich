@@ -266,6 +266,22 @@ function pickSender(): { sender: Sender; from: string; label: string } | null {
   return null
 }
 
+/** Send a one-off transactional email using the same transport as order alerts. */
+export async function sendTransactionalEmail(payload: EmailPayload): Promise<boolean> {
+  const picked = pickSender()
+  if (!picked) {
+    console.warn('[email] No email transport configured — cannot send message.')
+    return false
+  }
+  try {
+    await picked.sender(payload)
+    return true
+  } catch (error) {
+    console.error(`[email:${picked.label}] Send failed:`, error)
+    return false
+  }
+}
+
 /**
  * Sends (1) a receipt to the customer, (2) an alert to the store inbox, and
  * (3) optionally a tiny email to a carrier SMS gateway (e.g.

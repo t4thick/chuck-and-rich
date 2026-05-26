@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/store/PageHeader'
+import { getSupportEmail } from '@/lib/constants/store'
 
 export const metadata = { title: 'Privacy Policy' }
 
 export default function PrivacyPage() {
+  const supportEmail = getSupportEmail()
   return (
     <div className="min-h-screen bg-cream">
       <PageHeader eyebrow="Legal" title="Privacy policy" />
@@ -24,6 +26,17 @@ export default function PrivacyPage() {
           <p>
             We do not sell your personal information. We may use service providers (hosting, email
             delivery, analytics) who process data on our behalf under appropriate agreements.
+          </p>
+          <p>
+            Questions or requests:{' '}
+            <a href={`mailto:${supportEmail}`} className="font-medium text-brand-700 no-underline">
+              {supportEmail}
+            </a>
+            . Website suggestions:{' '}
+            <Link href="/feedback" className="font-medium text-brand-700 no-underline">
+              feedback form
+            </Link>
+            .
           </p>
         </div>
         <p className="mt-10">
