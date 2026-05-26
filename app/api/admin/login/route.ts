@@ -8,6 +8,7 @@ import {
 } from '@/lib/auth/admin-session'
 import {
   clearLoginFailures,
+  isAdminLoginRateLimitDisabled,
   isLoginAllowed,
   recordFailedLogin,
 } from '@/lib/security/login-rate-limit'
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const ip = getClientIp(req)
 
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && !isAdminLoginRateLimitDisabled()) {
     const { allowed, retryAfterSecs } = await isLoginAllowed(ip)
     if (!allowed) {
       return NextResponse.json(
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
   const expectedNorm = expected.normalize('NFKC')
 
   if (supplied.length === 0 || !constantTimeEquals(supplied, expectedNorm)) {
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && !isAdminLoginRateLimitDisabled()) {
       await recordFailedLogin(ip)
     } else {
       const maskedSupplied =

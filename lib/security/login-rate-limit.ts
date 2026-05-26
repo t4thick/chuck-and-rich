@@ -4,6 +4,22 @@ const WINDOW_SEC = 15 * 60
 const MAX_FAILURES = 5
 const REDIS_KEY_PREFIX = 'lq:admin-login-fail:'
 
+function isTruthyEnv(name: string | undefined): boolean {
+  const v = name?.trim().toLowerCase()
+  return v === '1' || v === 'true' || v === 'yes'
+}
+
+/**
+ * Admin login lockouts are paused unless ADMIN_ENFORCE_LOGIN_RATE_LIMIT=1.
+ * Optional: ADMIN_DISABLE_LOGIN_RATE_LIMIT=1 also pauses (explicit).
+ */
+export function isAdminLoginRateLimitDisabled(): boolean {
+  if (isTruthyEnv(process.env.ADMIN_ENFORCE_LOGIN_RATE_LIMIT)) return false
+  if (isTruthyEnv(process.env.ADMIN_DISABLE_LOGIN_RATE_LIMIT)) return true
+  // HOLD: paused by default until you set ADMIN_ENFORCE_LOGIN_RATE_LIMIT=1 on Vercel.
+  return true
+}
+
 interface RateEntry {
   count: number
   resetAt: number
@@ -36,6 +52,10 @@ export async function isLoginAllowed(clientKey: string): Promise<{
   allowed: boolean
   retryAfterSecs: number
 }> {
+  if (isAdminLoginRateLimitDisabled()) {
+    return { allowed: true, retryAfterSecs: 0 }
+  }
+
   const r = redis()
   if (r) {
     const count = Number(await r.get(`${REDIS_KEY_PREFIX}${clientKey}`)) || 0
@@ -59,6 +79,8 @@ export async function isLoginAllowed(clientKey: string): Promise<{
 
 /** Record a failed password attempt. */
 export async function recordFailedLogin(clientKey: string): Promise<void> {
+  if (isAdminLoginRateLimitDisabled()) return
+
   const r = redis()
   if (r) {
     const key = `${REDIS_KEY_PREFIX}${clientKey}`
