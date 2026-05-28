@@ -660,14 +660,6 @@ export function CheckoutClient({
                       ${taxQuote.taxAmount.toFixed(2)}
                     </span>
                   </div>
-                ) : taxQuote.destination === 'unknown' && taxQuote.taxableSubtotal > 0 ? (
-                  <p className="text-xs text-earth-500">
-                    Ohio sales tax is calculated after you enter your delivery state.
-                  </p>
-                ) : taxQuote.destination === 'out_of_state' && taxQuote.taxableSubtotal > 0 ? (
-                  <p className="text-xs text-earth-500">
-                    No Ohio sales tax — delivery outside Ohio.
-                  </p>
                 ) : null}
                 <div className="flex justify-between border-t border-earth-100 pt-3 text-lg font-bold text-earth-950">
                   <span>Total</span>

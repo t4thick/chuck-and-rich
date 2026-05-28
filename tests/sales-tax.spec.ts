@@ -18,12 +18,13 @@ test.describe('Ohio category sales tax', () => {
     expect(isCategoryTaxable('Non food')).toBe(true)
   })
 
-  test('tax applies only for Ohio shipping and store pickup', () => {
+  test('tax applies for all US states on taxable items (Ohio store rate)', () => {
     expect(shouldApplyStoreSalesTax({ country: 'US', state: 'Ohio' })).toBe(true)
     expect(shouldApplyStoreSalesTax({ country: 'US', state: 'OH' })).toBe(true)
-    expect(shouldApplyStoreSalesTax({ country: 'US', state: '' })).toBe(false)
+    expect(shouldApplyStoreSalesTax({ country: 'US', state: '' })).toBe(true)
     expect(shouldApplyStoreSalesTax({ shippingMethod: 'pickup' })).toBe(true)
-    expect(shouldApplyStoreSalesTax({ country: 'US', state: 'Texas' })).toBe(false)
+    expect(shouldApplyStoreSalesTax({ country: 'US', state: 'Texas' })).toBe(true)
+    expect(shouldApplyStoreSalesTax({ country: 'US', state: 'Michigan' })).toBe(true)
   })
 
   test('mixed cart taxes only taxable lines in Ohio', () => {
@@ -40,10 +41,19 @@ test.describe('Ohio category sales tax', () => {
     expect(quote.taxAmount).toBe(0.78)
   })
 
-  test('out of state has no tax even on cosmetics', () => {
+  test('out of state US still taxes non-food at store rate', () => {
     const quote = calculateSalesTax(
       [{ category: 'Non food', lineSubtotal: 15 }],
       { country: 'US', state: 'Michigan' }
+    )
+    expect(quote.applies).toBe(true)
+    expect(quote.taxAmount).toBe(1.16)
+  })
+
+  test('non-US orders have no sales tax on site', () => {
+    const quote = calculateSalesTax(
+      [{ category: 'Cosmetics', lineSubtotal: 20 }],
+      { country: 'Canada', state: 'ON' }
     )
     expect(quote.taxAmount).toBe(0)
   })

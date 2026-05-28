@@ -76,7 +76,7 @@ export type TaxLineInput = {
   lineSubtotal: number
 }
 
-export type TaxDestination = 'ohio' | 'pickup' | 'out_of_state' | 'unknown'
+export type TaxDestination = 'pickup' | 'us' | 'international' | 'unknown'
 
 export type SalesTaxQuote = {
   /** True when Ohio tax is collected on this order (Ohio ship-to or store pickup). */
@@ -89,8 +89,9 @@ export type SalesTaxQuote = {
 }
 
 /**
- * Ohio sourcing: collect at the Columbus store rate only for Ohio delivery or pickup.
- * Out-of-state US addresses are not charged Ohio sales tax on the site.
+ * Store is in Columbus, OH — taxable merchandise uses Ohio category rules + store rate
+ * for all US delivery and pickup. Grocery categories stay exempt (see isCategoryTaxable).
+ * Out-of-state customers are not exempt from tax on non-food items.
  */
 export function resolveTaxDestination(input: {
   country?: string
@@ -101,12 +102,11 @@ export function resolveTaxDestination(input: {
 
   const country = normalizeShippingCountry(input.country)
   const isUnitedStates = !country || country === 'united states'
-  if (!isUnitedStates) return 'out_of_state'
+  if (!isUnitedStates) return 'international'
 
   const state = normalizeShippingRegion(input.state)
   if (!state) return 'unknown'
-  if (state === 'ohio') return 'ohio'
-  return 'out_of_state'
+  return 'us'
 }
 
 export function shouldApplyStoreSalesTax(input: {
@@ -115,7 +115,7 @@ export function shouldApplyStoreSalesTax(input: {
   shippingMethod?: string
 }): boolean {
   const dest = resolveTaxDestination(input)
-  return dest === 'ohio' || dest === 'pickup'
+  return dest === 'pickup' || dest === 'us' || dest === 'unknown'
 }
 
 export function calculateSalesTax(
@@ -128,12 +128,14 @@ export function calculateSalesTax(
 ): SalesTaxQuote {
   const rate = getStoreSalesTaxRate()
   const destination = resolveTaxDestination(dest)
-  const applies = destination === 'ohio' || destination === 'pickup'
+  const applies = shouldApplyStoreSalesTax(dest)
   const pct = (rate * 100).toFixed(2).replace(/\.?0+$/, '')
   const jurisdictionLabel =
     destination === 'pickup'
       ? `Store pickup · Columbus, OH (${pct}%)`
-      : `${STORE.shipFrom.city}, OH (${pct}%)`
+      : destination === 'international'
+        ? ''
+        : `Columbus, OH rate (${pct}%)`
 
   let taxableSubtotal = 0
   for (const line of lines) {
