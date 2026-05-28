@@ -184,6 +184,11 @@ export function CheckoutClient({
   const [categoryByProductId, setCategoryByProductId] = useState<Record<string, string>>({})
   const [addressVerified, setAddressVerified] = useState(Boolean(defaultAddress))
 
+  const cartFingerprint = useMemo(
+    () => items.map((i) => `${i.product.id}:${i.quantity}`).join('|'),
+    [items]
+  )
+
   useEffect(() => {
     setReturnUrl(`${getAuthSiteOrigin()}/checkout/success`)
   }, [])
@@ -207,7 +212,7 @@ export function CheckoutClient({
       })
       .catch(() => {})
     return () => ctrl.abort()
-  }, [cartFingerprint])
+  }, [cartFingerprint, items])
 
   function pickSavedAddress(id: string) {
     setSelectedAddressId(id)
@@ -229,11 +234,6 @@ export function CheckoutClient({
       setAddressVerified(true)
     }
   }
-
-  const cartFingerprint = useMemo(
-    () => items.map((i) => `${i.product.id}:${i.quantity}`).join('|'),
-    [items]
-  )
 
   const checkoutFingerprint = useMemo(
     () =>

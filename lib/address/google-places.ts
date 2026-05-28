@@ -86,8 +86,8 @@ export async function googlePlacesAutocomplete(input: string): Promise<AddressSu
   const out: AddressSuggestion[] = []
   for (const s of data.suggestions ?? []) {
     const p = s.placePrediction
-    const placeId = p?.placeId?.trim()
-    if (!placeId) continue
+    if (!p?.placeId?.trim()) continue
+    const placeId = p.placeId.trim()
     const primary = p.structuredFormat?.mainText?.text ?? p.text?.text ?? ''
     const secondary = p.structuredFormat?.secondaryText?.text ?? ''
     if (!primary) continue

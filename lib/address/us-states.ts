@@ -52,7 +52,7 @@ export const US_STATE_OPTIONS = [
   { code: 'WY', name: 'Wyoming' },
 ] as const
 
-const CODE_SET = new Set(US_STATE_OPTIONS.map((s) => s.code))
+const CODE_SET = new Set<string>(US_STATE_OPTIONS.map((s) => s.code))
 
 export function isValidUsStateCode(value: string | null | undefined): boolean {
   if (!value) return false
