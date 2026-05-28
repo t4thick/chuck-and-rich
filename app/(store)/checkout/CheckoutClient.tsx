@@ -145,7 +145,7 @@ export function CheckoutClient({
       address1: '',
       address2: '',
       city: '',
-      state: '',
+      state: 'OH',
       country: 'United States',
       postalCode: '',
     }
@@ -179,10 +179,32 @@ export function CheckoutClient({
   const [error, setError] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [returnUrl, setReturnUrl] = useState('')
+  const [categoryByProductId, setCategoryByProductId] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setReturnUrl(`${getAuthSiteOrigin()}/checkout/success`)
   }, [])
+
+  useEffect(() => {
+    const productIds = items.map((i) => i.product.id)
+    if (productIds.length === 0) {
+      setCategoryByProductId({})
+      return
+    }
+    const ctrl = new AbortController()
+    fetch('/api/checkout/cart-categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productIds }),
+      signal: ctrl.signal,
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: { categories?: Record<string, string> }) => {
+        setCategoryByProductId(data.categories ?? {})
+      })
+      .catch(() => {})
+    return () => ctrl.abort()
+  }, [cartFingerprint])
 
   function pickSavedAddress(id: string) {
     setSelectedAddressId(id)
@@ -235,7 +257,7 @@ export function CheckoutClient({
     () =>
       calculateSalesTax(
         items.map(({ product, quantity }) => ({
-          category: product.category,
+          category: categoryByProductId[product.id] ?? product.category ?? '',
           lineSubtotal: product.price * quantity,
         })),
         {
@@ -244,7 +266,7 @@ export function CheckoutClient({
           shippingMethod,
         }
       ),
-    [items, form.country, form.state, shippingMethod]
+    [items, categoryByProductId, form.country, form.state, shippingMethod]
   )
 
   const grandTotal = totalPrice + shipping.fee + taxQuote.taxAmount
@@ -625,16 +647,23 @@ export function CheckoutClient({
                     {shipping.fee === 0 ? 'Free' : `$${shipping.fee.toFixed(2)}`}
                   </span>
                 </div>
-                {taxQuote.taxAmount > 0 ? (
+                {taxQuote.applies ? (
                   <div className="flex justify-between text-earth-600">
-                    <span className="max-w-[12rem] text-xs sm:text-sm">
+                    <span className="max-w-[14rem] text-xs sm:text-sm">
                       Sales tax
                       <span className="block text-earth-400">{taxQuote.jurisdictionLabel}</span>
+                      {taxQuote.taxAmount === 0 && taxQuote.taxableSubtotal === 0 ? (
+                        <span className="block text-earth-400">Grocery — exempt</span>
+                      ) : null}
                     </span>
-                    <span className="font-medium text-earth-900">${taxQuote.taxAmount.toFixed(2)}</span>
+                    <span className="font-medium text-earth-900">
+                      ${taxQuote.taxAmount.toFixed(2)}
+                    </span>
                   </div>
-                ) : taxQuote.applies && taxQuote.taxableSubtotal === 0 ? (
-                  <p className="text-xs text-earth-500">Grocery items — no sales tax.</p>
+                ) : taxQuote.taxableSubtotal > 0 ? (
+                  <p className="text-xs text-earth-500">
+                    Sales tax applies for Ohio delivery and store pickup.
+                  </p>
                 ) : null}
                 <div className="flex justify-between border-t border-earth-100 pt-3 text-lg font-bold text-earth-950">
                   <span>Total</span>

@@ -20,6 +20,8 @@ test.describe('Ohio category sales tax', () => {
 
   test('tax applies for Ohio shipping and pickup', () => {
     expect(shouldApplyStoreSalesTax({ country: 'US', state: 'Ohio' })).toBe(true)
+    expect(shouldApplyStoreSalesTax({ country: 'US', state: 'OH' })).toBe(true)
+    expect(shouldApplyStoreSalesTax({ country: 'US', state: '' })).toBe(true)
     expect(shouldApplyStoreSalesTax({ shippingMethod: 'pickup' })).toBe(true)
     expect(shouldApplyStoreSalesTax({ country: 'US', state: 'Texas' })).toBe(false)
   })

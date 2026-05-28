@@ -86,7 +86,7 @@ export type SalesTaxQuote = {
 
 /**
  * Ohio sales tax at the Columbus store rate for taxable merchandise.
- * Applies to Ohio deliveries and store pickup (not out-of-state shipping).
+ * Applies to US orders when state is Ohio (or OH), store pickup, or state not yet entered (US default).
  */
 export function shouldApplyStoreSalesTax(input: {
   country?: string
@@ -97,10 +97,11 @@ export function shouldApplyStoreSalesTax(input: {
   if (method === 'pickup') return true
 
   const country = normalizeShippingCountry(input.country)
-  const state = normalizeShippingRegion(input.state)
   const isUnitedStates = !country || country === 'united states'
   if (!isUnitedStates) return false
 
+  const state = normalizeShippingRegion(input.state)
+  if (!state) return true
   return state === 'ohio'
 }
 
