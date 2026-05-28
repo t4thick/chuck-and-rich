@@ -50,6 +50,17 @@ test.describe('Ohio category sales tax', () => {
     expect(quote.taxAmount).toBe(1.16)
   })
 
+  test('Texas and California same tax as Ohio on cosmetics', () => {
+    for (const state of ['Texas', 'California', 'New York']) {
+      const quote = calculateSalesTax(
+        [{ category: 'Cosmetics', lineSubtotal: 100 }],
+        { country: 'United States', state }
+      )
+      expect(quote.applies, state).toBe(true)
+      expect(quote.taxAmount, state).toBe(7.75)
+    }
+  })
+
   test('non-US orders have no sales tax on site', () => {
     const quote = calculateSalesTax(
       [{ category: 'Cosmetics', lineSubtotal: 20 }],

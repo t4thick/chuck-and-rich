@@ -79,7 +79,7 @@ export type TaxLineInput = {
 export type TaxDestination = 'pickup' | 'us' | 'international' | 'unknown'
 
 export type SalesTaxQuote = {
-  /** True when Ohio tax is collected on this order (Ohio ship-to or store pickup). */
+  /** True when sales tax is collected (any US address, pickup, or US before state entered). */
   applies: boolean
   destination: TaxDestination
   rate: number
