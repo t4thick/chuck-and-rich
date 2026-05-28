@@ -18,10 +18,10 @@ test.describe('Ohio category sales tax', () => {
     expect(isCategoryTaxable('Non food')).toBe(true)
   })
 
-  test('tax applies for Ohio shipping and pickup', () => {
+  test('tax applies only for Ohio shipping and store pickup', () => {
     expect(shouldApplyStoreSalesTax({ country: 'US', state: 'Ohio' })).toBe(true)
     expect(shouldApplyStoreSalesTax({ country: 'US', state: 'OH' })).toBe(true)
-    expect(shouldApplyStoreSalesTax({ country: 'US', state: '' })).toBe(true)
+    expect(shouldApplyStoreSalesTax({ country: 'US', state: '' })).toBe(false)
     expect(shouldApplyStoreSalesTax({ shippingMethod: 'pickup' })).toBe(true)
     expect(shouldApplyStoreSalesTax({ country: 'US', state: 'Texas' })).toBe(false)
   })

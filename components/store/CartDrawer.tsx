@@ -227,7 +227,7 @@ export function CartDrawer() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-earth-500">
-                Shipping at checkout · Ohio sales tax on non-food items only
+                Shipping at checkout · Ohio sales tax on non-food (Ohio delivery only)
               </p>
               <Link href="/checkout" className="mt-4 block no-underline" onClick={closeCart}>
                 <Button size="lg" className="h-11 w-full">

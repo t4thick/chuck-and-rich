@@ -650,19 +650,23 @@ export function CheckoutClient({
                 {taxQuote.applies ? (
                   <div className="flex justify-between text-earth-600">
                     <span className="max-w-[14rem] text-xs sm:text-sm">
-                      Sales tax
+                      Ohio sales tax
                       <span className="block text-earth-400">{taxQuote.jurisdictionLabel}</span>
                       {taxQuote.taxAmount === 0 && taxQuote.taxableSubtotal === 0 ? (
-                        <span className="block text-earth-400">Grocery — exempt</span>
+                        <span className="block text-earth-400">Grocery — exempt in Ohio</span>
                       ) : null}
                     </span>
                     <span className="font-medium text-earth-900">
                       ${taxQuote.taxAmount.toFixed(2)}
                     </span>
                   </div>
-                ) : taxQuote.taxableSubtotal > 0 ? (
+                ) : taxQuote.destination === 'unknown' && taxQuote.taxableSubtotal > 0 ? (
                   <p className="text-xs text-earth-500">
-                    Sales tax applies for Ohio delivery and store pickup.
+                    Ohio sales tax is calculated after you enter your delivery state.
+                  </p>
+                ) : taxQuote.destination === 'out_of_state' && taxQuote.taxableSubtotal > 0 ? (
+                  <p className="text-xs text-earth-500">
+                    No Ohio sales tax — delivery outside Ohio.
                   </p>
                 ) : null}
                 <div className="flex justify-between border-t border-earth-100 pt-3 text-lg font-bold text-earth-950">

@@ -2,7 +2,7 @@ import { STORE } from '@/lib/constants/store'
 import {
   normalizeShippingCountry,
   normalizeShippingRegion,
-  type ShippingMethod,
+  normalizeShippingMethod as normalizeShipMethod,
 } from '@/lib/shipping'
 
 /**
@@ -76,8 +76,12 @@ export type TaxLineInput = {
   lineSubtotal: number
 }
 
+export type TaxDestination = 'ohio' | 'pickup' | 'out_of_state' | 'unknown'
+
 export type SalesTaxQuote = {
+  /** True when Ohio tax is collected on this order (Ohio ship-to or store pickup). */
   applies: boolean
+  destination: TaxDestination
   rate: number
   taxableSubtotal: number
   taxAmount: number
@@ -85,24 +89,33 @@ export type SalesTaxQuote = {
 }
 
 /**
- * Ohio sales tax at the Columbus store rate for taxable merchandise.
- * Applies to US orders when state is Ohio (or OH), store pickup, or state not yet entered (US default).
+ * Ohio sourcing: collect at the Columbus store rate only for Ohio delivery or pickup.
+ * Out-of-state US addresses are not charged Ohio sales tax on the site.
  */
+export function resolveTaxDestination(input: {
+  country?: string
+  state?: string
+  shippingMethod?: string
+}): TaxDestination {
+  if (normalizeShipMethod(input.shippingMethod) === 'pickup') return 'pickup'
+
+  const country = normalizeShippingCountry(input.country)
+  const isUnitedStates = !country || country === 'united states'
+  if (!isUnitedStates) return 'out_of_state'
+
+  const state = normalizeShippingRegion(input.state)
+  if (!state) return 'unknown'
+  if (state === 'ohio') return 'ohio'
+  return 'out_of_state'
+}
+
 export function shouldApplyStoreSalesTax(input: {
   country?: string
   state?: string
   shippingMethod?: string
 }): boolean {
-  const method = input.shippingMethod
-  if (method === 'pickup') return true
-
-  const country = normalizeShippingCountry(input.country)
-  const isUnitedStates = !country || country === 'united states'
-  if (!isUnitedStates) return false
-
-  const state = normalizeShippingRegion(input.state)
-  if (!state) return true
-  return state === 'ohio'
+  const dest = resolveTaxDestination(input)
+  return dest === 'ohio' || dest === 'pickup'
 }
 
 export function calculateSalesTax(
@@ -114,9 +127,13 @@ export function calculateSalesTax(
   }
 ): SalesTaxQuote {
   const rate = getStoreSalesTaxRate()
-  const applies = shouldApplyStoreSalesTax(dest)
+  const destination = resolveTaxDestination(dest)
+  const applies = destination === 'ohio' || destination === 'pickup'
   const pct = (rate * 100).toFixed(2).replace(/\.?0+$/, '')
-  const jurisdictionLabel = `${STORE.shipFrom.city}, OH (${pct}%)`
+  const jurisdictionLabel =
+    destination === 'pickup'
+      ? `Store pickup · Columbus, OH (${pct}%)`
+      : `${STORE.shipFrom.city}, OH (${pct}%)`
 
   let taxableSubtotal = 0
   for (const line of lines) {
@@ -129,5 +146,5 @@ export function calculateSalesTax(
 
   const taxAmount = applies ? Math.round(taxableSubtotal * rate * 100) / 100 : 0
 
-  return { applies, rate, taxableSubtotal, taxAmount, jurisdictionLabel }
+  return { applies, destination, rate, taxableSubtotal, taxAmount, jurisdictionLabel }
 }
