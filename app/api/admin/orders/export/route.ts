@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
   let q = supabaseAdmin
     .from('orders')
     .select(
-      'id, order_number, created_at, customer_name, customer_email, customer_phone, address_line, city, state, country, postal_code, subtotal_amount, shipping_fee, total_amount, refund_amount, refunded_at, status, shipping_method, payment_method, tracking_number'
+      'id, order_number, created_at, customer_name, customer_email, customer_phone, address_line, city, state, country, postal_code, subtotal_amount, shipping_fee, tax_amount, total_amount, refund_amount, refunded_at, status, shipping_method, payment_method, tracking_number'
     )
     .lt('created_at', endIso)
     .order('created_at', { ascending: false })
@@ -103,6 +103,7 @@ export async function GET(req: NextRequest) {
       o.country ?? '',
       o.subtotal_amount ?? '',
       o.shipping_fee ?? '',
+      (o as { tax_amount?: number | null }).tax_amount ?? '',
       o.total_amount ?? '',
       o.refund_amount ?? '',
       o.refunded_at ?? '',

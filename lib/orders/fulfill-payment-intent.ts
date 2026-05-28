@@ -1,18 +1,13 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendOrderEmails } from '@/lib/email/send-order-emails'
 import { sendOrderSmsToMerchant } from '@/lib/notifications/send-order-sms'
+import type { SanitizedCartLine } from '@/lib/order-pricing'
 import {
-  buildAuthoritativeOrderItems,
-  type AuthoritativeProduct,
-  type SanitizedCartLine,
-} from '@/lib/order-pricing'
-import {
-  calculateShipping,
-  normalizeShippingCountry,
-  normalizeShippingMethod,
-  normalizeShippingRegion,
-  type ShippingMethod,
-} from '@/lib/shipping'
+  CHECKOUT_PRODUCT_SELECT,
+  computeCheckoutTotals,
+  type ProductWithCategory,
+} from '@/lib/checkout-totals'
+import { normalizeShippingCountry, normalizeShippingRegion } from '@/lib/shipping'
 import { getStripe } from '@/lib/stripe'
 import type { CheckoutSnapshotPayload } from '@/lib/orders/checkout-snapshot'
 
@@ -89,34 +84,35 @@ export async function fulfillOrderFromPaymentIntent(
   const candidateProductIds = Array.from(new Set(sanitizedItems.map((i) => i.productId)))
   const { data: productRows, error: productError } = await supabaseAdmin
     .from('products')
-    .select('id,name,price,in_stock')
+    .select(CHECKOUT_PRODUCT_SELECT)
     .in('id', candidateProductIds)
 
   if (productError) {
     throw new Error(productError.message)
   }
 
-  const productMap = new Map<string, AuthoritativeProduct>(
-    (productRows ?? []).map((p) => [p.id, p as AuthoritativeProduct])
+  const productMap = new Map<string, ProductWithCategory>(
+    (productRows ?? []).map((p) => [p.id, p as ProductWithCategory])
   )
 
   if (productMap.size !== candidateProductIds.length) {
     throw new Error('One or more products are no longer available')
   }
 
-  const shipping_method = normalizeShippingMethod(payload.shipping_method)
   const normalizedCountry = normalizeShippingCountry(payload.country)
   const normalizedState = normalizeShippingRegion(payload.state)
 
-  const { orderItems: authoritativeItems, subtotal } = buildAuthoritativeOrderItems(sanitizedItems, productMap)
-  const shipping = calculateShipping({
-    subtotal,
+  const totals = computeCheckoutTotals({
+    items: sanitizedItems,
+    productMap,
     country: normalizedCountry,
     state: normalizedState,
-    method: shipping_method as ShippingMethod,
+    shippingMethod: payload.shipping_method,
   })
+  const { orderItems: authoritativeItems, subtotal, shipping, tax } = totals
+  const shipping_method = shipping.method
 
-  const totalCents = Math.round((subtotal + shipping.fee) * 100)
+  const totalCents = Math.round(totals.total * 100)
   const received = pi.amount_received ?? pi.amount ?? 0
   if (Math.abs(received - totalCents) > 2) {
     console.error('[stripe] PI amount mismatch', { received, totalCents, paymentIntentId })
@@ -139,6 +135,7 @@ export async function fulfillOrderFromPaymentIntent(
       postal_code: payload.postal_code?.trim() || null,
       subtotal_amount: subtotal,
       shipping_fee: shipping.fee,
+      tax_amount: tax.taxAmount,
       shipping_method,
       shipping_zone: shipping.zone,
       total_amount: totalFromStripe,
@@ -217,6 +214,7 @@ export async function fulfillOrderFromPaymentIntent(
         postal_code: order.postal_code,
         subtotal_amount: Number(order.subtotal_amount),
         shipping_fee: Number(order.shipping_fee),
+        tax_amount: Number((order as { tax_amount?: number }).tax_amount ?? tax.taxAmount),
         total_amount: Number(order.total_amount),
         shipping_method: order.shipping_method,
         payment_method: order.payment_method,

@@ -63,6 +63,7 @@ export async function fulfillOrderFromStripeSession(sessionId: string): Promise<
   const lineItems = lineItemsRes.data ?? []
   const orderItems: AuthoritativeOrderItem[] = []
   let shippingFee = 0
+  let taxAmount = 0
 
   for (const li of lineItems) {
     const price = li.price
@@ -72,6 +73,10 @@ export async function fulfillOrderFromStripeSession(sessionId: string): Promise<
     const meta = product.metadata ?? {}
     if (meta.type === 'shipping') {
       shippingFee += (li.amount_total ?? 0) / 100
+      continue
+    }
+    if (meta.type === 'tax') {
+      taxAmount += (li.amount_total ?? 0) / 100
       continue
     }
     const productId = meta.product_id?.trim()
@@ -94,7 +99,7 @@ export async function fulfillOrderFromStripeSession(sessionId: string): Promise<
 
   const subtotal = orderItems.reduce((s, i) => s + i.subtotal, 0)
   const totalFromStripe = (session.amount_total ?? 0) / 100
-  const computedTotal = Number((subtotal + shippingFee).toFixed(2))
+  const computedTotal = Number((subtotal + shippingFee + taxAmount).toFixed(2))
   if (Math.abs(computedTotal - totalFromStripe) > 0.02) {
     console.error('[stripe] total mismatch', { computedTotal, totalFromStripe, sessionId })
     throw new Error('Order total mismatch — manual review required')
@@ -118,6 +123,7 @@ export async function fulfillOrderFromStripeSession(sessionId: string): Promise<
       postal_code: postalCode,
       subtotal_amount: subtotal,
       shipping_fee: shippingFee,
+      tax_amount: taxAmount,
       shipping_method: shippingMethod,
       shipping_zone: shippingZone,
       total_amount: totalFromStripe,
@@ -190,6 +196,7 @@ export async function fulfillOrderFromStripeSession(sessionId: string): Promise<
         postal_code: order.postal_code,
         subtotal_amount: Number(order.subtotal_amount),
         shipping_fee: Number(order.shipping_fee),
+        tax_amount: Number((order as { tax_amount?: number }).tax_amount ?? taxAmount),
         total_amount: Number(order.total_amount),
         shipping_method: order.shipping_method,
         payment_method: order.payment_method,

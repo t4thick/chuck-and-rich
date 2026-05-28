@@ -15,6 +15,7 @@ import {
   SHIPPING_METHOD_LABEL,
   type ShippingMethod,
 } from '@/lib/shipping'
+import { calculateSalesTax } from '@/lib/tax/sales-tax'
 import { getAuthSiteOrigin } from '@/lib/site-url-client'
 import { cn } from '@/lib/utils'
 
@@ -205,9 +206,20 @@ export function CheckoutClient({
     [items]
   )
 
+  const checkoutFingerprint = useMemo(
+    () =>
+      [
+        cartFingerprint,
+        form.country,
+        form.state,
+        shippingMethod,
+      ].join('|'),
+    [cartFingerprint, form.country, form.state, shippingMethod]
+  )
+
   useEffect(() => {
     setClientSecret(null)
-  }, [cartFingerprint, totalPrice, shippingMethod])
+  }, [checkoutFingerprint, totalPrice])
 
   const shipping = useMemo(
     () =>
@@ -219,7 +231,23 @@ export function CheckoutClient({
       }),
     [form.country, form.state, shippingMethod, totalPrice]
   )
-  const grandTotal = totalPrice + shipping.fee
+  const taxQuote = useMemo(
+    () =>
+      calculateSalesTax(
+        items.map(({ product, quantity }) => ({
+          category: product.category,
+          lineSubtotal: product.price * quantity,
+        })),
+        {
+          country: form.country,
+          state: form.state,
+          shippingMethod,
+        }
+      ),
+    [items, form.country, form.state, shippingMethod]
+  )
+
+  const grandTotal = totalPrice + shipping.fee + taxQuote.taxAmount
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -596,6 +624,17 @@ export function CheckoutClient({
                     {shipping.fee === 0 ? 'Free' : `$${shipping.fee.toFixed(2)}`}
                   </span>
                 </div>
+                {taxQuote.taxAmount > 0 ? (
+                  <div className="flex justify-between text-earth-600">
+                    <span className="max-w-[12rem] text-xs sm:text-sm">
+                      Sales tax
+                      <span className="block text-earth-400">{taxQuote.jurisdictionLabel}</span>
+                    </span>
+                    <span className="font-medium text-earth-900">${taxQuote.taxAmount.toFixed(2)}</span>
+                  </div>
+                ) : taxQuote.applies && taxQuote.taxableSubtotal === 0 ? (
+                  <p className="text-xs text-earth-500">Grocery items — no sales tax.</p>
+                ) : null}
                 <div className="flex justify-between border-t border-earth-100 pt-3 text-lg font-bold text-earth-950">
                   <span>Total</span>
                   <span>${grandTotal.toFixed(2)}</span>

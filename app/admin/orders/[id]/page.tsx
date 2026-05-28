@@ -178,6 +178,16 @@ export default async function AdminOrderDetailPage({
                         ${Number(order.shipping_fee ?? 0).toFixed(2)}
                       </td>
                     </tr>
+                    {Number(orderRecord.tax_amount ?? 0) > 0 ? (
+                      <tr>
+                        <td colSpan={3} className="text-right text-earth-600">
+                          Sales tax
+                        </td>
+                        <td className="text-right tabular-nums">
+                          ${Number(orderRecord.tax_amount).toFixed(2)}
+                        </td>
+                      </tr>
+                    ) : null}
                     <tr className="border-t border-earth-200">
                       <td colSpan={3} className="pt-2 text-right font-semibold text-earth-900">
                         Total

@@ -1,3 +1,6 @@
+/**
+ * Tax: most categories are grocery-exempt; taxable = Cosmetics, Non food (see lib/tax/sales-tax.ts).
+ */
 export const PRODUCT_CATEGORIES = [
   'Beverages',
   'Bread',

@@ -22,6 +22,7 @@ export type OrderRowForEmail = {
   postal_code: string | null
   subtotal_amount: number
   shipping_fee: number
+  tax_amount?: number
   total_amount: number
   shipping_method: string | null
   payment_method: string | null
@@ -103,6 +104,7 @@ function receiptHtml(order: OrderRowForEmail, items: AuthoritativeOrderItem[]): 
     <table role="presentation" style="width:100%;margin-top:16px;font-size:14px;">
       <tr><td style="padding:4px 0;">Subtotal</td><td style="text-align:right;">${money(order.subtotal_amount)}</td></tr>
       <tr><td style="padding:4px 0;">Shipping</td><td style="text-align:right;">${money(order.shipping_fee)}</td></tr>
+      ${(order.tax_amount ?? 0) > 0 ? `<tr><td style="padding:4px 0;">Sales tax</td><td style="text-align:right;">${money(order.tax_amount!)}</td></tr>` : ''}
       <tr><td style="padding:12px 0 4px;font-weight:700;border-top:1px solid #eee;">Total</td><td style="text-align:right;padding:12px 0 4px;font-weight:700;border-top:1px solid #eee;">${money(order.total_amount)}</td></tr>
     </table>
     <p style="margin:20px 0 8px;font-size:13px;color:#444;"><strong>Ship to</strong></p>
@@ -134,6 +136,7 @@ function receiptText(order: OrderRowForEmail, items: AuthoritativeOrderItem[]): 
     ``,
     `Subtotal: ${money(order.subtotal_amount)}`,
     `Shipping: ${money(order.shipping_fee)}`,
+    ...((order.tax_amount ?? 0) > 0 ? [`Sales tax: ${money(order.tax_amount!)}`] : []),
     `Total: ${money(order.total_amount)}`,
     ``,
     `Ship to:`,

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { sanitizeCartItems } from '@/lib/order-pricing'
 import {
-  buildAuthoritativeOrderItems,
-  sanitizeCartItems,
-  type AuthoritativeProduct,
-} from '@/lib/order-pricing'
+  CHECKOUT_PRODUCT_SELECT,
+  computeCheckoutTotals,
+  type ProductWithCategory,
+} from '@/lib/checkout-totals'
 import {
-  calculateShipping,
   normalizeShippingCountry,
-  normalizeShippingMethod,
   normalizeShippingRegion,
   SHIPPING_METHOD_LABEL,
   type ShippingMethod,
@@ -74,7 +73,7 @@ export async function POST(req: NextRequest) {
     const candidateProductIds = Array.from(new Set(sanitizedItems.map((item) => item.productId)))
     const { data: productRows, error: productError } = await supabaseAdmin
       .from('products')
-      .select('id,name,price,in_stock')
+      .select(CHECKOUT_PRODUCT_SELECT)
       .in('id', candidateProductIds)
 
     if (productError) {
@@ -82,8 +81,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not verify cart items.' }, { status: 500 })
     }
 
-    const productMap = new Map<string, AuthoritativeProduct>(
-      (productRows ?? []).map((product) => [product.id, product as AuthoritativeProduct])
+    const productMap = new Map<string, ProductWithCategory>(
+      (productRows ?? []).map((product) => [product.id, product as ProductWithCategory])
     )
 
     if (productMap.size !== candidateProductIds.length) {
@@ -95,7 +94,7 @@ export async function POST(req: NextRequest) {
 
     const unavailable = sanitizedItems
       .map((item) => productMap.get(item.productId))
-      .filter((product): product is AuthoritativeProduct => !!product && !product.in_stock)
+      .filter((product): product is ProductWithCategory => !!product && !product.in_stock)
 
     if (unavailable.length > 0) {
       return NextResponse.json(
@@ -106,16 +105,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const shipping_method = normalizeShippingMethod(rawShippingMethod)
     const normalizedCountry = normalizeShippingCountry(country)
     const normalizedState = normalizeShippingRegion(state)
-    const { orderItems: authoritativeItems, subtotal } = buildAuthoritativeOrderItems(sanitizedItems, productMap)
-    const shipping = calculateShipping({
-      subtotal,
+    const totals = computeCheckoutTotals({
+      items: sanitizedItems,
+      productMap,
       country: normalizedCountry,
       state: normalizedState,
-      method: shipping_method,
+      shippingMethod: rawShippingMethod,
     })
+    const { orderItems: authoritativeItems, shipping, tax } = totals
+    const shipping_method = shipping.method
 
     const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
     if (!stripeKey) {
@@ -153,8 +153,26 @@ export async function POST(req: NextRequest) {
       },
     }
 
-    const lineItemsPayload =
-      shipping.fee > 0 ? [...productLines, shippingLine] : [...productLines]
+    const taxLine =
+      tax.taxAmount > 0
+        ? {
+            quantity: 1,
+            price_data: {
+              currency: 'usd',
+              unit_amount: Math.round(tax.taxAmount * 100),
+              product_data: {
+                name: 'Sales tax (Ohio)',
+                metadata: { type: 'tax' },
+              },
+            },
+          }
+        : null
+
+    const lineItemsPayload = [
+      ...productLines,
+      ...(shipping.fee > 0 ? [shippingLine] : []),
+      ...(taxLine ? [taxLine] : []),
+    ]
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

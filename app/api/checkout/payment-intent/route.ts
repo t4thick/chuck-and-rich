@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { sanitizeCartItems } from '@/lib/order-pricing'
 import {
-  buildAuthoritativeOrderItems,
-  sanitizeCartItems,
-  type AuthoritativeProduct,
-} from '@/lib/order-pricing'
-import {
-  calculateShipping,
-  normalizeShippingCountry,
-  normalizeShippingMethod,
-  normalizeShippingRegion,
-} from '@/lib/shipping'
+  CHECKOUT_PRODUCT_SELECT,
+  computeCheckoutTotals,
+  type ProductWithCategory,
+} from '@/lib/checkout-totals'
+import { normalizeShippingCountry, normalizeShippingRegion } from '@/lib/shipping'
 import type { CartItem } from '@/types'
 import { getStripe } from '@/lib/stripe'
 import type { CheckoutSnapshotPayload } from '@/lib/orders/checkout-snapshot'
@@ -72,7 +68,7 @@ export async function POST(req: NextRequest) {
     const candidateProductIds = Array.from(new Set(sanitizedItems.map((item) => item.productId)))
     const { data: productRows, error: productError } = await supabaseAdmin
       .from('products')
-      .select('id,name,price,in_stock')
+      .select(CHECKOUT_PRODUCT_SELECT)
       .in('id', candidateProductIds)
 
     if (productError) {
@@ -80,8 +76,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not verify cart items.' }, { status: 500 })
     }
 
-    const productMap = new Map<string, AuthoritativeProduct>(
-      (productRows ?? []).map((product) => [product.id, product as AuthoritativeProduct])
+    const productMap = new Map<string, ProductWithCategory>(
+      (productRows ?? []).map((product) => [product.id, product as ProductWithCategory])
     )
 
     if (productMap.size !== candidateProductIds.length) {
@@ -93,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     const unavailable = sanitizedItems
       .map((item) => productMap.get(item.productId))
-      .filter((product): product is AuthoritativeProduct => !!product && !product.in_stock)
+      .filter((product): product is ProductWithCategory => !!product && !product.in_stock)
 
     if (unavailable.length > 0) {
       return NextResponse.json(
@@ -104,16 +100,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const shipping_method = normalizeShippingMethod(rawShippingMethod)
     const normalizedCountry = normalizeShippingCountry(country)
     const normalizedState = normalizeShippingRegion(state)
-    const { subtotal } = buildAuthoritativeOrderItems(sanitizedItems, productMap)
-    const shipping = calculateShipping({
-      subtotal,
+    const totals = computeCheckoutTotals({
+      items: sanitizedItems,
+      productMap,
       country: normalizedCountry,
       state: normalizedState,
-      method: shipping_method,
+      shippingMethod: rawShippingMethod,
     })
+    const { subtotal, shipping, tax } = totals
+    const shipping_method = shipping.method
 
     const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
     if (!stripeKey) {
@@ -183,8 +180,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not prepare checkout.' }, { status: 500 })
     }
 
-    const totalAmount = subtotal + shipping.fee
-    const amountCents = Math.round(totalAmount * 100)
+    const amountCents = Math.round(totals.total * 100)
     if (amountCents < 50) {
       await supabaseAdmin.from('checkout_snapshots').delete().eq('id', snap.id)
       return NextResponse.json({ error: 'Order total is too small.' }, { status: 400 })
@@ -212,7 +208,14 @@ export async function POST(req: NextRequest) {
       .update({ payment_intent_id: paymentIntent.id })
       .eq('id', snap.id)
 
-    return NextResponse.json({ clientSecret: paymentIntent.client_secret })
+    return NextResponse.json({
+      clientSecret: paymentIntent.client_secret,
+      subtotal,
+      shippingFee: shipping.fee,
+      taxAmount: tax.taxAmount,
+      taxApplies: tax.applies,
+      total: totals.total,
+    })
   } catch (err) {
     console.error('payment-intent error:', err)
     return NextResponse.json({ error: 'Could not start checkout.' }, { status: 500 })
