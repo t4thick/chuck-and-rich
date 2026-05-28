@@ -13,5 +13,5 @@ export type AddressSuggestion = {
   parsed: ParsedAddress
   /** Google Places ID — required for verified selection when Google is enabled. */
   placeId?: string
-  source: 'google' | 'photon'
+  source: 'google' | 'geoapify' | 'photon'
 }

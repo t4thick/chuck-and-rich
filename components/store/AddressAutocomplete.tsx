@@ -27,7 +27,7 @@ export function AddressAutocomplete({
 }: Props) {
   const listId = useId()
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
-  const [provider, setProvider] = useState<'google' | 'photon' | 'none'>('none')
+  const [provider, setProvider] = useState<'google' | 'geoapify' | 'photon' | 'none'>('none')
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const [loading, setLoading] = useState(false)
@@ -78,7 +78,15 @@ export function AddressAutocomplete({
       .then((data: { suggestions?: AddressSuggestion[]; provider?: string }) => {
         const list = Array.isArray(data.suggestions) ? data.suggestions : []
         setSuggestions(list)
-        setProvider(data.provider === 'google' ? 'google' : data.provider === 'photon' ? 'photon' : 'none')
+        setProvider(
+          data.provider === 'google'
+            ? 'google'
+            : data.provider === 'geoapify'
+              ? 'geoapify'
+              : data.provider === 'photon'
+                ? 'photon'
+                : 'none'
+        )
         setOpen(list.length > 0)
         setActiveIndex(-1)
       })

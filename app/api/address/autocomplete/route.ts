@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { geoapifyUsAutocomplete, isGeoapifyConfigured } from '@/lib/address/geoapify-autocomplete'
 import { googlePlacesAutocomplete, isGooglePlacesConfigured } from '@/lib/address/google-places'
 import { photonUsAutocomplete } from '@/lib/address/photon-autocomplete'
 import { assertSameOrigin } from '@/lib/security/same-origin'
@@ -19,6 +20,13 @@ export async function POST(req: NextRequest) {
 
   if (input.length < 3) {
     return NextResponse.json({ suggestions: [], provider: 'none' })
+  }
+
+  if (isGeoapifyConfigured()) {
+    const suggestions = await geoapifyUsAutocomplete(input)
+    if (suggestions.length > 0) {
+      return NextResponse.json({ suggestions, provider: 'geoapify' })
+    }
   }
 
   if (isGooglePlacesConfigured()) {
