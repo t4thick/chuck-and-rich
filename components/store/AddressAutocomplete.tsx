@@ -2,155 +2,47 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
+import type { AddressSuggestion, ParsedAddress } from '@/lib/address/types'
 
-export type ParsedAddress = {
-  line1: string
-  city: string
-  state: string
-  country: string
-  postalCode: string
-}
-
-type Suggestion = {
-  id: string
-  primary: string
-  secondary: string
-  parsed: ParsedAddress
-}
+export type { ParsedAddress }
 
 type Props = {
   value: string
   onChange: (v: string) => void
   onSelect: (addr: ParsedAddress) => void
+  onVerifiedChange?: (verified: boolean) => void
   required?: boolean
   id?: string
   name?: string
-  countryBias?: 'us' | 'none'
-}
-
-const PHOTON_ENDPOINT = 'https://photon.komoot.io/api'
-/** Bias suggestions toward Columbus / Ohio delivery area. */
-const OHIO_BIAS = { lat: '39.9612', lon: '-82.9988' }
-/** Continental US bounding box for Photon. */
-const US_BBOX = '-125.0,24.0,-66.0,49.5'
-
-const US_STATE_TO_CODE: Record<string, string> = {
-  alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
-  colorado: 'CO', connecticut: 'CT', delaware: 'DE', florida: 'FL', georgia: 'GA',
-  hawaii: 'HI', idaho: 'ID', illinois: 'IL', indiana: 'IN', iowa: 'IA',
-  kansas: 'KS', kentucky: 'KY', louisiana: 'LA', maine: 'ME', maryland: 'MD',
-  massachusetts: 'MA', michigan: 'MI', minnesota: 'MN', mississippi: 'MS', missouri: 'MO',
-  montana: 'MT', nebraska: 'NE', nevada: 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', ohio: 'OH',
-  oklahoma: 'OK', oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-  'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT', vermont: 'VT',
-  virginia: 'VA', washington: 'WA', 'west virginia': 'WV', wisconsin: 'WI', wyoming: 'WY',
-  'district of columbia': 'DC',
-}
-
-const ALLOWED_COUNTRIES = new Set(['united states', 'usa', 'us', 'canada', 'mexico'])
-
-function toStateCode(raw: string | undefined, country: string): string {
-  if (!raw) return ''
-  if (country === 'United States') {
-    const k = raw.toLowerCase().trim()
-    return US_STATE_TO_CODE[k] ?? raw
-  }
-  return raw
-}
-
-function normalizeCountry(raw: string | undefined): string {
-  if (!raw) return 'United States'
-  const k = raw.trim().toLowerCase()
-  if (k === 'united states' || k === 'usa' || k === 'us' || k === 'united states of america') {
-    return 'United States'
-  }
-  if (k === 'canada' || k === 'ca') return 'Canada'
-  if (k === 'mexico' || k === 'mx') return 'Mexico'
-  return raw
-}
-
-function countryAllowed(country: string): boolean {
-  return ALLOWED_COUNTRIES.has(country.trim().toLowerCase())
-}
-
-type PhotonProps = {
-  name?: string
-  housenumber?: string
-  street?: string
-  city?: string
-  town?: string
-  village?: string
-  hamlet?: string
-  state?: string
-  postcode?: string
-  country?: string
-}
-
-type PhotonFeature = {
-  geometry?: { coordinates?: [number, number] }
-  properties: PhotonProps
-}
-
-function buildSuggestionFromFeature(f: PhotonFeature): Suggestion | null {
-  const p = f.properties
-  const housenumber = p.housenumber?.trim() ?? ''
-  const street = p.street?.trim() ?? p.name?.trim() ?? ''
-  const city = (p.city ?? p.town ?? p.village ?? p.hamlet ?? '').trim()
-  const country = normalizeCountry(p.country)
-  if (!countryAllowed(country)) return null
-
-  const state = toStateCode(p.state, country)
-  const postal = p.postcode?.trim() ?? ''
-
-  const line1 = [housenumber, street].filter(Boolean).join(' ').trim()
-  if (!line1 && !city) return null
-
-  const secondary = [city, [state, postal].filter(Boolean).join(' '), country]
-    .filter(Boolean)
-    .join(', ')
-
-  const id = [
-    f.geometry?.coordinates?.join(','),
-    line1,
-    city,
-    state,
-    postal,
-  ]
-    .filter(Boolean)
-    .join('|')
-
-  return {
-    id: id || `${line1}|${secondary}`,
-    primary: line1 || street || city,
-    secondary,
-    parsed: {
-      line1,
-      city,
-      state,
-      country,
-      postalCode: postal,
-    },
-  }
 }
 
 export function AddressAutocomplete({
   value,
   onChange,
   onSelect,
+  onVerifiedChange,
   required,
   id,
   name = 'address1',
-  countryBias = 'us',
 }: Props) {
   const listId = useId()
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
+  const [provider, setProvider] = useState<'google' | 'photon' | 'none'>('none')
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const [loading, setLoading] = useState(false)
+  const [loadingDetails, setLoadingDetails] = useState(false)
+  const [verified, setVerified] = useState(false)
+  const [touchError, setTouchError] = useState('')
   const wrapperRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const debounceRef = useRef<number | undefined>(undefined)
+
+  function setVerifiedState(next: boolean) {
+    setVerified(next)
+    onVerifiedChange?.(next)
+    if (next) setTouchError('')
+  }
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -164,7 +56,7 @@ export function AddressAutocomplete({
 
   function fetchSuggestions(query: string) {
     const trimmed = query.trim()
-    if (trimmed.length < 2) {
+    if (trimmed.length < 3) {
       setSuggestions([])
       setLoading(false)
       setOpen(false)
@@ -174,34 +66,19 @@ export function AddressAutocomplete({
     abortRef.current?.abort()
     const ctrl = new AbortController()
     abortRef.current = ctrl
-
-    const params = new URLSearchParams({
-      q: trimmed,
-      limit: '8',
-      lang: 'en',
-    })
-    if (countryBias === 'us') {
-      params.set('lat', OHIO_BIAS.lat)
-      params.set('lon', OHIO_BIAS.lon)
-      params.set('bbox', US_BBOX)
-    }
-
     setLoading(true)
 
-    fetch(`${PHOTON_ENDPOINT}?${params.toString()}`, { signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Photon error'))))
-      .then((data: { features?: PhotonFeature[] }) => {
-        const features = Array.isArray(data.features) ? data.features : []
-        const list: Suggestion[] = []
-        const seen = new Set<string>()
-        for (const f of features) {
-          const s = buildSuggestionFromFeature(f)
-          if (s && !seen.has(s.id)) {
-            seen.add(s.id)
-            list.push(s)
-          }
-        }
+    fetch('/api/address/autocomplete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: trimmed }),
+      signal: ctrl.signal,
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: { suggestions?: AddressSuggestion[]; provider?: string }) => {
+        const list = Array.isArray(data.suggestions) ? data.suggestions : []
         setSuggestions(list)
+        setProvider(data.provider === 'google' ? 'google' : data.provider === 'photon' ? 'photon' : 'none')
         setOpen(list.length > 0)
         setActiveIndex(-1)
       })
@@ -214,16 +91,50 @@ export function AddressAutocomplete({
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = e.target.value
     onChange(next)
+    setVerifiedState(false)
     window.clearTimeout(debounceRef.current)
-    debounceRef.current = window.setTimeout(() => fetchSuggestions(next), 180)
+    debounceRef.current = window.setTimeout(() => fetchSuggestions(next), 200)
   }
 
-  function pick(s: Suggestion) {
-    onChange(s.parsed.line1 || value)
+  async function pick(s: AddressSuggestion) {
+    if (s.source === 'google' && s.placeId) {
+      setLoadingDetails(true)
+      try {
+        const res = await fetch('/api/address/place', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ placeId: s.placeId }),
+        })
+        const data = (await res.json()) as { address?: ParsedAddress; error?: string }
+        if (!res.ok || !data.address) {
+          setTouchError(data.error ?? 'Could not load that address. Try another suggestion.')
+          return
+        }
+        onChange(data.address.line1)
+        onSelect(data.address)
+        setVerifiedState(true)
+      } catch {
+        setTouchError('Could not load address. Try again.')
+      } finally {
+        setLoadingDetails(false)
+        setOpen(false)
+        setSuggestions([])
+      }
+      return
+    }
+
+    onChange(s.parsed.line1)
     onSelect(s.parsed)
+    setVerifiedState(true)
     setOpen(false)
     setSuggestions([])
     setActiveIndex(-1)
+  }
+
+  function handleBlur() {
+    if (!verified && value.trim().length >= 3) {
+      setTouchError('Select your address from the US list — do not type a made-up street.')
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -236,7 +147,7 @@ export function AddressAutocomplete({
       setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1))
     } else if (e.key === 'Enter' && activeIndex >= 0) {
       e.preventDefault()
-      pick(suggestions[activeIndex])
+      void pick(suggestions[activeIndex])
     } else if (e.key === 'Escape') {
       setOpen(false)
     }
@@ -254,22 +165,24 @@ export function AddressAutocomplete({
         value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
         onFocus={() => {
           if (suggestions.length > 0) setOpen(true)
         }}
         required={required}
-        autoComplete="shipping address-line1"
+        autoComplete="off"
         spellCheck={false}
-        placeholder="Street address"
+        placeholder="Start typing — select from the list"
         role="combobox"
         aria-expanded={open}
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={activeOptionId}
-        className={loading ? 'pr-10' : undefined}
+        aria-invalid={Boolean(touchError)}
+        className={loading || loadingDetails ? 'pr-10' : undefined}
       />
 
-      {loading && (
+      {(loading || loadingDetails) && (
         <span
           className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-earth-200 border-t-brand-600"
           aria-hidden
@@ -288,7 +201,8 @@ export function AddressAutocomplete({
               <li key={s.id} id={`${listId}-opt-${i}`} role="presentation">
                 <button
                   type="button"
-                  onClick={() => pick(s)}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => void pick(s)}
                   onMouseEnter={() => setActiveIndex(i)}
                   className={`block w-full px-3 py-2.5 text-left transition-colors duration-150 ${
                     isActive ? 'bg-earth-50' : 'hover:bg-earth-50'
@@ -307,9 +221,21 @@ export function AddressAutocomplete({
         </ul>
       )}
 
-      <p className="mt-1.5 text-xs text-earth-500">
-        Type your street address — city, state, and ZIP fill in when you pick a match.
-      </p>
+      {verified ? (
+        <p className="mt-1.5 text-xs font-medium text-brand-700">Address verified</p>
+      ) : (
+        <p className="mt-1.5 text-xs text-earth-500">
+          {provider === 'google'
+            ? 'US addresses from Google — pick one match to continue.'
+            : 'US street addresses only — pick a match with street number and ZIP.'}
+        </p>
+      )}
+
+      {touchError ? (
+        <p className="mt-1 text-xs font-medium text-red-700" role="alert">
+          {touchError}
+        </p>
+      ) : null}
     </div>
   )
 }

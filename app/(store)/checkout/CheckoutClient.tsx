@@ -7,6 +7,8 @@ import { ArrowLeft, Check, Lock, Truck } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { PageHeader } from '@/components/store/PageHeader'
 import { AddressAutocomplete } from '@/components/store/AddressAutocomplete'
+import { UsStateSelect } from '@/components/store/UsStateSelect'
+import { isUnitedStatesCountry } from '@/lib/address/verify-us-address'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CheckoutStripePayment } from './CheckoutStripePayment'
@@ -180,6 +182,7 @@ export function CheckoutClient({
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [returnUrl, setReturnUrl] = useState('')
   const [categoryByProductId, setCategoryByProductId] = useState<Record<string, string>>({})
+  const [addressVerified, setAddressVerified] = useState(Boolean(defaultAddress))
 
   useEffect(() => {
     setReturnUrl(`${getAuthSiteOrigin()}/checkout/success`)
@@ -209,18 +212,22 @@ export function CheckoutClient({
   function pickSavedAddress(id: string) {
     setSelectedAddressId(id)
     if (id === 'new') {
+      setAddressVerified(false)
       setForm((prev) => ({
         ...prev,
         address1: '',
         address2: '',
         city: '',
-        state: '',
+        state: 'OH',
         postalCode: '',
       }))
       return
     }
     const addr = savedAddresses.find((a) => a.id === id)
-    if (addr) setForm(addressToForm(initialAccount, addr))
+    if (addr) {
+      setForm(addressToForm(initialAccount, addr))
+      setAddressVerified(true)
+    }
   }
 
   const cartFingerprint = useMemo(
@@ -272,13 +279,33 @@ export function CheckoutClient({
   const grandTotal = totalPrice + shipping.fee + taxQuote.taxAmount
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const name = e.target.name
+    setForm((prev) => ({ ...prev, [name]: e.target.value }))
+    if (
+      name === 'city' ||
+      name === 'state' ||
+      name === 'postalCode' ||
+      name === 'country' ||
+      name === 'address2'
+    ) {
+      setAddressVerified(false)
+      setSelectedAddressId('new')
+    }
   }
 
   async function preparePayment() {
     const el = detailsFormRef.current
     if (el && !el.checkValidity()) {
       el.reportValidity()
+      return
+    }
+
+    if (
+      shippingMethod !== 'pickup' &&
+      isUnitedStatesCountry(form.country) &&
+      !addressVerified
+    ) {
+      setError('Select a real US address from the suggestions, or choose a saved address.')
       return
     }
 
@@ -297,6 +324,7 @@ export function CheckoutClient({
           state: form.state,
           country: form.country,
           postalCode: form.postalCode,
+          addressVerified: shippingMethod === 'pickup' || addressVerified,
           items,
           shippingMethod,
         }),
@@ -480,10 +508,13 @@ export function CheckoutClient({
                     value={form.address1}
                     onChange={(v) => {
                       setSelectedAddressId('new')
+                      setAddressVerified(false)
                       setForm((prev) => ({ ...prev, address1: v }))
                     }}
+                    onVerifiedChange={setAddressVerified}
                     onSelect={(parsed) => {
                       setSelectedAddressId('new')
+                      setAddressVerified(true)
                       setForm((prev) => ({
                         ...prev,
                         address1: parsed.line1 || prev.address1,
@@ -528,15 +559,29 @@ export function CheckoutClient({
                     <label htmlFor="checkout-state" className="form-label">
                       State
                     </label>
-                    <Input
-                      id="checkout-state"
-                      type="text"
-                      name="state"
-                      value={form.state}
-                      onChange={handleChange}
-                      required
-                      autoComplete="shipping address-level1"
-                    />
+                    {isUnitedStatesCountry(form.country) ? (
+                      <UsStateSelect
+                        id="checkout-state"
+                        name="state"
+                        value={form.state}
+                        onChange={(code) => {
+                          setAddressVerified(false)
+                          setSelectedAddressId('new')
+                          setForm((prev) => ({ ...prev, state: code }))
+                        }}
+                        required
+                      />
+                    ) : (
+                      <Input
+                        id="checkout-state"
+                        type="text"
+                        name="state"
+                        value={form.state}
+                        onChange={handleChange}
+                        required
+                        autoComplete="shipping address-level1"
+                      />
+                    )}
                   </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">

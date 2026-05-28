@@ -8,6 +8,10 @@ import {
   type ProductWithCategory,
 } from '@/lib/checkout-totals'
 import {
+  isUnitedStatesCountry,
+  verifyUsDeliveryAddress,
+} from '@/lib/address/verify-us-address'
+import {
   normalizeShippingCountry,
   normalizeShippingRegion,
   SHIPPING_METHOD_LABEL,
@@ -116,6 +120,23 @@ export async function POST(req: NextRequest) {
     })
     const { orderItems: authoritativeItems, shipping, tax } = totals
     const shipping_method = shipping.method
+
+    if (shipping_method !== 'pickup' && isUnitedStatesCountry(String(country))) {
+      const zip = typeof postalCode === 'string' ? postalCode.trim() : ''
+      if (!zip) {
+        return NextResponse.json({ error: 'ZIP code is required.' }, { status: 400 })
+      }
+      const verified = await verifyUsDeliveryAddress({
+        line1: String(address).trim(),
+        city: String(city).trim(),
+        state: normalizedState || String(state).trim(),
+        postalCode: zip,
+        country: String(country).trim(),
+      })
+      if (!verified.ok) {
+        return NextResponse.json({ error: verified.error }, { status: 400 })
+      }
+    }
 
     const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
     if (!stripeKey) {
