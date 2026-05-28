@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Check, Lock, MapPin, Star, Truck } from 'lucide-react'
+import { ArrowLeft, Check, Lock, Truck } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { PageHeader } from '@/components/store/PageHeader'
 import { AddressAutocomplete } from '@/components/store/AddressAutocomplete'
@@ -340,6 +340,7 @@ export function CheckoutClient({
           <form
             ref={detailsFormRef}
             onSubmit={(e) => e.preventDefault()}
+            autoComplete="shipping"
             className="space-y-6 lg:col-span-3"
           >
             <CheckoutStep step={1} title="Contact details">
@@ -410,20 +411,15 @@ export function CheckoutClient({
                           )}
                         >
                           <div className="flex w-full items-center justify-between gap-2">
-                            <span className="inline-flex items-center gap-1 font-semibold text-earth-900">
-                              <MapPin className="h-3.5 w-3.5 text-earth-400" aria-hidden />
+                            <span className="font-semibold text-earth-900">
                               {a.label || 'Address'}
+                              {a.is_default ? (
+                                <span className="ml-2 text-xs font-medium text-earth-500">Default</span>
+                              ) : null}
                             </span>
-                            <div className="flex items-center gap-1">
-                              {a.is_default && (
-                                <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
-                                  <Star className="h-2.5 w-2.5 fill-current" aria-hidden /> Default
-                                </span>
-                              )}
-                              {active && (
-                                <Check className="h-4 w-4 text-brand-700" strokeWidth={2.5} aria-hidden />
-                              )}
-                            </div>
+                            {active ? (
+                              <Check className="h-4 w-4 shrink-0 text-brand-700" strokeWidth={2.5} aria-hidden />
+                            ) : null}
                           </div>
                           <span className="line-clamp-2 text-xs leading-snug text-earth-600">
                             {a.line1}
@@ -458,9 +454,14 @@ export function CheckoutClient({
                   </label>
                   <AddressAutocomplete
                     id="checkout-address1"
+                    name="shipping-address-line1"
                     value={form.address1}
-                    onChange={(v) => setForm((prev) => ({ ...prev, address1: v }))}
-                    onSelect={(parsed) =>
+                    onChange={(v) => {
+                      setSelectedAddressId('new')
+                      setForm((prev) => ({ ...prev, address1: v }))
+                    }}
+                    onSelect={(parsed) => {
+                      setSelectedAddressId('new')
                       setForm((prev) => ({
                         ...prev,
                         address1: parsed.line1 || prev.address1,
@@ -469,7 +470,7 @@ export function CheckoutClient({
                         country: parsed.country || prev.country,
                         postalCode: parsed.postalCode || prev.postalCode,
                       }))
-                    }
+                    }}
                     required
                   />
                 </div>
@@ -483,7 +484,7 @@ export function CheckoutClient({
                     name="address2"
                     value={form.address2}
                     onChange={handleChange}
-                    autoComplete="address-line2"
+                    autoComplete="shipping address-line2"
                   />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -498,7 +499,7 @@ export function CheckoutClient({
                       value={form.city}
                       onChange={handleChange}
                       required
-                      autoComplete="address-level2"
+                      autoComplete="shipping address-level2"
                     />
                   </div>
                   <div>
@@ -512,7 +513,7 @@ export function CheckoutClient({
                       value={form.state}
                       onChange={handleChange}
                       required
-                      autoComplete="address-level1"
+                      autoComplete="shipping address-level1"
                     />
                   </div>
                 </div>
@@ -546,7 +547,7 @@ export function CheckoutClient({
                       value={form.postalCode}
                       onChange={handleChange}
                       required
-                      autoComplete="postal-code"
+                      autoComplete="shipping postal-code"
                     />
                   </div>
                 </div>

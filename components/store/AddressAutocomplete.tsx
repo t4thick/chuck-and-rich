@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { MapPin } from 'lucide-react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 
 export type ParsedAddress = {
@@ -14,7 +13,8 @@ export type ParsedAddress = {
 
 type Suggestion = {
   id: string
-  display: string
+  primary: string
+  secondary: string
   parsed: ParsedAddress
 }
 
@@ -24,10 +24,16 @@ type Props = {
   onSelect: (addr: ParsedAddress) => void
   required?: boolean
   id?: string
-  countryBias?: string
+  name?: string
+  countryBias?: 'us' | 'none'
 }
 
 const PHOTON_ENDPOINT = 'https://photon.komoot.io/api'
+/** Bias suggestions toward Columbus / Ohio delivery area. */
+const OHIO_BIAS = { lat: '39.9612', lon: '-82.9988' }
+/** Continental US bounding box for Photon. */
+const US_BBOX = '-125.0,24.0,-66.0,49.5'
+
 const US_STATE_TO_CODE: Record<string, string> = {
   alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
   colorado: 'CO', connecticut: 'CT', delaware: 'DE', florida: 'FL', georgia: 'GA',
@@ -42,9 +48,11 @@ const US_STATE_TO_CODE: Record<string, string> = {
   'district of columbia': 'DC',
 }
 
+const ALLOWED_COUNTRIES = new Set(['united states', 'usa', 'us', 'canada', 'mexico'])
+
 function toStateCode(raw: string | undefined, country: string): string {
   if (!raw) return ''
-  if (country === 'US' || country === 'United States') {
+  if (country === 'United States') {
     const k = raw.toLowerCase().trim()
     return US_STATE_TO_CODE[k] ?? raw
   }
@@ -58,11 +66,12 @@ function normalizeCountry(raw: string | undefined): string {
     return 'United States'
   }
   if (k === 'canada' || k === 'ca') return 'Canada'
-  if (k === 'united kingdom' || k === 'uk' || k === 'gb' || k === 'great britain') {
-    return 'United Kingdom'
-  }
   if (k === 'mexico' || k === 'mx') return 'Mexico'
   return raw
+}
+
+function countryAllowed(country: string): boolean {
+  return ALLOWED_COUNTRIES.has(country.trim().toLowerCase())
 }
 
 type PhotonProps = {
@@ -76,9 +85,6 @@ type PhotonProps = {
   state?: string
   postcode?: string
   country?: string
-  countrycode?: string
-  type?: string
-  osm_value?: string
 }
 
 type PhotonFeature = {
@@ -92,18 +98,17 @@ function buildSuggestionFromFeature(f: PhotonFeature): Suggestion | null {
   const street = p.street?.trim() ?? p.name?.trim() ?? ''
   const city = (p.city ?? p.town ?? p.village ?? p.hamlet ?? '').trim()
   const country = normalizeCountry(p.country)
+  if (!countryAllowed(country)) return null
+
   const state = toStateCode(p.state, country)
   const postal = p.postcode?.trim() ?? ''
 
   const line1 = [housenumber, street].filter(Boolean).join(' ').trim()
   if (!line1 && !city) return null
 
-  const displayParts = [
-    line1 || street || p.name || '',
-    city,
-    [state, postal].filter(Boolean).join(' '),
-    country,
-  ].filter(Boolean)
+  const secondary = [city, [state, postal].filter(Boolean).join(' '), country]
+    .filter(Boolean)
+    .join(', ')
 
   const id = [
     f.geometry?.coordinates?.join(','),
@@ -111,11 +116,14 @@ function buildSuggestionFromFeature(f: PhotonFeature): Suggestion | null {
     city,
     state,
     postal,
-  ].filter(Boolean).join('|')
+  ]
+    .filter(Boolean)
+    .join('|')
 
   return {
-    id: id || displayParts.join('|'),
-    display: displayParts.join(', '),
+    id: id || `${line1}|${secondary}`,
+    primary: line1 || street || city,
+    secondary,
     parsed: {
       line1,
       city,
@@ -132,8 +140,10 @@ export function AddressAutocomplete({
   onSelect,
   required,
   id,
+  name = 'address1',
   countryBias = 'us',
 }: Props) {
+  const listId = useId()
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -153,9 +163,11 @@ export function AddressAutocomplete({
   }, [])
 
   function fetchSuggestions(query: string) {
-    if (query.trim().length < 3) {
+    const trimmed = query.trim()
+    if (trimmed.length < 2) {
       setSuggestions([])
       setLoading(false)
+      setOpen(false)
       return
     }
 
@@ -164,17 +176,19 @@ export function AddressAutocomplete({
     abortRef.current = ctrl
 
     const params = new URLSearchParams({
-      q: query,
-      limit: '6',
+      q: trimmed,
+      limit: '8',
       lang: 'en',
     })
-    if (countryBias) params.set('lat', '39.9612')
-    if (countryBias) params.set('lon', '-82.9988')
+    if (countryBias === 'us') {
+      params.set('lat', OHIO_BIAS.lat)
+      params.set('lon', OHIO_BIAS.lon)
+      params.set('bbox', US_BBOX)
+    }
+
     setLoading(true)
 
-    fetch(`${PHOTON_ENDPOINT}?${params.toString()}`, {
-      signal: ctrl.signal,
-    })
+    fetch(`${PHOTON_ENDPOINT}?${params.toString()}`, { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Photon error'))))
       .then((data: { features?: PhotonFeature[] }) => {
         const features = Array.isArray(data.features) ? data.features : []
@@ -192,9 +206,7 @@ export function AddressAutocomplete({
         setActiveIndex(-1)
       })
       .catch((err) => {
-        if (err?.name !== 'AbortError') {
-          setSuggestions([])
-        }
+        if (err?.name !== 'AbortError') setSuggestions([])
       })
       .finally(() => setLoading(false))
   }
@@ -203,7 +215,7 @@ export function AddressAutocomplete({
     const next = e.target.value
     onChange(next)
     window.clearTimeout(debounceRef.current)
-    debounceRef.current = window.setTimeout(() => fetchSuggestions(next), 220)
+    debounceRef.current = window.setTimeout(() => fetchSuggestions(next), 180)
   }
 
   function pick(s: Suggestion) {
@@ -211,6 +223,7 @@ export function AddressAutocomplete({
     onSelect(s.parsed)
     setOpen(false)
     setSuggestions([])
+    setActiveIndex(-1)
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -229,46 +242,64 @@ export function AddressAutocomplete({
     }
   }
 
+  const activeOptionId =
+    activeIndex >= 0 && suggestions[activeIndex] ? `${listId}-opt-${activeIndex}` : undefined
+
   return (
     <div ref={wrapperRef} className="relative">
       <Input
         id={id}
+        name={name}
         type="text"
         value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => suggestions.length > 0 && setOpen(true)}
+        onFocus={() => {
+          if (suggestions.length > 0) setOpen(true)
+        }}
         required={required}
-        autoComplete="address-line1"
+        autoComplete="shipping address-line1"
         spellCheck={false}
-        placeholder="Start typing your address…"
+        placeholder="Street address"
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={activeOptionId}
+        className={loading ? 'pr-10' : undefined}
       />
+
+      {loading && (
+        <span
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-earth-200 border-t-brand-600"
+          aria-hidden
+        />
+      )}
 
       {open && suggestions.length > 0 && (
         <ul
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-earth-200 bg-white shadow-[var(--shadow-elev)]"
+          id={listId}
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto rounded-lg border border-earth-200 bg-white py-1 shadow-[var(--shadow-elev)]"
           role="listbox"
         >
           {suggestions.map((s, i) => {
             const isActive = i === activeIndex
             return (
-              <li key={s.id}>
+              <li key={s.id} id={`${listId}-opt-${i}`} role="presentation">
                 <button
                   type="button"
                   onClick={() => pick(s)}
                   onMouseEnter={() => setActiveIndex(i)}
-                  className={`flex w-full items-start gap-2 px-3 py-2 text-left text-sm transition-colors ${
-                    isActive ? 'bg-earth-100' : 'hover:bg-earth-50'
+                  className={`block w-full px-3 py-2.5 text-left transition-colors duration-150 ${
+                    isActive ? 'bg-earth-50' : 'hover:bg-earth-50'
                   }`}
                   role="option"
                   aria-selected={isActive}
                 >
-                  <MapPin
-                    className="mt-0.5 h-4 w-4 flex-shrink-0 text-earth-400"
-                    strokeWidth={1.75}
-                    aria-hidden
-                  />
-                  <span className="line-clamp-2 text-earth-800">{s.display}</span>
+                  <span className="block text-sm font-medium text-earth-900">{s.primary}</span>
+                  {s.secondary ? (
+                    <span className="mt-0.5 block text-xs text-earth-500">{s.secondary}</span>
+                  ) : null}
                 </button>
               </li>
             )
@@ -276,11 +307,9 @@ export function AddressAutocomplete({
         </ul>
       )}
 
-      {loading && (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-earth-400">
-          …
-        </span>
-      )}
+      <p className="mt-1.5 text-xs text-earth-500">
+        Type your street address — city, state, and ZIP fill in when you pick a match.
+      </p>
     </div>
   )
 }
