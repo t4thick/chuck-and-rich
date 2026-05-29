@@ -233,9 +233,11 @@ export function AddressAutocomplete({
         <p className="mt-1.5 text-xs font-medium text-brand-700">Address verified</p>
       ) : (
         <p className="mt-1.5 text-xs text-earth-500">
-          {provider === 'google'
-            ? 'US addresses from Google — pick one match to continue.'
-            : 'US street addresses only — pick a match with street number and ZIP.'}
+          {provider === 'geoapify'
+            ? 'US addresses — pick one match to continue.'
+            : provider === 'google'
+              ? 'US addresses from Google — pick one match to continue.'
+              : 'US street addresses only — pick a match with street number and ZIP.'}
         </p>
       )}
 
