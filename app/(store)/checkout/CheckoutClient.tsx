@@ -723,15 +723,20 @@ export function CheckoutClient({
                 </p>
 
                 {!clientSecret && (
-                  <Button
-                    type="button"
-                    size="lg"
-                    className="mt-4 h-12 w-full rounded-xl"
-                    onClick={() => void preparePayment()}
-                    disabled={loading}
-                  >
-                    {loading ? 'Preparing…' : 'Continue to payment'}
-                  </Button>
+                  <div className="mt-4 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-1 max-md:border-t max-md:border-earth-200 max-md:bg-white max-md:px-1 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:pt-3">
+                    <Button
+                      type="button"
+                      size="lg"
+                      className="h-14 w-full rounded-xl text-base font-bold tracking-tight shadow-[var(--shadow-card-hover)]"
+                      onClick={() => void preparePayment()}
+                      disabled={loading}
+                    >
+                      {loading ? 'Preparing…' : `Continue to pay · $${grandTotal.toFixed(2)}`}
+                    </Button>
+                    <p className="mt-2 text-center text-xs text-earth-500">
+                      Apple Pay, Google Pay, and cards via Stripe
+                    </p>
+                  </div>
                 )}
 
                 {clientSecret && returnUrl && (
