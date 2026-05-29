@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Lock, MapPin, Phone, ShieldCheck } from 'lucide-react'
 import { getSupportEmail, STORE } from '@/lib/constants/store'
+import { PaymentMethodIcons } from '@/components/store/PaymentMethodIcons'
 import { StoreLogo } from '@/components/ui/StoreLogo'
 
 const SHOP_LINKS = [
@@ -125,7 +126,11 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-earth-200 pt-6 text-xs text-earth-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 border-t border-earth-200 pt-8">
+          <PaymentMethodIcons />
+        </div>
+
+        <div className="mt-8 flex flex-col gap-3 border-t border-earth-200 pt-6 text-xs text-earth-500 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {STORE.name}. All rights reserved.
           </p>
