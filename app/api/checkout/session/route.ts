@@ -18,7 +18,7 @@ import {
   type ShippingMethod,
 } from '@/lib/shipping'
 import type { CartItem } from '@/types'
-import { getStripe } from '@/lib/stripe'
+import { CHECKOUT_STRIPE_PAYMENT_METHOD_TYPES, getStripe } from '@/lib/stripe'
 import { getPublicSiteUrl } from '@/lib/site-url'
 import { assertSameOrigin } from '@/lib/security/same-origin'
 
@@ -197,6 +197,7 @@ export async function POST(req: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      payment_method_types: [...CHECKOUT_STRIPE_PAYMENT_METHOD_TYPES],
       customer_email: accountEmail,
       client_reference_id: user.id,
       line_items: lineItemsPayload,

@@ -1,5 +1,8 @@
 import Stripe from 'stripe'
 
+/** Card + wallets (Apple Pay / Google Pay). Excludes Klarna, Amazon Pay, BNPL, etc. */
+export const CHECKOUT_STRIPE_PAYMENT_METHOD_TYPES = ['card'] as const
+
 let stripeSingleton: Stripe | null = null
 
 export function getStripe(): Stripe {

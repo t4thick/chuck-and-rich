@@ -13,7 +13,7 @@ import {
 } from '@/lib/address/verify-us-address'
 import { normalizeShippingCountry, normalizeShippingRegion } from '@/lib/shipping'
 import type { CartItem } from '@/types'
-import { getStripe } from '@/lib/stripe'
+import { CHECKOUT_STRIPE_PAYMENT_METHOD_TYPES, getStripe } from '@/lib/stripe'
 import type { CheckoutSnapshotPayload } from '@/lib/orders/checkout-snapshot'
 import { assertSameOrigin } from '@/lib/security/same-origin'
 
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountCents,
       currency: 'usd',
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: [...CHECKOUT_STRIPE_PAYMENT_METHOD_TYPES],
       metadata: {
         user_id: user.id,
         checkout_snapshot_id: snap.id,

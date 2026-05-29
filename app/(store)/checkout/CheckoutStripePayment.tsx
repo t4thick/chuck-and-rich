@@ -129,6 +129,7 @@ function PayForm({ clientSecret, returnUrl, totalLabel }: Props) {
       <div className="rounded-xl border border-earth-200 bg-white p-3 sm:p-4">
         <PaymentElement
           options={{
+            paymentMethodOrder: ['card'],
             layout: {
               type: 'tabs',
               defaultCollapsed: false,
