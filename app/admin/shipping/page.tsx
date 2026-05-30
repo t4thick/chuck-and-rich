@@ -105,37 +105,71 @@ export default async function AdminShippingPage() {
           Shipping workflow
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-earth-600">
-          Current mode: <strong>{cfg.labelModeLabel}</strong>. Most stores print USPS labels from an
-          existing business account, then paste tracking on each order — same as TikTok Shop.
+          Current mode: <strong>{cfg.labelModeLabel}</strong>.
+          {cfg.labelMode === 'quick' && cfg.shippoConfigured ? (
+            <>
+              {' '}
+              TikTok-style: open an order → <strong>Print shipping label</strong> → {cfg.preferredCarrier}{' '}
+              {cfg.preferredCarrierService} via Shippo → PDF opens and tracking saves automatically.
+            </>
+          ) : (
+            <>
+              {' '}
+              Print labels on TikTok Shop or your carrier site, then paste tracking here — or enable
+              Shippo for one-click print.
+            </>
+          )}
         </p>
       </div>
 
-      <section className="admin-card">
-        <h2 className="admin-section-title">Recommended: external labels (TikTok-style)</h2>
-        <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-earth-700">
-          <li>Open an order in admin → print the packing slip / address.</li>
-          <li>
-            Print the USPS label from <strong>USPS Click-N-Ship</strong>, Stamps.com, or your business
-            contract (not from this website unless you enable Shippo below).
-          </li>
-          <li>Paste the tracking number → <strong>Save tracking &amp; mark shipped</strong>.</li>
-        </ol>
-        <p className="mt-4 text-sm text-earth-600">
-          Set <code className="rounded bg-earth-100 px-1 text-xs">SHIP_LABEL_MODE=external</code> on
-          Vercel (or leave unset — that is the default). No Shippo required.
-        </p>
-      </section>
+      {cfg.labelMode === 'quick' && cfg.shippoConfigured ? (
+        <section className="admin-card border-brand-200 bg-brand-50/30">
+          <h2 className="admin-section-title">Quick print (TikTok-style)</h2>
+          <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-earth-700">
+            <li>Open a paid shipping order in admin.</li>
+            <li>
+              Click <strong>Print shipping label</strong> — buys {cfg.preferredCarrier}{' '}
+              {cfg.preferredCarrierService} at the default box size.
+            </li>
+            <li>Label PDF opens; tracking is saved and the customer is emailed.</li>
+          </ol>
+          <p className="mt-4 text-sm text-earth-600">
+            Default carrier: <code className="rounded bg-earth-100 px-1 text-xs">SHIP_PREFERRED_CARRIER={cfg.preferredCarrier}</code>
+            {' · '}
+            Service: <code className="rounded bg-earth-100 px-1 text-xs">{cfg.preferredCarrierService}</code>
+          </p>
+        </section>
+      ) : (
+        <section className="admin-card">
+          <h2 className="admin-section-title">External labels (TikTok Shop today)</h2>
+          <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-earth-700">
+            <li>Open an order in admin → print the packing slip / address.</li>
+            <li>
+              Print on <strong>TikTok Shop</strong> (UPS API) or USPS Click-N-Ship — label comes from
+              the carrier, not this site.
+            </li>
+            <li>Paste the tracking number → <strong>Save tracking &amp; mark shipped</strong>.</li>
+          </ol>
+          <p className="mt-4 text-sm text-earth-600">
+            Set <code className="rounded bg-earth-100 px-1 text-xs">SHIP_LABEL_MODE=external</code> on
+            Vercel. No Shippo required.
+          </p>
+        </section>
+      )}
 
       <section className="admin-card">
-        <h2 className="admin-section-title">Optional: buy labels in admin (Shippo)</h2>
+        <h2 className="admin-section-title">Shippo setup (one-click print on this site)</h2>
         <p className="mt-2 text-sm text-earth-600">
-          Only if you want the website to purchase postage. Uses weight + zone pricing (not flat-rate
-          unless you always use the same default box).
+          Same idea as TikTok: click Print → carrier API → label PDF. Shippo connects to UPS and USPS.
         </p>
         <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-earth-700">
           <li>
-            <code className="text-xs">SHIP_LABEL_MODE=quick</code> — one button, default 3 lb box, USPS
-            Ground Advantage
+            <code className="text-xs">SHIP_LABEL_MODE=quick</code> — one <strong>Print shipping label</strong>{' '}
+            button, default box, {cfg.preferredCarrier} {cfg.preferredCarrierService}
+          </li>
+          <li>
+            <code className="text-xs">SHIP_PREFERRED_CARRIER=UPS</code> — match TikTok Shop (UPS Ground
+            default)
           </li>
           <li>
             <code className="text-xs">SHIP_LABEL_MODE=advanced</code> — compare all USPS / UPS rates

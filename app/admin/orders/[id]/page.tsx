@@ -276,7 +276,8 @@ export default async function AdminOrderDetailPage({
                 currentStatus={normalizedStatus}
                 labelMode={shippingConfig.labelMode}
                 shippoConfigured={isShippoConfigured()}
-                preferredUspsService={shippingConfig.preferredUspsService}
+                preferredCarrier={shippingConfig.preferredCarrier}
+                preferredCarrierService={shippingConfig.preferredCarrierService}
                 initialLabelUrl={
                   typeof orderRecord.shipping_label_url === 'string'
                     ? orderRecord.shipping_label_url

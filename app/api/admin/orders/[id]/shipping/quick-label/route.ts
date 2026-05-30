@@ -4,11 +4,12 @@ import { assertSameOrigin } from '@/lib/security/same-origin'
 import { applyLabelToOrder } from '@/lib/shipping/apply-label-to-order'
 import {
   getDefaultParcel,
-  getPreferredUspsServiceName,
+  getPreferredCarrier,
+  getPreferredCarrierServiceName,
   getShipFromAddress,
   isShippoConfigured,
 } from '@/lib/shipping/label-config'
-import { getShippoRates, pickPreferredUspsRate, purchaseShippoLabel } from '@/lib/shipping/shippo-client'
+import { getShippoRates, pickPreferredCarrierRate, purchaseShippoLabel } from '@/lib/shipping/shippo-client'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
@@ -30,7 +31,8 @@ export async function POST(
   try {
     const { id } = await params
     const parcel = getDefaultParcel()
-    const preferred = getPreferredUspsServiceName()
+    const carrier = getPreferredCarrier()
+    const preferredService = getPreferredCarrierServiceName(carrier)
 
     const { data: order, error } = await supabaseAdmin
       .from('orders')
@@ -64,11 +66,12 @@ export async function POST(
       parcel,
     })
 
-    const uspsOnly = rates.filter((r) => r.provider === 'USPS')
-    const picked = pickPreferredUspsRate(uspsOnly, preferred)
+    const picked = pickPreferredCarrierRate(rates, carrier, preferredService)
     if (!picked) {
       return NextResponse.json(
-        { error: 'No USPS rates returned. Check the ship-to address or Shippo account.' },
+        {
+          error: `No ${carrier} rates returned. Check the ship-to address or Shippo account.`,
+        },
         { status: 400 }
       )
     }
@@ -82,7 +85,8 @@ export async function POST(
     return NextResponse.json({
       ok: true,
       parcel,
-      preferredService: preferred,
+      preferredService,
+      preferredCarrier: carrier,
       trackingNumber: label.trackingNumber,
       labelUrl: label.labelUrl,
       carrier: label.carrier,

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { ShipLabelMode } from '@/lib/shipping/shipping-workflow'
 import { ManualTrackingPanel } from '@/components/admin/ManualTrackingPanel'
-import { QuickUspsLabelPanel } from '@/components/admin/QuickUspsLabelPanel'
+import { QuickPrintLabelPanel } from '@/components/admin/QuickPrintLabelPanel'
 import { ShippingLabelPanel } from '@/components/admin/ShippingLabelPanel'
 
 type Props = {
@@ -12,7 +12,8 @@ type Props = {
   currentStatus: string
   labelMode: ShipLabelMode
   shippoConfigured: boolean
-  preferredUspsService: string
+  preferredCarrier: 'USPS' | 'UPS'
+  preferredCarrierService: string
   defaultParcel: {
     weightLb: number
     lengthIn: number
@@ -31,7 +32,8 @@ export function FulfillOrderShipping({
   currentStatus,
   labelMode,
   shippoConfigured,
-  preferredUspsService,
+  preferredCarrier,
+  preferredCarrierService,
   defaultParcel,
   initialLabelUrl,
   initialTracking,
@@ -39,6 +41,7 @@ export function FulfillOrderShipping({
   initialService,
 }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(labelMode === 'advanced')
+  const [showManual, setShowManual] = useState(labelMode === 'external')
 
   if (isPickup) {
     return (
@@ -49,10 +52,35 @@ export function FulfillOrderShipping({
   }
 
   const hasLabel = Boolean(initialLabelUrl)
+  const tiktokStyle = shippoConfigured && (labelMode === 'quick' || labelMode === 'advanced')
 
   return (
     <div className="space-y-6">
-      {!hasLabel && (
+      {tiktokStyle && !hasLabel && (
+        <QuickPrintLabelPanel
+          orderId={orderId}
+          carrier={preferredCarrier}
+          preferredService={preferredCarrierService}
+          defaultParcel={defaultParcel}
+          initialLabelUrl={initialLabelUrl}
+          initialTracking={initialTracking}
+        />
+      )}
+
+      {hasLabel && (
+        <ShippingLabelPanel
+          orderId={orderId}
+          isPickup={false}
+          initialLabelUrl={initialLabelUrl}
+          initialTracking={initialTracking}
+          initialCarrier={initialCarrier}
+          initialService={initialService}
+          defaultParcel={defaultParcel}
+          configured={shippoConfigured}
+        />
+      )}
+
+      {!hasLabel && labelMode === 'external' && (
         <ManualTrackingPanel
           orderId={orderId}
           initialTracking={initialTracking}
@@ -60,14 +88,27 @@ export function FulfillOrderShipping({
         />
       )}
 
-      {shippoConfigured && labelMode === 'quick' && !hasLabel && (
-        <QuickUspsLabelPanel
-          orderId={orderId}
-          defaultParcel={defaultParcel}
-          preferredService={preferredUspsService}
-          initialLabelUrl={initialLabelUrl}
-          initialTracking={initialTracking}
-        />
+      {tiktokStyle && !hasLabel && (
+        <div>
+          <button
+            type="button"
+            className="text-sm font-medium text-earth-600 hover:text-earth-900"
+            onClick={() => setShowManual((v) => !v)}
+          >
+            {showManual
+              ? 'Hide manual tracking'
+              : 'Label printed on TikTok Shop or elsewhere? Enter tracking manually'}
+          </button>
+          {showManual && (
+            <div className="mt-4">
+              <ManualTrackingPanel
+                orderId={orderId}
+                initialTracking={initialTracking}
+                currentStatus={currentStatus}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {shippoConfigured && labelMode === 'quick' && !hasLabel && (
@@ -82,14 +123,8 @@ export function FulfillOrderShipping({
         </div>
       )}
 
-      {shippoConfigured && (labelMode === 'advanced' || (labelMode === 'quick' && showAdvanced) || hasLabel) && (
-        <div className={labelMode === 'quick' && !hasLabel ? 'border-t border-earth-200 pt-6' : undefined}>
-          {labelMode === 'advanced' && !hasLabel ? (
-            <p className="mb-4 text-sm text-earth-600">
-              Or buy a label here with full rate comparison. Most stores use external USPS labels
-              instead — see section above.
-            </p>
-          ) : null}
+      {shippoConfigured && (labelMode === 'advanced' || (labelMode === 'quick' && showAdvanced)) && !hasLabel && (
+        <div className="border-t border-earth-200 pt-6">
           <ShippingLabelPanel
             orderId={orderId}
             isPickup={false}
@@ -105,8 +140,8 @@ export function FulfillOrderShipping({
 
       {labelMode === 'external' && !shippoConfigured && (
         <p className="text-xs text-earth-500">
-          Online label purchase (Shippo) is off. Add <code className="text-[11px]">SHIPPO_API_TOKEN</code>{' '}
-          only if you want one-click labels from admin later.
+          To get TikTok-style one-click print here, add <code className="text-[11px]">SHIPPO_API_TOKEN</code> on
+          Vercel and set <code className="text-[11px]">SHIP_PREFERRED_CARRIER=UPS</code>.
         </p>
       )}
     </div>

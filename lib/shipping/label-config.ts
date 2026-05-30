@@ -5,14 +5,23 @@
 
 import { STORE } from '@/lib/constants/store'
 import {
-  getShipLabelMode,
+  getPreferredCarrier,
+  getPreferredCarrierServiceName,
   getPreferredUspsServiceName,
+  getShipLabelMode,
   shipLabelModeLabel,
+  type PreferredCarrier,
   type ShipLabelMode,
 } from '@/lib/shipping/shipping-workflow'
 
-export type { ShipLabelMode }
-export { getShipLabelMode, getPreferredUspsServiceName, shipLabelModeLabel }
+export type { PreferredCarrier, ShipLabelMode }
+export {
+  getPreferredCarrier,
+  getPreferredCarrierServiceName,
+  getPreferredUspsServiceName,
+  getShipLabelMode,
+  shipLabelModeLabel,
+}
 
 export type ShipFromAddress = {
   name: string
@@ -39,6 +48,8 @@ export type ShippingLabelConfig = {
   defaultParcel: DefaultParcel
   allowedCarriers: readonly ['USPS', 'UPS']
   labelMode: ShipLabelMode
+  preferredCarrier: PreferredCarrier
+  preferredCarrierService: string
   preferredUspsService: string
 }
 
@@ -91,12 +102,15 @@ export function isShippoConfigured(): boolean {
 }
 
 export function getShippingLabelConfig(): ShippingLabelConfig {
+  const preferredCarrier = getPreferredCarrier()
   return {
     shippoConfigured: isShippoConfigured(),
     shipFrom: getShipFromAddress(),
     defaultParcel: getDefaultParcel(),
     allowedCarriers: ['USPS', 'UPS'] as const,
     labelMode: getShipLabelMode(),
+    preferredCarrier,
+    preferredCarrierService: getPreferredCarrierServiceName(preferredCarrier),
     preferredUspsService: getPreferredUspsServiceName(),
   }
 }
@@ -125,6 +139,8 @@ export function getShippingLabelConfigPublic() {
     allowedCarriers: cfg.allowedCarriers,
     labelMode: cfg.labelMode,
     labelModeLabel: shipLabelModeLabel(cfg.labelMode),
+    preferredCarrier: cfg.preferredCarrier,
+    preferredCarrierService: cfg.preferredCarrierService,
     preferredUspsService: cfg.preferredUspsService,
   }
 }

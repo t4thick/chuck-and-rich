@@ -168,19 +168,28 @@ export async function getShippoRates(input: {
   return rates.sort((a, b) => a.amount - b.amount)
 }
 
-/** Pick preferred USPS service (e.g. Ground Advantage) or cheapest USPS. */
+/** Pick preferred carrier service (e.g. UPS Ground) or cheapest on that carrier. */
+export function pickPreferredCarrierRate(
+  rates: ShippoRate[],
+  carrier: 'USPS' | 'UPS',
+  preferredServiceName: string
+): ShippoRate | null {
+  const filtered = rates.filter((r) => r.provider === carrier)
+  if (filtered.length === 0) return null
+  const needle = preferredServiceName.trim().toLowerCase()
+  if (needle) {
+    const match = filtered.find((r) => r.serviceName.toLowerCase().includes(needle))
+    if (match) return match
+  }
+  return [...filtered].sort((a, b) => a.amount - b.amount)[0] ?? null
+}
+
+/** @deprecated use pickPreferredCarrierRate */
 export function pickPreferredUspsRate(
   rates: ShippoRate[],
   preferredServiceName: string
 ): ShippoRate | null {
-  const usps = rates.filter((r) => r.provider === 'USPS')
-  if (usps.length === 0) return null
-  const needle = preferredServiceName.trim().toLowerCase()
-  if (needle) {
-    const match = usps.find((r) => r.serviceName.toLowerCase().includes(needle))
-    if (match) return match
-  }
-  return [...usps].sort((a, b) => a.amount - b.amount)[0] ?? null
+  return pickPreferredCarrierRate(rates, 'USPS', preferredServiceName)
 }
 
 export async function purchaseShippoLabel(rateId: string): Promise<ShippoLabelResult> {
