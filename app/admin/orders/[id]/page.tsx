@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { PAYMENT_LABEL, type PaymentMethod } from '@/lib/payment-methods'
 import { OrderStatusUpdater } from '@/components/admin/OrderStatusUpdater'
 import { RefundButton } from '@/components/admin/RefundButton'
-import { ShippingLabelPanel } from '@/components/admin/ShippingLabelPanel'
+import { FulfillOrderShipping } from '@/components/admin/FulfillOrderShipping'
 import { PrintAddressSlipLink } from '@/components/admin/PrintAddressSlipLink'
 import {
   ORDER_STATUS_LABEL,
@@ -19,6 +19,7 @@ import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { formatOrderNumber } from '@/lib/orders/order-number'
 import {
   getDefaultParcel,
+  getShippingLabelConfig,
   isShippoConfigured,
 } from '@/lib/shipping/label-config'
 
@@ -65,6 +66,7 @@ export default async function AdminOrderDetailPage({
       : (logsResult.data ?? [])
 
   const defaultParcel = getDefaultParcel()
+  const shippingConfig = getShippingLabelConfig()
   const orderRecord = order as Record<string, unknown>
 
   return (
@@ -263,12 +265,18 @@ export default async function AdminOrderDetailPage({
             <PrintAddressSlipLink orderId={order.id} isPickup={shippingMethod === 'pickup'} />
 
             <div>
-              <h2 className="admin-section-title">Buy USPS / UPS label online (Shippo)</h2>
-              <p className="mt-1 text-sm text-earth-500">Optional — pay postage here and print a carrier label.</p>
+              <h2 className="admin-section-title">Ship this order</h2>
+              <p className="mt-1 text-sm text-earth-500">
+                Mode: {shippingConfig.labelMode === 'external' ? 'External USPS labels' : shippingConfig.labelMode === 'quick' ? 'External + quick Shippo' : 'Full Shippo rates'}
+              </p>
               <div className="mt-4">
-              <ShippingLabelPanel
+              <FulfillOrderShipping
                 orderId={order.id}
                 isPickup={shippingMethod === 'pickup'}
+                currentStatus={normalizedStatus}
+                labelMode={shippingConfig.labelMode}
+                shippoConfigured={isShippoConfigured()}
+                preferredUspsService={shippingConfig.preferredUspsService}
                 initialLabelUrl={
                   typeof orderRecord.shipping_label_url === 'string'
                     ? orderRecord.shipping_label_url
@@ -286,7 +294,6 @@ export default async function AdminOrderDetailPage({
                     : null
                 }
                 defaultParcel={defaultParcel}
-                configured={isShippoConfigured()}
               />
               </div>
             </div>

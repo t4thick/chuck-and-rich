@@ -102,16 +102,66 @@ export default async function AdminShippingPage() {
       <div>
         <h1 className="admin-page-title flex items-center gap-2">
           <Truck className="h-7 w-7 text-brand-700" aria-hidden />
-          Shipping labels (USPS &amp; UPS)
+          Shipping workflow
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-earth-600">
-          One-time setup. After that, print labels from each order in admin — no more copying
-          tracking numbers from Click-N-Ship or Pirate Ship.
+          Current mode: <strong>{cfg.labelModeLabel}</strong>. Most stores print USPS labels from an
+          existing business account, then paste tracking on each order — same as TikTok Shop.
         </p>
       </div>
 
       <section className="admin-card">
-        <h2 className="admin-section-title">Status</h2>
+        <h2 className="admin-section-title">Recommended: external labels (TikTok-style)</h2>
+        <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-earth-700">
+          <li>Open an order in admin → print the packing slip / address.</li>
+          <li>
+            Print the USPS label from <strong>USPS Click-N-Ship</strong>, Stamps.com, or your business
+            contract (not from this website unless you enable Shippo below).
+          </li>
+          <li>Paste the tracking number → <strong>Save tracking &amp; mark shipped</strong>.</li>
+        </ol>
+        <p className="mt-4 text-sm text-earth-600">
+          Set <code className="rounded bg-earth-100 px-1 text-xs">SHIP_LABEL_MODE=external</code> on
+          Vercel (or leave unset — that is the default). No Shippo required.
+        </p>
+      </section>
+
+      <section className="admin-card">
+        <h2 className="admin-section-title">Optional: buy labels in admin (Shippo)</h2>
+        <p className="mt-2 text-sm text-earth-600">
+          Only if you want the website to purchase postage. Uses weight + zone pricing (not flat-rate
+          unless you always use the same default box).
+        </p>
+        <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-earth-700">
+          <li>
+            <code className="text-xs">SHIP_LABEL_MODE=quick</code> — one button, default 3 lb box, USPS
+            Ground Advantage
+          </li>
+          <li>
+            <code className="text-xs">SHIP_LABEL_MODE=advanced</code> — compare all USPS / UPS rates
+          </li>
+        </ul>
+      </section>
+
+      <section className="admin-card">
+        <h2 className="admin-section-title">USPS direct (no Shippo)</h2>
+        <p className="mt-2 text-sm text-earth-600">
+          If you have a USPS business account with prepaid or contract rates, keep using{' '}
+          <a
+            href="https://cns.usps.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-brand-700 underline"
+          >
+            Click-N-Ship
+          </a>{' '}
+          or your existing label printer. This site stores tracking only — no USPS API wiring needed
+          unless you later add Enterprise Payment System (EPS) integration.
+        </p>
+      </section>
+
+      <section className="admin-card">
+        <h2 className="admin-section-title">Shippo setup (optional)</h2>
         <ul className="mt-4 space-y-2 text-sm">
           <StatusRow ok={cfg.hasShippoToken} label="Shippo API token" />
           <StatusRow ok={cfg.shipFromComplete} label="Store ship-from address" />

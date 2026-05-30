@@ -168,6 +168,21 @@ export async function getShippoRates(input: {
   return rates.sort((a, b) => a.amount - b.amount)
 }
 
+/** Pick preferred USPS service (e.g. Ground Advantage) or cheapest USPS. */
+export function pickPreferredUspsRate(
+  rates: ShippoRate[],
+  preferredServiceName: string
+): ShippoRate | null {
+  const usps = rates.filter((r) => r.provider === 'USPS')
+  if (usps.length === 0) return null
+  const needle = preferredServiceName.trim().toLowerCase()
+  if (needle) {
+    const match = usps.find((r) => r.serviceName.toLowerCase().includes(needle))
+    if (match) return match
+  }
+  return [...usps].sort((a, b) => a.amount - b.amount)[0] ?? null
+}
+
 export async function purchaseShippoLabel(rateId: string): Promise<ShippoLabelResult> {
   const tx = await shippoRequest<ShippoTransactionResponse>('/transactions/', {
     method: 'POST',

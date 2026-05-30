@@ -4,6 +4,15 @@
  */
 
 import { STORE } from '@/lib/constants/store'
+import {
+  getShipLabelMode,
+  getPreferredUspsServiceName,
+  shipLabelModeLabel,
+  type ShipLabelMode,
+} from '@/lib/shipping/shipping-workflow'
+
+export type { ShipLabelMode }
+export { getShipLabelMode, getPreferredUspsServiceName, shipLabelModeLabel }
 
 export type ShipFromAddress = {
   name: string
@@ -29,6 +38,8 @@ export type ShippingLabelConfig = {
   shipFrom: ShipFromAddress | null
   defaultParcel: DefaultParcel
   allowedCarriers: readonly ['USPS', 'UPS']
+  labelMode: ShipLabelMode
+  preferredUspsService: string
 }
 
 function trim(v: string | undefined): string {
@@ -85,6 +96,8 @@ export function getShippingLabelConfig(): ShippingLabelConfig {
     shipFrom: getShipFromAddress(),
     defaultParcel: getDefaultParcel(),
     allowedCarriers: ['USPS', 'UPS'] as const,
+    labelMode: getShipLabelMode(),
+    preferredUspsService: getPreferredUspsServiceName(),
   }
 }
 
@@ -110,5 +123,8 @@ export function getShippingLabelConfigPublic() {
       : null,
     defaultParcel: cfg.defaultParcel,
     allowedCarriers: cfg.allowedCarriers,
+    labelMode: cfg.labelMode,
+    labelModeLabel: shipLabelModeLabel(cfg.labelMode),
+    preferredUspsService: cfg.preferredUspsService,
   }
 }
