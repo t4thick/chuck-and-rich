@@ -17,6 +17,8 @@ import {
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { formatOrderNumber } from '@/lib/orders/order-number'
+import { getDefaultParcel } from '@/lib/shipping/label-config'
+import { getUspsConfigPublic, isUspsConfigured } from '@/lib/shipping/usps-config'
 
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
@@ -60,6 +62,8 @@ export default async function AdminOrderDetailPage({
       ? []
       : (logsResult.data ?? [])
 
+  const uspsConfig = getUspsConfigPublic()
+  const defaultParcel = getDefaultParcel()
   const orderRecord = order as Record<string, unknown>
 
   return (
@@ -259,12 +263,19 @@ export default async function AdminOrderDetailPage({
 
             <div>
               <h2 className="admin-section-title">Ship this order</h2>
-              <p className="mt-1 text-sm text-earth-500">USPS business account → paste tracking here</p>
+              <p className="mt-1 text-sm text-earth-500">
+                {uspsConfig.uspsConfigured
+                  ? `USPS ${uspsConfig.mailClass.replace(/_/g, ' ')} · one-click print`
+                  : 'USPS Click-N-Ship · paste tracking'}
+              </p>
               <div className="mt-4">
               <FulfillOrderShipping
                 orderId={order.id}
                 isPickup={shippingMethod === 'pickup'}
                 currentStatus={normalizedStatus}
+                uspsConfigured={isUspsConfigured()}
+                mailClass={uspsConfig.mailClass}
+                defaultParcel={defaultParcel}
                 initialLabelUrl={
                   typeof orderRecord.shipping_label_url === 'string'
                     ? orderRecord.shipping_label_url

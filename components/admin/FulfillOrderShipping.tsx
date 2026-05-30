@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { Download } from 'lucide-react'
 import { ManualTrackingPanel } from '@/components/admin/ManualTrackingPanel'
+import { UspsPrintLabelPanel } from '@/components/admin/UspsPrintLabelPanel'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -9,6 +11,14 @@ type Props = {
   orderId: string
   isPickup: boolean
   currentStatus: string
+  uspsConfigured: boolean
+  mailClass: string
+  defaultParcel: {
+    weightLb: number
+    lengthIn: number
+    widthIn: number
+    heightIn: number
+  }
   initialLabelUrl?: string | null
   initialTracking?: string | null
   initialCarrier?: string | null
@@ -19,18 +29,24 @@ export function FulfillOrderShipping({
   orderId,
   isPickup,
   currentStatus,
+  uspsConfigured,
+  mailClass,
+  defaultParcel,
   initialLabelUrl,
   initialTracking,
   initialCarrier,
   initialService,
 }: Props) {
+  const [showManual, setShowManual] = useState(false)
+  const hasShipment = Boolean(initialTracking || initialLabelUrl)
+
   if (isPickup) {
     return <p className="text-sm text-earth-600">Pickup order — no shipping label needed.</p>
   }
 
   return (
     <div className="space-y-6">
-      {initialTracking || initialLabelUrl ? (
+      {hasShipment && !uspsConfigured ? (
         <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
           <p className="text-sm font-semibold text-emerald-900">Shipment on file</p>
           {initialCarrier || initialService ? (
@@ -57,11 +73,42 @@ export function FulfillOrderShipping({
         </div>
       ) : null}
 
-      <ManualTrackingPanel
-        orderId={orderId}
-        initialTracking={initialTracking}
-        currentStatus={currentStatus}
-      />
+      {uspsConfigured ? (
+        <UspsPrintLabelPanel
+          orderId={orderId}
+          mailClass={mailClass}
+          defaultParcel={defaultParcel}
+          initialLabelUrl={initialLabelUrl}
+          initialTracking={initialTracking}
+        />
+      ) : (
+        <ManualTrackingPanel
+          orderId={orderId}
+          initialTracking={initialTracking}
+          currentStatus={currentStatus}
+        />
+      )}
+
+      {uspsConfigured && !hasShipment && (
+        <div>
+          <button
+            type="button"
+            className="text-sm font-medium text-earth-600 hover:text-earth-900"
+            onClick={() => setShowManual((v) => !v)}
+          >
+            {showManual ? 'Hide manual tracking' : 'Already printed elsewhere? Enter tracking manually'}
+          </button>
+          {showManual && (
+            <div className="mt-4">
+              <ManualTrackingPanel
+                orderId={orderId}
+                initialTracking={initialTracking}
+                currentStatus={currentStatus}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
