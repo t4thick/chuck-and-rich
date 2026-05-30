@@ -1,8 +1,8 @@
 /**
  * How staff fulfill shipped orders in admin.
  *
- * external — Labels printed outside this site (TikTok Shop, Click-N-Ship); paste tracking.
- * quick    — TikTok-style: one Print button → Shippo calls UPS/USPS API → label PDF + tracking.
+ * external — Label printed outside admin; paste tracking only.
+ * quick    — One Print button → Shippo → UPS/USPS API → label PDF + tracking.
  * advanced — Full Shippo rate picker (USPS + UPS).
  */
 
@@ -16,7 +16,7 @@ export function getShipLabelMode(): ShipLabelMode {
   if (raw && VALID.includes(raw as ShipLabelMode)) {
     return raw as ShipLabelMode
   }
-  // When Shippo is wired up, default to one-click print (TikTok-style).
+  // When Shippo is wired up, default to one-click print.
   if (process.env.SHIPPO_API_TOKEN?.trim()) {
     return 'quick'
   }
@@ -44,9 +44,9 @@ export function getPreferredUspsServiceName(): string {
 export function shipLabelModeLabel(mode: ShipLabelMode): string {
   switch (mode) {
     case 'external':
-      return 'External labels (TikTok Shop / Click-N-Ship)'
+      return 'Manual tracking only'
     case 'quick':
-      return 'Print label (carrier API via Shippo)'
+      return 'Print label (UPS/USPS via Shippo)'
     case 'advanced':
       return 'Compare rates (Shippo)'
   }

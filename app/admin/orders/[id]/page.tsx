@@ -267,7 +267,11 @@ export default async function AdminOrderDetailPage({
             <div>
               <h2 className="admin-section-title">Ship this order</h2>
               <p className="mt-1 text-sm text-earth-500">
-                Mode: {shippingConfig.labelMode === 'external' ? 'External USPS labels' : shippingConfig.labelMode === 'quick' ? 'External + quick Shippo' : 'Full Shippo rates'}
+                {shippingConfig.labelMode === 'quick'
+                  ? `${shippingConfig.preferredCarrier} ${shippingConfig.preferredCarrierService} · one-click print`
+                  : shippingConfig.labelMode === 'advanced'
+                    ? 'Compare all carrier rates'
+                    : 'Manual tracking'}
               </p>
               <div className="mt-4">
               <FulfillOrderShipping

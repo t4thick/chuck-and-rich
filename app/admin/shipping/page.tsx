@@ -89,9 +89,9 @@ export default async function AdminShippingPage() {
       title: 'Buy & print labels from an order',
       body: (
         <>
-          Open any paid order → <strong>Print shipping label</strong> → enter weight → pick USPS or
-          UPS rate → <strong>Buy label</strong>. Then <strong>Print</strong> or <strong>Download
-          PDF</strong>. Tracking is saved automatically and the customer is emailed.
+          Open any paid order → <strong>Print shipping label</strong>. For quick mode, one click buys{' '}
+          {cfg.preferredCarrier} {cfg.preferredCarrierService} at the default box size. Tracking saves
+          automatically and the customer is emailed.
         </>
       ),
     },
@@ -109,67 +109,61 @@ export default async function AdminShippingPage() {
           {cfg.labelMode === 'quick' && cfg.shippoConfigured ? (
             <>
               {' '}
-              TikTok-style: open an order → <strong>Print shipping label</strong> → {cfg.preferredCarrier}{' '}
-              {cfg.preferredCarrierService} via Shippo → PDF opens and tracking saves automatically.
+              Open an order → <strong>Print shipping label</strong> → {cfg.preferredCarrier}{' '}
+              {cfg.preferredCarrierService} → PDF opens and tracking saves automatically.
             </>
+          ) : cfg.shippoConfigured ? (
+            <> Shippo is connected — configure quick or advanced mode in Vercel.</>
           ) : (
-            <>
-              {' '}
-              Print labels on TikTok Shop or your carrier site, then paste tracking here — or enable
-              Shippo for one-click print.
-            </>
+            <> Connect Shippo to print labels here, or enter tracking after shipping from your carrier account.</>
           )}
         </p>
       </div>
 
       {cfg.labelMode === 'quick' && cfg.shippoConfigured ? (
         <section className="admin-card border-brand-200 bg-brand-50/30">
-          <h2 className="admin-section-title">Quick print (TikTok-style)</h2>
+          <h2 className="admin-section-title">Print labels in admin</h2>
           <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-earth-700">
-            <li>Open a paid shipping order in admin.</li>
+            <li>Open a paid shipping order.</li>
             <li>
-              Click <strong>Print shipping label</strong> — buys {cfg.preferredCarrier}{' '}
-              {cfg.preferredCarrierService} at the default box size.
+              Click <strong>Print shipping label</strong> — {cfg.preferredCarrier}{' '}
+              {cfg.preferredCarrierService}, default box size.
             </li>
             <li>Label PDF opens; tracking is saved and the customer is emailed.</li>
           </ol>
           <p className="mt-4 text-sm text-earth-600">
-            Default carrier: <code className="rounded bg-earth-100 px-1 text-xs">SHIP_PREFERRED_CARRIER={cfg.preferredCarrier}</code>
+            Carrier: <code className="rounded bg-earth-100 px-1 text-xs">SHIP_PREFERRED_CARRIER={cfg.preferredCarrier}</code>
             {' · '}
             Service: <code className="rounded bg-earth-100 px-1 text-xs">{cfg.preferredCarrierService}</code>
           </p>
         </section>
-      ) : (
+      ) : !cfg.shippoConfigured ? (
         <section className="admin-card">
-          <h2 className="admin-section-title">External labels (TikTok Shop today)</h2>
+          <h2 className="admin-section-title">Manual tracking</h2>
           <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-earth-700">
-            <li>Open an order in admin → print the packing slip / address.</li>
-            <li>
-              Print on <strong>TikTok Shop</strong> (UPS API) or USPS Click-N-Ship — label comes from
-              the carrier, not this site.
-            </li>
+            <li>Print the packing slip from the order.</li>
+            <li>Buy and print a label from your carrier account.</li>
             <li>Paste the tracking number → <strong>Save tracking &amp; mark shipped</strong>.</li>
           </ol>
           <p className="mt-4 text-sm text-earth-600">
-            Set <code className="rounded bg-earth-100 px-1 text-xs">SHIP_LABEL_MODE=external</code> on
-            Vercel. No Shippo required.
+            Add <code className="rounded bg-earth-100 px-1 text-xs">SHIPPO_API_TOKEN</code> on Vercel to
+            print labels directly in admin instead.
           </p>
         </section>
-      )}
+      ) : null}
 
       <section className="admin-card">
-        <h2 className="admin-section-title">Shippo setup (one-click print on this site)</h2>
+        <h2 className="admin-section-title">Shippo configuration</h2>
         <p className="mt-2 text-sm text-earth-600">
-          Same idea as TikTok: click Print → carrier API → label PDF. Shippo connects to UPS and USPS.
+          Shippo connects to UPS and USPS. One click buys a label, opens the PDF, and saves tracking.
         </p>
         <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-earth-700">
           <li>
-            <code className="text-xs">SHIP_LABEL_MODE=quick</code> — one <strong>Print shipping label</strong>{' '}
-            button, default box, {cfg.preferredCarrier} {cfg.preferredCarrierService}
+            <code className="text-xs">SHIP_LABEL_MODE=quick</code> — <strong>Print shipping label</strong>{' '}
+            button, {cfg.preferredCarrier} {cfg.preferredCarrierService}
           </li>
           <li>
-            <code className="text-xs">SHIP_PREFERRED_CARRIER=UPS</code> — match TikTok Shop (UPS Ground
-            default)
+            <code className="text-xs">SHIP_PREFERRED_CARRIER=UPS</code> — UPS Ground default
           </li>
           <li>
             <code className="text-xs">SHIP_LABEL_MODE=advanced</code> — compare all USPS / UPS rates

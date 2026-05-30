@@ -41,22 +41,22 @@ export function FulfillOrderShipping({
   initialService,
 }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(labelMode === 'advanced')
-  const [showManual, setShowManual] = useState(labelMode === 'external')
+  const [showManual, setShowManual] = useState(false)
 
   if (isPickup) {
     return (
       <p className="text-sm text-earth-600">
-        This is a <strong>pickup</strong> order — no shipping label needed.
+        Pickup order — no shipping label needed.
       </p>
     )
   }
 
   const hasLabel = Boolean(initialLabelUrl)
-  const tiktokStyle = shippoConfigured && (labelMode === 'quick' || labelMode === 'advanced')
+  const autoPrint = shippoConfigured && (labelMode === 'quick' || labelMode === 'advanced')
 
   return (
     <div className="space-y-6">
-      {tiktokStyle && !hasLabel && (
+      {autoPrint && !hasLabel && (
         <QuickPrintLabelPanel
           orderId={orderId}
           carrier={preferredCarrier}
@@ -80,7 +80,7 @@ export function FulfillOrderShipping({
         />
       )}
 
-      {!hasLabel && labelMode === 'external' && (
+      {!hasLabel && !autoPrint && (
         <ManualTrackingPanel
           orderId={orderId}
           initialTracking={initialTracking}
@@ -88,16 +88,14 @@ export function FulfillOrderShipping({
         />
       )}
 
-      {tiktokStyle && !hasLabel && (
+      {autoPrint && !hasLabel && (
         <div>
           <button
             type="button"
             className="text-sm font-medium text-earth-600 hover:text-earth-900"
             onClick={() => setShowManual((v) => !v)}
           >
-            {showManual
-              ? 'Hide manual tracking'
-              : 'Label printed on TikTok Shop or elsewhere? Enter tracking manually'}
+            {showManual ? 'Hide manual tracking' : 'Already have a tracking number?'}
           </button>
           {showManual && (
             <div className="mt-4">
@@ -105,6 +103,7 @@ export function FulfillOrderShipping({
                 orderId={orderId}
                 initialTracking={initialTracking}
                 currentStatus={currentStatus}
+                compact
               />
             </div>
           )}
@@ -118,7 +117,7 @@ export function FulfillOrderShipping({
             className="text-sm font-medium text-brand-700 hover:text-brand-800"
             onClick={() => setShowAdvanced((v) => !v)}
           >
-            {showAdvanced ? 'Hide rate comparison' : 'Compare all USPS / UPS rates instead'}
+            {showAdvanced ? 'Hide rate comparison' : 'Compare all USPS / UPS rates'}
           </button>
         </div>
       )}
@@ -138,10 +137,10 @@ export function FulfillOrderShipping({
         </div>
       )}
 
-      {labelMode === 'external' && !shippoConfigured && (
+      {!shippoConfigured && (
         <p className="text-xs text-earth-500">
-          To get TikTok-style one-click print here, add <code className="text-[11px]">SHIPPO_API_TOKEN</code> on
-          Vercel and set <code className="text-[11px]">SHIP_PREFERRED_CARRIER=UPS</code>.
+          Add <code className="text-[11px]">SHIPPO_API_TOKEN</code> on Vercel to print labels here, or
+          enter tracking after printing from your carrier account.
         </p>
       )}
     </div>

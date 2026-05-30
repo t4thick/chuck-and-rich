@@ -20,7 +20,7 @@ type Props = {
   initialTracking?: string | null
 }
 
-/** TikTok Shop-style: one Print → carrier API → label PDF + tracking. */
+/** One click → carrier API → label PDF + tracking saved on the order. */
 export function QuickPrintLabelPanel({
   orderId,
   carrier,
@@ -74,18 +74,18 @@ export function QuickPrintLabelPanel({
   if (labelUrl) {
     return (
       <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-        <p className="text-sm font-semibold text-emerald-900">Label ready — same as TikTok print flow</p>
+        <p className="text-sm font-semibold text-emerald-900">Label ready</p>
         {serviceLine ? <p className="text-sm text-emerald-800">{serviceLine}</p> : null}
         {amount != null ? <p className="text-sm text-emerald-800">Postage: ${amount.toFixed(2)}</p> : null}
         {tracking ? (
           <p className="font-mono text-xs text-emerald-900">
-            Tracking saved: <span className="font-semibold">{tracking}</span>
+            Tracking: <span className="font-semibold">{tracking}</span>
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={openPrint}>
             <Printer className="mr-1.5 h-4 w-4" aria-hidden />
-            Print label again
+            Print label
           </Button>
           <a
             href={labelUrl}
@@ -107,8 +107,9 @@ export function QuickPrintLabelPanel({
       <div>
         <p className="text-base font-semibold text-earth-900">Print shipping label</p>
         <p className="mt-1 text-sm text-earth-600">
-          Like TikTok Shop: one click buys a {carrier} {preferredService} label (default{' '}
-          {defaultParcel.weightLb} lb box), opens the PDF, and saves tracking on this order.
+          Buys a {carrier} {preferredService} label ({defaultParcel.weightLb} lb,{' '}
+          {defaultParcel.lengthIn}×{defaultParcel.widthIn}×{defaultParcel.heightIn} in), opens the PDF,
+          and saves tracking on this order.
         </p>
       </div>
       {error ? (
