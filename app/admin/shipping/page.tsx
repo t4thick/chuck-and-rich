@@ -1,11 +1,21 @@
 import Link from 'next/link'
 import { CheckCircle2, Circle, Truck } from 'lucide-react'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
-import { getShippingLabelConfigPublic } from '@/lib/shipping/label-config'
+import { getShippingLabelConfigPublic, isShippoConfigured } from '@/lib/shipping/label-config'
+import { listShippoCarrierAccounts } from '@/lib/shipping/shippo-client'
 
 export default async function AdminShippingPage() {
   await requireAdminPage()
   const cfg = getShippingLabelConfigPublic()
+  let carrierAccounts: Awaited<ReturnType<typeof listShippoCarrierAccounts>> = []
+  if (isShippoConfigured()) {
+    try {
+      carrierAccounts = await listShippoCarrierAccounts()
+    } catch {
+      carrierAccounts = []
+    }
+  }
+  const uspsOwnAccounts = carrierAccounts.filter((a) => a.carrier === 'USPS' && !a.isShippoAccount)
 
   const steps = [
     {
@@ -152,10 +162,88 @@ export default async function AdminShippingPage() {
         </section>
       ) : null}
 
+      <section className="admin-card border-brand-200 bg-brand-50/30">
+        <h2 className="admin-section-title">Use your USPS business account</h2>
+        <p className="mt-2 text-sm text-earth-600">
+          Shippo is the print button on this site. Connect <strong>your</strong> USPS business account
+          inside Shippo so labels bill to your existing USPS rates — not Shippo&apos;s default rates.
+        </p>
+        <ol className="mt-4 list-inside list-decimal space-y-2 text-sm text-earth-700">
+          <li>
+            Log in at{' '}
+            <a
+              href="https://goshippo.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-brand-700 underline"
+            >
+              goshippo.com
+            </a>{' '}
+            with the same account as your <code className="text-xs">SHIPPO_API_TOKEN</code>.
+          </li>
+          <li>
+            <strong>Settings → Carriers → Connect carrier account → USPS</strong>. Sign in with your
+            USPS business / Click-N-Ship credentials.
+          </li>
+          <li>
+            Copy your account&apos;s <strong>object ID</strong> from the list below (or Shippo → Carriers →
+            Your accounts).
+          </li>
+          <li>
+            In Vercel, set{' '}
+            <code className="rounded bg-earth-100 px-1 text-xs">SHIPPO_CARRIER_ACCOUNT_IDS</code> to that
+            ID (comma-separated if you have more than one). Also set{' '}
+            <code className="rounded bg-earth-100 px-1 text-xs">SHIP_PREFERRED_CARRIER=USPS</code> and{' '}
+            <code className="rounded bg-earth-100 px-1 text-xs">SHIP_PREFERRED_USPS_SERVICE=Ground Advantage</code>.
+          </li>
+          <li>Redeploy. Print labels in admin — postage charges your USPS account (+ Shippo API fee if applicable).</li>
+        </ol>
+        <ul className="mt-4 space-y-2 text-sm">
+          <StatusRow ok={cfg.ownCarrierAccountsConfigured} label="SHIPPO_CARRIER_ACCOUNT_IDS set on Vercel" />
+        </ul>
+        {carrierAccounts.length > 0 ? (
+          <div className="mt-4 overflow-x-auto rounded-lg border border-earth-200">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-earth-50 text-xs font-semibold uppercase text-earth-600">
+                <tr>
+                  <th className="px-3 py-2">Account</th>
+                  <th className="px-3 py-2">Carrier</th>
+                  <th className="px-3 py-2">Type</th>
+                  <th className="px-3 py-2">Object ID (for Vercel)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-earth-100">
+                {carrierAccounts.map((a) => (
+                  <tr key={a.objectId}>
+                    <td className="px-3 py-2 text-earth-900">{a.name}</td>
+                    <td className="px-3 py-2">{a.carrier}</td>
+                    <td className="px-3 py-2">{a.isShippoAccount ? 'Shippo rates' : 'Your account'}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-earth-800">{a.objectId}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : cfg.hasShippoToken ? (
+          <p className="mt-4 text-sm text-amber-800">
+            Could not load carrier accounts — check that your Shippo API token is live and redeployed.
+          </p>
+        ) : null}
+        {uspsOwnAccounts.length > 0 && !cfg.ownCarrierAccountsConfigured ? (
+          <p className="mt-4 text-sm font-medium text-brand-800">
+            Your USPS business account is connected in Shippo. Add{' '}
+            <code className="text-xs">{uspsOwnAccounts[0]!.objectId}</code> to{' '}
+            <code className="text-xs">SHIPPO_CARRIER_ACCOUNT_IDS</code> on Vercel so we only use your
+            rates.
+          </p>
+        ) : null}
+      </section>
+
       <section className="admin-card">
         <h2 className="admin-section-title">Shippo configuration</h2>
         <p className="mt-2 text-sm text-earth-600">
-          Shippo connects to UPS and USPS. One click buys a label, opens the PDF, and saves tracking.
+          Shippo runs the print API. Connect your own USPS account inside Shippo to use your business
+          rates.
         </p>
         <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-earth-700">
           <li>
@@ -163,37 +251,24 @@ export default async function AdminShippingPage() {
             button, {cfg.preferredCarrier} {cfg.preferredCarrierService}
           </li>
           <li>
-            <code className="text-xs">SHIP_PREFERRED_CARRIER=UPS</code> — UPS Ground default
+            <code className="text-xs">SHIP_PREFERRED_CARRIER=USPS</code> — USPS Ground Advantage default
           </li>
           <li>
-            <code className="text-xs">SHIP_LABEL_MODE=advanced</code> — compare all USPS / UPS rates
+            <code className="text-xs">SHIPPO_CARRIER_ACCOUNT_IDS</code> — force your USPS business account
+          </li>
+          <li>
+            <code className="text-xs">SHIP_LABEL_MODE=advanced</code> — compare all rates before buying
           </li>
         </ul>
       </section>
 
       <section className="admin-card">
-        <h2 className="admin-section-title">USPS direct (no Shippo)</h2>
-        <p className="mt-2 text-sm text-earth-600">
-          If you have a USPS business account with prepaid or contract rates, keep using{' '}
-          <a
-            href="https://cns.usps.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-brand-700 underline"
-          >
-            Click-N-Ship
-          </a>{' '}
-          or your existing label printer. This site stores tracking only — no USPS API wiring needed
-          unless you later add Enterprise Payment System (EPS) integration.
-        </p>
-      </section>
-
-      <section className="admin-card">
-        <h2 className="admin-section-title">Shippo setup (optional)</h2>
+        <h2 className="admin-section-title">Status</h2>
         <ul className="mt-4 space-y-2 text-sm">
           <StatusRow ok={cfg.hasShippoToken} label="Shippo API token" />
           <StatusRow ok={cfg.shipFromComplete} label="Store ship-from address" />
           <StatusRow ok={cfg.shippoConfigured} label="Ready to print labels" />
+          <StatusRow ok={cfg.ownCarrierAccountsConfigured} label="Using your carrier account IDs" />
         </ul>
         {cfg.shipFrom && (
           <div className="mt-4 rounded-lg border border-earth-200 bg-earth-50 px-4 py-3 text-sm text-earth-700">

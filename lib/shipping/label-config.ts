@@ -101,6 +101,16 @@ export function isShippoConfigured(): boolean {
   return Boolean(process.env.SHIPPO_API_TOKEN?.trim()) && getShipFromAddress() !== null
 }
 
+/** Shippo carrier account object_ids (your USPS/UPS business accounts). Comma-separated. */
+export function getShippoCarrierAccountIds(): string[] {
+  const raw = process.env.SHIPPO_CARRIER_ACCOUNT_IDS?.trim()
+  if (!raw) return []
+  return raw
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+}
+
 export function getShippingLabelConfig(): ShippingLabelConfig {
   const preferredCarrier = getPreferredCarrier()
   return {
@@ -142,5 +152,6 @@ export function getShippingLabelConfigPublic() {
     preferredCarrier: cfg.preferredCarrier,
     preferredCarrierService: cfg.preferredCarrierService,
     preferredUspsService: cfg.preferredUspsService,
+    ownCarrierAccountsConfigured: getShippoCarrierAccountIds().length > 0,
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Download, Printer } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -36,6 +36,41 @@ export function QuickPrintLabelPanel({
   const [tracking, setTracking] = useState(initialTracking ?? '')
   const [serviceLine, setServiceLine] = useState('')
   const [amount, setAmount] = useState<number | null>(null)
+  const [estimate, setEstimate] = useState<{ service: string; amount: number } | null>(null)
+  const [estimateError, setEstimateError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadEstimate() {
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}/shipping/rates`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ carrier }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || cancelled) return
+        const rates = Array.isArray(data.rates) ? data.rates : []
+        const needle = preferredService.trim().toLowerCase()
+        const match =
+          rates.find((r: { serviceName?: string }) =>
+            r.serviceName?.toLowerCase().includes(needle)
+          ) ?? rates[0]
+        if (match && typeof match.amount === 'number') {
+          setEstimate({
+            service: match.serviceName ?? `${carrier} ${preferredService}`,
+            amount: match.amount,
+          })
+        }
+      } catch {
+        if (!cancelled) setEstimateError('Could not load rate estimate.')
+      }
+    }
+    if (!labelUrl) void loadEstimate()
+    return () => {
+      cancelled = true
+    }
+  }, [orderId, carrier, preferredService, labelUrl])
 
   async function printLabel() {
     setLoading(true)
@@ -111,6 +146,15 @@ export function QuickPrintLabelPanel({
           {defaultParcel.lengthIn}×{defaultParcel.widthIn}×{defaultParcel.heightIn} in), opens the PDF,
           and saves tracking on this order.
         </p>
+        {estimate ? (
+          <p className="mt-2 text-sm font-medium text-earth-900">
+            Estimated postage: ${estimate.amount.toFixed(2)} · {estimate.service}
+          </p>
+        ) : estimateError ? (
+          <p className="mt-2 text-xs text-earth-500">{estimateError}</p>
+        ) : (
+          <p className="mt-2 text-xs text-earth-500">Loading rate estimate…</p>
+        )}
       </div>
       {error ? (
         <p className="text-sm font-medium text-red-700" role="alert">

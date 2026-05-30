@@ -4,6 +4,7 @@ import { assertSameOrigin } from '@/lib/security/same-origin'
 import {
   getDefaultParcel,
   getShipFromAddress,
+  getShippoCarrierAccountIds,
   isShippoConfigured,
 } from '@/lib/shipping/label-config'
 import { getShippoRates } from '@/lib/shipping/shippo-client'
@@ -71,6 +72,7 @@ export async function POST(
     }
 
     const from = getShipFromAddress()!
+    const carrierAccountIds = getShippoCarrierAccountIds()
     const rates = await getShippoRates({
       from,
       to: {
@@ -84,6 +86,7 @@ export async function POST(
         email: order.customer_email ?? undefined,
       },
       parcel,
+      carrierAccountIds: carrierAccountIds.length > 0 ? carrierAccountIds : undefined,
     })
 
     const filtered = carrierFilter

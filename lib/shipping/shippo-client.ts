@@ -82,6 +82,40 @@ function normalizeCarrier(provider: string): 'USPS' | 'UPS' | null {
   return null
 }
 
+type ShippoCarrierAccount = {
+  object_id: string
+  carrier: string
+  carrier_name?: string
+  active?: boolean
+  is_shippo_account?: boolean
+  metadata?: string
+}
+
+type ShippoCarrierAccountList = {
+  results?: ShippoCarrierAccount[]
+}
+
+export type ShippoCarrierAccountSummary = {
+  objectId: string
+  carrier: string
+  name: string
+  active: boolean
+  isShippoAccount: boolean
+}
+
+export async function listShippoCarrierAccounts(): Promise<ShippoCarrierAccountSummary[]> {
+  const data = await shippoRequest<ShippoCarrierAccountList>('/carrier_accounts/?results=100', {
+    method: 'GET',
+  })
+  return (data.results ?? []).map((a) => ({
+    objectId: a.object_id,
+    carrier: (a.carrier ?? '').toUpperCase(),
+    name: a.metadata?.trim() || a.carrier_name || a.carrier || 'Carrier account',
+    active: a.active !== false,
+    isShippoAccount: Boolean(a.is_shippo_account),
+  }))
+}
+
 type ShippoShipmentResponse = {
   object_id: string
   rates: Array<{
@@ -121,33 +155,40 @@ export async function getShippoRates(input: {
     email?: string
   }
   parcel: DefaultParcel
+  carrierAccountIds?: string[]
 }): Promise<ShippoRate[]> {
+  const body: Record<string, unknown> = {
+    address_from: toShippoAddress(input.from),
+    address_to: {
+      name: input.to.name,
+      street1: input.to.street1,
+      city: input.to.city,
+      state: input.to.state,
+      zip: input.to.zip,
+      country: input.to.country.length === 2 ? input.to.country : 'US',
+      phone: input.to.phone || input.from.phone,
+      email: input.to.email || input.from.email,
+    },
+    parcels: [
+      {
+        length: String(input.parcel.lengthIn),
+        width: String(input.parcel.widthIn),
+        height: String(input.parcel.heightIn),
+        distance_unit: 'in',
+        weight: String(input.parcel.weightLb),
+        mass_unit: 'lb',
+      },
+    ],
+    async: false,
+  }
+
+  if (input.carrierAccountIds && input.carrierAccountIds.length > 0) {
+    body.carrier_accounts = input.carrierAccountIds
+  }
+
   const shipment = await shippoRequest<ShippoShipmentResponse>('/shipments/', {
     method: 'POST',
-    body: JSON.stringify({
-      address_from: toShippoAddress(input.from),
-      address_to: {
-        name: input.to.name,
-        street1: input.to.street1,
-        city: input.to.city,
-        state: input.to.state,
-        zip: input.to.zip,
-        country: input.to.country.length === 2 ? input.to.country : 'US',
-        phone: input.to.phone || input.from.phone,
-        email: input.to.email || input.from.email,
-      },
-      parcels: [
-        {
-          length: String(input.parcel.lengthIn),
-          width: String(input.parcel.widthIn),
-          height: String(input.parcel.heightIn),
-          distance_unit: 'in',
-          weight: String(input.parcel.weightLb),
-          mass_unit: 'lb',
-        },
-      ],
-      async: false,
-    }),
+    body: JSON.stringify(body),
   })
 
   const rates: ShippoRate[] = []

@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process'
 
 const VARS = {
   SHIP_LABEL_MODE: 'quick',
-  SHIP_PREFERRED_CARRIER: 'UPS',
+  SHIP_PREFERRED_CARRIER: 'USPS',
   SHIP_PREFERRED_UPS_SERVICE: 'Ground',
   SHIP_PREFERRED_USPS_SERVICE: 'Ground Advantage',
   SHIP_FROM_NAME: 'Lovely Queen African Market',
