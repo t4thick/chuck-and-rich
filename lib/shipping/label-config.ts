@@ -1,27 +1,9 @@
 /**
- * Store ship-from address and default parcel — set in Vercel / .env.local.
+ * Store ship-from address — used for packing slips and shipping admin.
  * Falls back to STORE.shipFrom when env vars are not set.
  */
 
 import { STORE } from '@/lib/constants/store'
-import {
-  getPreferredCarrier,
-  getPreferredCarrierServiceName,
-  getPreferredUspsServiceName,
-  getShipLabelMode,
-  shipLabelModeLabel,
-  type PreferredCarrier,
-  type ShipLabelMode,
-} from '@/lib/shipping/shipping-workflow'
-
-export type { PreferredCarrier, ShipLabelMode }
-export {
-  getPreferredCarrier,
-  getPreferredCarrierServiceName,
-  getPreferredUspsServiceName,
-  getShipLabelMode,
-  shipLabelModeLabel,
-}
 
 export type ShipFromAddress = {
   name: string
@@ -42,17 +24,6 @@ export type DefaultParcel = {
   heightIn: number
 }
 
-export type ShippingLabelConfig = {
-  shippoConfigured: boolean
-  shipFrom: ShipFromAddress | null
-  defaultParcel: DefaultParcel
-  allowedCarriers: readonly ['USPS', 'UPS']
-  labelMode: ShipLabelMode
-  preferredCarrier: PreferredCarrier
-  preferredCarrierService: string
-  preferredUspsService: string
-}
-
 function trim(v: string | undefined): string {
   return v?.trim() ?? ''
 }
@@ -68,8 +39,7 @@ export function getShipFromAddress(): ShipFromAddress | null {
   const city = trim(process.env.SHIP_FROM_CITY) || STORE.shipFrom.city
   const state = trim(process.env.SHIP_FROM_STATE) || STORE.shipFrom.state
   const zip = trim(process.env.SHIP_FROM_ZIP) || STORE.shipFrom.zip
-  const phone =
-    trim(process.env.SHIP_FROM_PHONE) || STORE.shipFrom.phone
+  const phone = trim(process.env.SHIP_FROM_PHONE) || STORE.shipFrom.phone
 
   if (!name || !street1 || !city || !state || !zip || !phone) {
     return null
@@ -84,7 +54,10 @@ export function getShipFromAddress(): ShipFromAddress | null {
     zip,
     country: trim(process.env.SHIP_FROM_COUNTRY) || STORE.shipFrom.country,
     phone,
-    email: trim(process.env.SHIP_FROM_EMAIL) || trim(process.env.MERCHANT_ORDER_EMAIL) || 'orders@lovelyqueenmarket.com',
+    email:
+      trim(process.env.SHIP_FROM_EMAIL) ||
+      trim(process.env.MERCHANT_ORDER_EMAIL) ||
+      'orders@lovelyqueenmarket.com',
   }
 }
 
@@ -97,41 +70,10 @@ export function getDefaultParcel(): DefaultParcel {
   }
 }
 
-export function isShippoConfigured(): boolean {
-  return Boolean(process.env.SHIPPO_API_TOKEN?.trim()) && getShipFromAddress() !== null
-}
-
-/** Shippo carrier account object_ids (your USPS/UPS business accounts). Comma-separated. */
-export function getShippoCarrierAccountIds(): string[] {
-  const raw = process.env.SHIPPO_CARRIER_ACCOUNT_IDS?.trim()
-  if (!raw) return []
-  return raw
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean)
-}
-
-export function getShippingLabelConfig(): ShippingLabelConfig {
-  const preferredCarrier = getPreferredCarrier()
-  return {
-    shippoConfigured: isShippoConfigured(),
-    shipFrom: getShipFromAddress(),
-    defaultParcel: getDefaultParcel(),
-    allowedCarriers: ['USPS', 'UPS'] as const,
-    labelMode: getShipLabelMode(),
-    preferredCarrier,
-    preferredCarrierService: getPreferredCarrierServiceName(preferredCarrier),
-    preferredUspsService: getPreferredUspsServiceName(),
-  }
-}
-
 /** Public-safe config for admin UI (no secrets). */
 export function getShippingLabelConfigPublic() {
-  const cfg = getShippingLabelConfig()
-  const from = cfg.shipFrom
+  const from = getShipFromAddress()
   return {
-    shippoConfigured: cfg.shippoConfigured,
-    hasShippoToken: Boolean(process.env.SHIPPO_API_TOKEN?.trim()),
     shipFromComplete: from !== null,
     shipFrom: from
       ? {
@@ -145,13 +87,6 @@ export function getShippingLabelConfigPublic() {
           phone: from.phone.replace(/\d(?=\d{4})/g, '*'),
         }
       : null,
-    defaultParcel: cfg.defaultParcel,
-    allowedCarriers: cfg.allowedCarriers,
-    labelMode: cfg.labelMode,
-    labelModeLabel: shipLabelModeLabel(cfg.labelMode),
-    preferredCarrier: cfg.preferredCarrier,
-    preferredCarrierService: cfg.preferredCarrierService,
-    preferredUspsService: cfg.preferredUspsService,
-    ownCarrierAccountsConfigured: getShippoCarrierAccountIds().length > 0,
+    defaultParcel: getDefaultParcel(),
   }
 }

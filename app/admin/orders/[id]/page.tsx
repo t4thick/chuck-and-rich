@@ -17,11 +17,6 @@ import {
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { formatOrderNumber } from '@/lib/orders/order-number'
-import {
-  getDefaultParcel,
-  getShippingLabelConfig,
-  isShippoConfigured,
-} from '@/lib/shipping/label-config'
 
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
@@ -65,8 +60,6 @@ export default async function AdminOrderDetailPage({
       ? []
       : (logsResult.data ?? [])
 
-  const defaultParcel = getDefaultParcel()
-  const shippingConfig = getShippingLabelConfig()
   const orderRecord = order as Record<string, unknown>
 
   return (
@@ -266,22 +259,12 @@ export default async function AdminOrderDetailPage({
 
             <div>
               <h2 className="admin-section-title">Ship this order</h2>
-              <p className="mt-1 text-sm text-earth-500">
-                {shippingConfig.labelMode === 'quick'
-                  ? `${shippingConfig.preferredCarrier} ${shippingConfig.preferredCarrierService} · one-click print`
-                  : shippingConfig.labelMode === 'advanced'
-                    ? 'Compare all carrier rates'
-                    : 'Manual tracking'}
-              </p>
+              <p className="mt-1 text-sm text-earth-500">USPS business account → paste tracking here</p>
               <div className="mt-4">
               <FulfillOrderShipping
                 orderId={order.id}
                 isPickup={shippingMethod === 'pickup'}
                 currentStatus={normalizedStatus}
-                labelMode={shippingConfig.labelMode}
-                shippoConfigured={isShippoConfigured()}
-                preferredCarrier={shippingConfig.preferredCarrier}
-                preferredCarrierService={shippingConfig.preferredCarrierService}
                 initialLabelUrl={
                   typeof orderRecord.shipping_label_url === 'string'
                     ? orderRecord.shipping_label_url
@@ -298,7 +281,6 @@ export default async function AdminOrderDetailPage({
                     ? orderRecord.shipping_service
                     : null
                 }
-                defaultParcel={defaultParcel}
               />
               </div>
             </div>

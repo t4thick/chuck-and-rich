@@ -27,7 +27,7 @@ export function PrintSlipActions({ orderId, autoPrint }: { orderId: string; auto
         Print slip
       </Button>
       <p className="text-sm text-earth-500">
-        Tape this to the box, take to USPS or UPS, pay postage there, then paste tracking in admin.
+        Tape this to the box, print your label at USPS Click-N-Ship, then paste tracking in admin.
       </p>
     </div>
   )

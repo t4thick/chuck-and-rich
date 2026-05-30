@@ -20,7 +20,7 @@ export const STORE = {
   tagline: 'African & Caribbean groceries, delivered fast.',
   supportEmail: DEFAULT_SUPPORT_EMAIL,
   address: '1668 E Dublin Granville Rd, Columbus, OH 43229',
-  /** Ship-from for USPS/UPS labels (Shippo). Env vars override these. */
+  /** Ship-from for packing slips. Env vars override these. */
   shipFrom: {
     street1: '1668 E Dublin Granville Rd',
     street2: '',

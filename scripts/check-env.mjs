@@ -105,7 +105,7 @@ const checks = [
   {
     phase: '4 — Optional',
     items: [
-      { key: 'SHIPPO_API_TOKEN + ship-from address', ok: set('SHIPPO_API_TOKEN') && set('SHIP_FROM_STREET1') && set('SHIP_FROM_ZIP'), required: false },
+      { key: 'SHIP_FROM address (packing slips)', ok: set('SHIP_FROM_STREET1') && set('SHIP_FROM_ZIP'), required: false },
       { key: 'Twilio SMS (all 4 vars)', ok: set('TWILIO_ACCOUNT_SID') && set('TWILIO_AUTH_TOKEN') && set('TWILIO_FROM_NUMBER') && set('MERCHANT_ALERT_PHONE'), required: false },
       { key: 'Upstash (admin rate limit)', ok: set('UPSTASH_REDIS_REST_URL') && set('UPSTASH_REDIS_REST_TOKEN'), required: false },
     ],
