@@ -154,6 +154,7 @@ export async function fetchFrequentlyBoughtTogether(
 }
 
 export async function fetchHomepageProducts(): Promise<{
+  staples: Product[]
   trending: Product[]
   newArrivals: Product[]
   categoryCount: Record<string, number>
@@ -163,6 +164,7 @@ export async function fetchHomepageProducts(): Promise<{
   const { configured } = getSupabasePublicConfig()
   if (!configured) {
     return {
+      staples: [],
       trending: [],
       newArrivals: [],
       categoryCount: {},
@@ -175,6 +177,7 @@ export async function fetchHomepageProducts(): Promise<{
     const supabase = await createClientOptional()
     if (!supabase) {
       return {
+        staples: [],
         trending: [],
         newArrivals: [],
         categoryCount: {},
@@ -189,6 +192,7 @@ export async function fetchHomepageProducts(): Promise<{
 
     if (catRes.error) {
       return {
+        staples: [],
         trending: [],
         newArrivals: [],
         categoryCount: {},
@@ -207,6 +211,7 @@ export async function fetchHomepageProducts(): Promise<{
     }, {})
 
     return {
+      staples: showcase.staples,
       trending: showcase.trending,
       newArrivals: showcase.newArrivals,
       categoryCount,
@@ -215,6 +220,7 @@ export async function fetchHomepageProducts(): Promise<{
     }
   } catch (e) {
     return {
+      staples: [],
       trending: [],
       newArrivals: [],
       categoryCount: {},

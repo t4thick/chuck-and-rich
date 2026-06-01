@@ -3,14 +3,21 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 const PRODUCT_SELECT = 'id,name,price,image_url,category,in_stock,description,created_at'
 
+/** Must appear on homepage — pinned before general trending */
+const STAPLE_PINS: { label: string; patterns: string[]; limit: number }[] = [
+  { label: 'fufu', patterns: ['fufu', 'fufuf'], limit: 3 },
+  { label: 'yam', patterns: ['yam'], limit: 1 },
+  { label: 'plantain', patterns: ['plantain'], limit: 2 },
+]
+
 /** Curated “Trending this week” — grocery staples first, cosmetics capped */
 const TRENDING_SLOTS: {
   category: string
   limit: number
   keywords?: string[]
 }[] = [
-  { category: 'Flours & Rice', limit: 2, keywords: ['fufu', 'yam', 'plantain', 'gari', 'rice', 'banku'] },
-  { category: 'Fresh Produce', limit: 2, keywords: ['yam', 'plantain', 'okra', 'ugwu'] },
+  { category: 'Flours & Rice', limit: 2, keywords: ['gari', 'banku', 'rice', 'konkonte'] },
+  { category: 'Fresh Produce', limit: 1, keywords: ['okra', 'ugwu', 'spinach'] },
   { category: 'Beverages', limit: 1 },
   { category: 'Spices', limit: 1 },
   { category: 'Snack', limit: 1 },
@@ -22,6 +29,11 @@ const TRENDING_SLOTS: {
 function nameMatchesKeywords(name: string, keywords: string[]): boolean {
   const n = name.toLowerCase()
   return keywords.some((k) => n.includes(k))
+}
+
+function nameMatchesPatterns(name: string, patterns: string[]): boolean {
+  const n = name.toLowerCase()
+  return patterns.some((p) => n.includes(p))
 }
 
 function pickFromRows(rows: Product[], limit: number, keywords?: string[]): Product[] {
@@ -40,9 +52,49 @@ function pickFromRows(rows: Product[], limit: number, keywords?: string[]): Prod
   return out
 }
 
+async function fetchStapleShowcase(supabase: SupabaseClient): Promise<Product[]> {
+  const out: Product[] = []
+  const used = new Set<string>()
+
+  for (const pin of STAPLE_PINS) {
+    const orFilter = pin.patterns.map((p) => `name.ilike.%${p}%`).join(',')
+    const { data } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('in_stock', true)
+      .or(orFilter)
+      .order('created_at', { ascending: false })
+      .limit(32)
+
+    const rows = ((data ?? []) as Product[]).sort((a, b) => {
+      const aImg = a.image_url?.trim() ? 1 : 0
+      const bImg = b.image_url?.trim() ? 1 : 0
+      if (bImg !== aImg) return bImg - aImg
+      const aMatch = nameMatchesPatterns(a.name, pin.patterns) ? 1 : 0
+      const bMatch = nameMatchesPatterns(b.name, pin.patterns) ? 1 : 0
+      return bMatch - aMatch
+    })
+
+    let added = 0
+    for (const p of rows) {
+      if (used.has(p.id)) continue
+      if (!nameMatchesPatterns(p.name, pin.patterns)) continue
+      used.add(p.id)
+      out.push(p)
+      added++
+      if (added >= pin.limit) break
+    }
+  }
+
+  return out
+}
+
 export async function fetchCuratedHomepageShowcase(
   supabase: SupabaseClient
-): Promise<{ trending: Product[]; newArrivals: Product[] }> {
+): Promise<{ staples: Product[]; trending: Product[]; newArrivals: Product[] }> {
+  const staples = await fetchStapleShowcase(supabase)
+  const used = new Set(staples.map((p) => p.id))
+
   const slotResults = await Promise.all(
     TRENDING_SLOTS.map(async (slot) => {
       const { data } = await supabase
@@ -57,7 +109,6 @@ export async function fetchCuratedHomepageShowcase(
   )
 
   const trending: Product[] = []
-  const used = new Set<string>()
   for (const batch of slotResults) {
     for (const p of batch) {
       if (used.has(p.id)) continue
@@ -66,7 +117,8 @@ export async function fetchCuratedHomepageShowcase(
     }
   }
 
-  if (trending.length < 8) {
+  const trendingTarget = 8
+  if (trending.length < trendingTarget) {
     const { data: fill } = await supabase
       .from('products')
       .select(PRODUCT_SELECT)
@@ -79,7 +131,7 @@ export async function fetchCuratedHomepageShowcase(
       if (used.has(p.id)) continue
       used.add(p.id)
       trending.push(p)
-      if (trending.length >= 8) break
+      if (trending.length >= trendingTarget) break
     }
   }
 
@@ -88,7 +140,7 @@ export async function fetchCuratedHomepageShowcase(
     .select(PRODUCT_SELECT)
     .eq('in_stock', true)
     .order('created_at', { ascending: false })
-    .limit(24)
+    .limit(32)
 
   const newArrivals: Product[] = []
   for (const p of (newest ?? []) as Product[]) {
@@ -98,5 +150,9 @@ export async function fetchCuratedHomepageShowcase(
     if (newArrivals.length >= 8) break
   }
 
-  return { trending: trending.slice(0, 8), newArrivals }
+  return {
+    staples,
+    trending: trending.slice(0, trendingTarget),
+    newArrivals,
+  }
 }

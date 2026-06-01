@@ -8,23 +8,48 @@ import { VisitSection } from '@/components/store/VisitSection'
 import { PRODUCT_CATEGORIES } from '@/lib/constants/categories'
 import { fetchHomepageProducts } from '@/lib/supabase/products'
 
-export default async function Home() {
-  const { trending, newArrivals, categoryCount, errorMessage } = await fetchHomepageProducts()
+const HOME_CATEGORY_ORDER = [
+  'Flours & Rice',
+  'Fresh Produce',
+  'Beverages',
+  'Meat and Seafood',
+  'Spices',
+  'Dairy And Tea',
+  'Bread',
+  'Snack',
+  'Canned',
+  'Cosmetics',
+] as const
 
-  const topCategories = PRODUCT_CATEGORIES.filter((c) => (categoryCount[c] ?? 0) > 0).slice(0, 10)
+export default async function Home() {
+  const { staples, trending, newArrivals, categoryCount, errorMessage } = await fetchHomepageProducts()
+
+  const withStock = PRODUCT_CATEGORIES.filter((c) => (categoryCount[c] ?? 0) > 0)
+  const ordered = HOME_CATEGORY_ORDER.filter((c) => withStock.includes(c))
+  const rest = withStock.filter((c) => !ordered.includes(c))
   const displayCategories =
-    topCategories.length > 0 ? topCategories : PRODUCT_CATEGORIES.slice(0, 10)
+    ordered.length > 0 ? [...ordered, ...rest].slice(0, 10) : PRODUCT_CATEGORIES.slice(0, 10)
 
   return (
     <>
       <HeroSection />
       <CategoryBrowse displayCategories={displayCategories} categoryCount={categoryCount} />
+      {staples.length > 0 && (
+        <ProductShowcase
+          title="Yam, fufu & staples"
+          subtitle="Plantain, fufu flour, yam box & pantry essentials."
+          products={staples}
+          errorMessage={errorMessage}
+          viewAllHref="/shop?category=Flours%20%26%20Rice"
+          priorityCount={4}
+        />
+      )}
       <ProductShowcase
         title="Trending this week"
-        subtitle="Staples, produce, drinks & more — picked across departments."
+        subtitle="Popular across departments — drinks, spices, snacks & more."
         products={trending}
         errorMessage={errorMessage}
-        priorityCount={4}
+        priorityCount={2}
       />
       <FeaturedCollections />
       <ProductShowcase

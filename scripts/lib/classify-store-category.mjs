@@ -112,6 +112,7 @@ const NAME_RULES = [
     cat: 'Flours & Rice',
     words: [
       'fufu',
+      'fufuf',
       'yam flour',
       'plantain flour',
       'plantain fufu',

@@ -2,13 +2,13 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { FEATURED_COLLECTIONS } from '@/lib/constants/collections'
-import { getBeveragesCollectionImage } from '@/lib/constants/category-images'
+import { getBeveragesCollectionImage, getCategoryImage } from '@/lib/constants/category-images'
 
-const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
-  staples: '/images/categories/flours-rice.jpg',
-  produce: '/images/categories/fresh-produce.jpg',
-  beverages: '/images/categories/beverages.jpg',
-  beauty: '/images/categories/cosmetics.jpg',
+const COLLECTION_CATEGORY: Record<string, string> = {
+  staples: 'Flours & Rice',
+  produce: 'Fresh Produce',
+  beverages: 'Beverages',
+  beauty: 'Cosmetics',
 }
 
 export function FeaturedCollections() {
@@ -16,8 +16,9 @@ export function FeaturedCollections() {
     if (col.id === 'beverages') {
       return { ...col, image: getBeveragesCollectionImage() }
     }
-    const local = LOCAL_CATEGORY_IMAGES[col.id]
-    return local ? { ...col, image: local } : col
+    const cat = COLLECTION_CATEGORY[col.id]
+    const fromCat = cat ? getCategoryImage(cat) : undefined
+    return fromCat ? { ...col, image: fromCat } : col
   })
 
   return (
@@ -37,7 +38,6 @@ export function FeaturedCollections() {
           </Link>
         </div>
 
-        {/* Mobile: horizontal scroll. sm+: 2-col grid → lg: 4-col */}
         <div className="-mx-4 mt-8 sm:mx-0">
           <div className="flex gap-4 overflow-x-auto scrollbar-none px-4 pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
             {collections.map((col) => (
