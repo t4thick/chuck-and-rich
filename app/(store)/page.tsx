@@ -25,8 +25,8 @@ export default async function Home() {
   const { staples, trending, newArrivals, categoryCount, errorMessage } = await fetchHomepageProducts()
 
   const withStock = PRODUCT_CATEGORIES.filter((c) => (categoryCount[c] ?? 0) > 0)
-  const ordered = HOME_CATEGORY_ORDER.filter((c) => withStock.includes(c))
-  const rest = withStock.filter((c) => !ordered.includes(c))
+  const ordered = HOME_CATEGORY_ORDER.filter((c) => (categoryCount[c] ?? 0) > 0)
+  const rest = withStock.filter((c) => !(HOME_CATEGORY_ORDER as readonly string[]).includes(c))
   const displayCategories =
     ordered.length > 0 ? [...ordered, ...rest].slice(0, 10) : PRODUCT_CATEGORIES.slice(0, 10)
 
