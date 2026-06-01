@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { CheckCircle2, Circle, Truck } from 'lucide-react'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { getShippingLabelConfigPublic } from '@/lib/shipping/label-config'
+import { isShippoConfigured, isUspsLabelsLive } from '@/lib/shipping/admin-ship-methods'
 import { getUspsConfigPublic } from '@/lib/shipping/usps-config'
 
 export default async function AdminShippingPage() {
@@ -17,53 +18,44 @@ export default async function AdminShippingPage() {
           Shipping workflow
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-earth-600">
-          {usps.uspsConfigured ? (
-            <>
-              <strong>USPS API connected.</strong> Open an order → <strong>Print shipping label</strong> →
-              label PDF opens and tracking saves automatically. Postage bills your USPS business account.
-            </>
-          ) : (
-            <>
-              Connect the USPS Labels API for one-click print in admin, or use Click-N-Ship and paste
-              tracking manually.
-            </>
-          )}
+          Each order offers three shipping lanes: <strong>Click-N-Ship</strong> and{' '}
+          <strong>Shippo</strong> (ready now — print elsewhere, paste tracking), plus{' '}
+          <strong>Print in admin</strong> (coming soon — one-click USPS API).
         </p>
       </div>
 
-      {usps.uspsConfigured ? (
-        <section className="admin-card border-brand-200 bg-brand-50/30">
-          <h2 className="admin-section-title">Print labels in admin</h2>
-          <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-earth-700">
-            <li>Open a paid US shipping order.</li>
-            <li>
-              Click <strong>Print shipping label</strong> — {usps.mailClass.replace(/_/g, ' ')},{' '}
-              {usps.defaultParcel.weightLb} lb default box.
-            </li>
-            <li>PDF opens; tracking is saved and the customer is emailed.</li>
-          </ol>
-        </section>
-      ) : (
-        <section className="admin-card">
-          <h2 className="admin-section-title">Manual fallback (Click-N-Ship)</h2>
-          <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-earth-700">
-            <li>Print packing slip from the order.</li>
-            <li>
-              Print label at{' '}
-              <a
-                href="https://cns.usps.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-brand-700 underline"
-              >
-                USPS Click-N-Ship
-              </a>
-              .
-            </li>
-            <li>Paste tracking → Save &amp; mark shipped.</li>
-          </ol>
-        </section>
-      )}
+      <section className="admin-card">
+        <h2 className="admin-section-title">Shipping lanes</h2>
+        <ul className="mt-4 space-y-3 text-sm text-earth-700">
+          <li className="flex gap-2">
+            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+              Ready
+            </span>
+            <span>
+              <strong>USPS Click-N-Ship</strong> — open cns.usps.com, paste tracking in admin.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+              Ready
+            </span>
+            <span>
+              <strong>Shippo</strong> — create label in Shippo, paste tracking
+              {isShippoConfigured() ? ' (API key on file for a future upgrade).' : '.'}
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+              Building
+            </span>
+            <span>
+              <strong>Print in admin</strong> — {usps.mailClass.replace(/_/g, ' ')} one-click when USPS approves
+              Labels API
+              {isUspsLabelsLive() && usps.uspsConfigured ? ' (enabled).' : '.'}
+            </span>
+          </li>
+        </ul>
+      </section>
 
       <section className="admin-card">
         <h2 className="admin-section-title">USPS API setup (one-click print)</h2>
@@ -80,7 +72,10 @@ export default async function AdminShippingPage() {
           .
         </p>
         <ol className="mt-4 list-inside list-decimal space-y-2 text-sm text-earth-700">
-          <li>Create an app → enable <strong>Labels</strong> and <strong>Payments</strong> APIs.</li>
+          <li>
+            Create an app → enable <strong>Labels</strong> and <strong>Domestic Prices</strong> (Products).
+            Address verify only needs <strong>Addresses</strong>.
+          </li>
           <li>Copy Consumer Key + Consumer Secret.</li>
           <li>
             From your USPS business account: EPS account number, CRID, MID (Mailer ID).

@@ -1,5 +1,6 @@
 import { createClientOptional } from '@/lib/supabase/server'
 import { getSupabasePublicConfig, formatCatalogError, SupabaseConfigError } from '@/lib/supabase/config'
+import { fetchCuratedHomepageShowcase } from '@/lib/supabase/homepage-curation'
 import type { Product } from '@/types'
 
 export type ProductsQueryResult = {
@@ -153,38 +154,46 @@ export async function fetchFrequentlyBoughtTogether(
 }
 
 export async function fetchHomepageProducts(): Promise<{
-  bestSellers: Product[]
+  trending: Product[]
+  newArrivals: Product[]
   categoryCount: Record<string, number>
   configured: boolean
   errorMessage: string | null
 }> {
   const { configured } = getSupabasePublicConfig()
   if (!configured) {
-    return { bestSellers: [], categoryCount: {}, configured: false, errorMessage: formatCatalogError(null, false) }
+    return {
+      trending: [],
+      newArrivals: [],
+      categoryCount: {},
+      configured: false,
+      errorMessage: formatCatalogError(null, false),
+    }
   }
 
   try {
     const supabase = await createClientOptional()
     if (!supabase) {
-      return { bestSellers: [], categoryCount: {}, configured: false, errorMessage: formatCatalogError(null, false) }
+      return {
+        trending: [],
+        newArrivals: [],
+        categoryCount: {},
+        configured: false,
+        errorMessage: formatCatalogError(null, false),
+      }
     }
-    const [bestRes, catRes] = await Promise.all([
-      // Fetch 16 so we can split into two non-overlapping showcase sections (trending + new arrivals).
-      supabase
-        .from('products')
-        .select('id,name,price,image_url,category,in_stock,description,created_at')
-        .eq('in_stock', true)
-        .order('created_at', { ascending: false })
-        .limit(16),
+    const [showcase, catRes] = await Promise.all([
+      fetchCuratedHomepageShowcase(supabase),
       supabase.from('products').select('category').eq('in_stock', true),
     ])
 
-    if (bestRes.error) {
+    if (catRes.error) {
       return {
-        bestSellers: [],
+        trending: [],
+        newArrivals: [],
         categoryCount: {},
         configured: true,
-        errorMessage: formatCatalogError(bestRes.error, true),
+        errorMessage: formatCatalogError(catRes.error, true),
       }
     }
 
@@ -198,14 +207,16 @@ export async function fetchHomepageProducts(): Promise<{
     }, {})
 
     return {
-      bestSellers: (bestRes.data ?? []) as Product[],
+      trending: showcase.trending,
+      newArrivals: showcase.newArrivals,
       categoryCount,
       configured: true,
       errorMessage: null,
     }
   } catch (e) {
     return {
-      bestSellers: [],
+      trending: [],
+      newArrivals: [],
       categoryCount: {},
       configured: configured,
       errorMessage: formatCatalogError(e instanceof Error ? e : { message: String(e) }, configured),

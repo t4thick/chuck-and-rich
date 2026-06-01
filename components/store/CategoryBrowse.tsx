@@ -46,8 +46,11 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
                         src={imageUrl}
                         alt=""
                         fill
-                        className="object-cover transition-opacity duration-150 group-hover:opacity-95"
-                        sizes="(max-width:640px) 50vw, 20vw"
+                        quality={90}
+                        unoptimized={imageUrl.startsWith('/images/categories/')}
+                        priority={cat === 'Beverages' || cat === 'Bread'}
+                        className="object-cover object-center transition-opacity duration-150 group-hover:opacity-95"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
                       />
                     ) : (
                       <span className="absolute inset-0 flex items-center justify-center bg-earth-100">

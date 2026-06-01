@@ -2,8 +2,24 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { FEATURED_COLLECTIONS } from '@/lib/constants/collections'
+import { getBeveragesCollectionImage } from '@/lib/constants/category-images'
+
+const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
+  staples: '/images/categories/flours-rice.jpg',
+  produce: '/images/categories/fresh-produce.jpg',
+  beverages: '/images/categories/beverages.jpg',
+  beauty: '/images/categories/cosmetics.jpg',
+}
 
 export function FeaturedCollections() {
+  const collections = FEATURED_COLLECTIONS.map((col) => {
+    if (col.id === 'beverages') {
+      return { ...col, image: getBeveragesCollectionImage() }
+    }
+    const local = LOCAL_CATEGORY_IMAGES[col.id]
+    return local ? { ...col, image: local } : col
+  })
+
   return (
     <section className="page-section bg-earth-50">
       <div className="store-container">
@@ -24,7 +40,7 @@ export function FeaturedCollections() {
         {/* Mobile: horizontal scroll. sm+: 2-col grid → lg: 4-col */}
         <div className="-mx-4 mt-8 sm:mx-0">
           <div className="flex gap-4 overflow-x-auto scrollbar-none px-4 pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
-            {FEATURED_COLLECTIONS.map((col) => (
+            {collections.map((col) => (
               <Link
                 key={col.id}
                 href={col.href}
@@ -34,7 +50,9 @@ export function FeaturedCollections() {
                   src={col.image}
                   alt=""
                   fill
-                  className="object-cover transition-opacity duration-150 group-hover:opacity-95"
+                  quality={90}
+                  unoptimized={col.image.startsWith('/images/categories/')}
+                  className="object-cover object-center transition-opacity duration-150 group-hover:opacity-95"
                   sizes="(max-width:640px) 75vw, 25vw"
                   aria-hidden
                 />

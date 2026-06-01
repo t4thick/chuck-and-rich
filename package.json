@@ -10,6 +10,7 @@
     "import:lovelyqueen": "node --env-file=.env.local scripts/import-lovelyqueen-to-supabase.mjs",
     "categories:reclassify": "node --env-file=.env.local scripts/reclassify-product-categories.mjs --apply",
     "categories:reclassify:dry": "node --env-file=.env.local scripts/reclassify-product-categories.mjs",
+    "categories:reclassify:prod": "node --env-file=.env.vercel.tmp scripts/reclassify-product-categories.mjs --apply",
     "dev:e2e": "next dev -p 3002",
     "build": "node scripts/next-dist-dir.cjs build && next build",
     "start": "next start",

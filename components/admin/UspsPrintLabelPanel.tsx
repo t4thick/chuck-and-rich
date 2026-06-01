@@ -33,10 +33,12 @@ export function UspsPrintLabelPanel({
   const [tracking, setTracking] = useState(initialTracking ?? '')
   const [postage, setPostage] = useState<number | null>(null)
   const [estimate, setEstimate] = useState<{ price: number; description: string } | null>(null)
+  const [rateError, setRateError] = useState('')
 
   useEffect(() => {
     let cancelled = false
     async function loadRate() {
+      setRateError('')
       try {
         const res = await fetch(`/api/admin/orders/${orderId}/shipping/usps-rate`, {
           method: 'POST',
@@ -44,12 +46,16 @@ export function UspsPrintLabelPanel({
           body: '{}',
         })
         const data = await res.json().catch(() => ({}))
-        if (!res.ok || cancelled) return
+        if (cancelled) return
+        if (!res.ok) {
+          setRateError(typeof data.error === 'string' ? data.error : 'Could not load rate estimate.')
+          return
+        }
         if (typeof data.price === 'number') {
           setEstimate({ price: data.price, description: data.description ?? 'USPS' })
         }
       } catch {
-        /* optional */
+        if (!cancelled) setRateError('Could not load rate estimate.')
       }
     }
     if (!labelUrl) void loadRate()
@@ -147,6 +153,8 @@ export function UspsPrintLabelPanel({
           <p className="mt-2 text-sm font-medium text-earth-900">
             Estimated postage: ${estimate.price.toFixed(2)} · {estimate.description}
           </p>
+        ) : rateError ? (
+          <p className="mt-2 text-xs font-medium text-amber-800">{rateError}</p>
         ) : (
           <p className="mt-2 text-xs text-earth-500">Loading rate estimate…</p>
         )}

@@ -18,6 +18,7 @@ import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { formatOrderNumber } from '@/lib/orders/order-number'
 import { getDefaultParcel } from '@/lib/shipping/label-config'
+import { isShippoConfigured, isUspsLabelsLive } from '@/lib/shipping/admin-ship-methods'
 import { getUspsConfigPublic, isUspsConfigured } from '@/lib/shipping/usps-config'
 
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
@@ -264,9 +265,7 @@ export default async function AdminOrderDetailPage({
             <div>
               <h2 className="admin-section-title">Ship this order</h2>
               <p className="mt-1 text-sm text-earth-500">
-                {uspsConfig.uspsConfigured
-                  ? `USPS ${uspsConfig.mailClass.replace(/_/g, ' ')} · one-click print`
-                  : 'USPS Click-N-Ship · paste tracking'}
+                Click-N-Ship, Shippo, or in-admin print (coming soon).
               </p>
               <div className="mt-4">
               <FulfillOrderShipping
@@ -274,6 +273,8 @@ export default async function AdminOrderDetailPage({
                 isPickup={shippingMethod === 'pickup'}
                 currentStatus={normalizedStatus}
                 uspsConfigured={isUspsConfigured()}
+                uspsLabelsLive={isUspsLabelsLive()}
+                shippoConfigured={isShippoConfigured()}
                 mailClass={uspsConfig.mailClass}
                 defaultParcel={defaultParcel}
                 initialLabelUrl={

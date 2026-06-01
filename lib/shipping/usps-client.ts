@@ -2,6 +2,10 @@ import type { DefaultParcel, ShipFromAddress } from '@/lib/shipping/label-config
 import { parseUspsLabelMultipart } from '@/lib/shipping/parse-multipart'
 import { parsePersonName } from '@/lib/shipping/parse-person-name'
 import { getUspsApiConfig, type UspsApiConfig } from '@/lib/shipping/usps-config'
+import { getUspsOAuthToken, resetUspsOAuthCache } from '@/lib/shipping/usps-oauth'
+
+const RATES_SCOPE = 'domestic-prices'
+const LABELS_SCOPE = 'labels'
 
 export type UspsLabelResult = {
   trackingNumber: string
@@ -16,7 +20,6 @@ type TokenCache = {
   expiresAt: number
 }
 
-let oauthCache: TokenCache | null = null
 let paymentCache: TokenCache | null = null
 
 function zip5(zip: string): string {
@@ -69,7 +72,9 @@ async function uspsJson<T>(
     } else if (buffer.length > 0 && buffer.length < 2000) {
       message = buffer.toString('utf8').trim() || message
     }
-    throw new Error(message)
+    const err = new Error(message) as Error & { status?: number }
+    err.status = res.status
+    throw err
   }
 
   if (contentType.includes('json')) {
@@ -79,40 +84,12 @@ async function uspsJson<T>(
   return { data: {} as T, contentType, buffer }
 }
 
-async function getOAuthToken(cfg: UspsApiConfig): Promise<string> {
-  const now = Date.now()
-  if (oauthCache && oauthCache.expiresAt > now + 60_000) {
-    return oauthCache.token
-  }
+async function getRatesOAuthToken(_cfg: UspsApiConfig): Promise<string> {
+  return getUspsOAuthToken('domestic-prices')
+}
 
-  const body = new URLSearchParams({
-    grant_type: 'client_credentials',
-    client_id: cfg.clientId,
-    client_secret: cfg.clientSecret,
-    scope: 'labels payments prices',
-  })
-
-  const res = await fetch(`${cfg.baseUrl}/oauth2/v3/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  })
-  const json = (await res.json().catch(() => ({}))) as {
-    access_token?: string
-    expires_in?: number
-    error_description?: string
-    message?: string
-  }
-
-  if (!res.ok || !json.access_token) {
-    throw new Error(json.error_description ?? json.message ?? 'Could not authenticate with USPS API.')
-  }
-
-  oauthCache = {
-    token: json.access_token,
-    expiresAt: now + (json.expires_in ?? 28_800) * 1000,
-  }
-  return json.access_token
+async function getLabelsOAuthToken(_cfg: UspsApiConfig): Promise<string> {
+  return getUspsOAuthToken('labels')
 }
 
 async function getPaymentToken(cfg: UspsApiConfig, bearer: string): Promise<string> {
@@ -184,31 +161,50 @@ export async function getUspsDomesticRate(input: {
   const cfg = getUspsApiConfig()
   if (!cfg) return null
 
-  const bearer = await getOAuthToken(cfg)
-  const { data } = await uspsJson<{
-    totalBasePrice?: number
-    rates?: Array<{ price?: number; mailClass?: string; description?: string }>
-  }>(cfg, '/prices/v3/base-rates/search', {
-    method: 'POST',
-    bearer,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      originZIPCode: zip5(input.fromZip),
-      destinationZIPCode: zip5(input.toZip),
-      weight: input.parcel.weightLb,
-      length: input.parcel.lengthIn,
-      width: input.parcel.widthIn,
-      height: input.parcel.heightIn,
-      mailClass: cfg.mailClass,
-      processingCategory: 'MACHINABLE',
-      destinationEntryFacilityType: 'NONE',
-      rateIndicator: 'SP',
-      priceType: 'COMMERCIAL',
-      accountType: cfg.accountType,
-      accountNumber: cfg.epsAccountNumber,
-      mailingDate: mailingDate(),
-    }),
+  const rateBody = JSON.stringify({
+    originZIPCode: zip5(input.fromZip),
+    destinationZIPCode: zip5(input.toZip),
+    weight: input.parcel.weightLb,
+    length: input.parcel.lengthIn,
+    width: input.parcel.widthIn,
+    height: input.parcel.heightIn,
+    mailClass: cfg.mailClass,
+    processingCategory: 'MACHINABLE',
+    destinationEntryFacilityType: 'NONE',
+    rateIndicator: 'SP',
+    priceType: 'COMMERCIAL',
+    accountType: cfg.accountType,
+    accountNumber: cfg.epsAccountNumber,
+    mailingDate: mailingDate(),
   })
+
+  async function fetchRate(bearer: string) {
+    return uspsJson<{
+      totalBasePrice?: number
+      rates?: Array<{ price?: number; mailClass?: string; description?: string }>
+    }>(cfg!, '/prices/v3/base-rates/search', {
+      method: 'POST',
+      bearer,
+      headers: { 'Content-Type': 'application/json' },
+      body: rateBody,
+    })
+  }
+
+  let bearer = await getRatesOAuthToken(cfg)
+  let data: Awaited<ReturnType<typeof fetchRate>>['data']
+  try {
+    ;({ data } = await fetchRate(bearer))
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : ''
+    const status = e && typeof e === 'object' && 'status' in e ? Number(e.status) : 0
+    if (status === 401 && /insufficient oauth scope/i.test(msg)) {
+      resetUspsOAuthCache(RATES_SCOPE)
+      bearer = await getRatesOAuthToken(cfg)
+      ;({ data } = await fetchRate(bearer))
+    } else {
+      throw e
+    }
+  }
 
   const rate = data.rates?.[0]
   const price = rate?.price ?? data.totalBasePrice
@@ -237,7 +233,7 @@ export async function createUspsDomesticLabel(input: {
     throw new Error('USPS API is not configured.')
   }
 
-  const bearer = await getOAuthToken(cfg)
+  const bearer = await getLabelsOAuthToken(cfg)
   const paymentToken = await getPaymentToken(cfg, bearer)
 
   const { contentType, buffer } = await uspsJson<unknown>(cfg, '/labels/v3/label', {
@@ -291,6 +287,6 @@ export async function createUspsDomesticLabel(input: {
 
 /** Clear cached tokens (tests / credential rotation). */
 export function resetUspsTokenCache(): void {
-  oauthCache = null
+  resetUspsOAuthCache()
   paymentCache = null
 }

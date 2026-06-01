@@ -8,7 +8,9 @@ import {
   type ProductWithCategory,
 } from '@/lib/checkout-totals'
 import {
+  formatAddressLine,
   isUnitedStatesCountry,
+  resolveShippingAddress,
   verifyUsDeliveryAddress,
 } from '@/lib/address/verify-us-address'
 import {
@@ -48,6 +50,8 @@ export async function POST(req: NextRequest) {
       name,
       phone,
       address,
+      address1,
+      address2,
       city,
       state,
       country,
@@ -56,7 +60,15 @@ export async function POST(req: NextRequest) {
       shippingMethod: rawShippingMethod,
     } = body
 
-    if (!name || !address || !city || !country || !items?.length) {
+    const addressLine1 =
+      typeof address1 === 'string'
+        ? address1.trim()
+        : typeof address === 'string'
+          ? address.trim()
+          : ''
+    const addressLine2 = typeof address2 === 'string' ? address2.trim() : ''
+
+    if (!name || !addressLine1 || !city || !country || !items?.length) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
     }
 
@@ -121,22 +133,51 @@ export async function POST(req: NextRequest) {
     const { orderItems: authoritativeItems, shipping, tax } = totals
     const shipping_method = shipping.method
 
+    let shippingAddress = {
+      line1: addressLine1,
+      line2: addressLine2,
+      city: String(city).trim(),
+      state: normalizedState || String(state).trim(),
+      postalCode: typeof postalCode === 'string' ? postalCode.trim() : '',
+    }
+
     if (shipping_method !== 'pickup' && isUnitedStatesCountry(String(country))) {
-      const zip = typeof postalCode === 'string' ? postalCode.trim() : ''
+      const zip = shippingAddress.postalCode
       if (!zip) {
         return NextResponse.json({ error: 'ZIP code is required.' }, { status: 400 })
       }
       const verified = await verifyUsDeliveryAddress({
-        line1: String(address).trim(),
-        city: String(city).trim(),
-        state: normalizedState || String(state).trim(),
+        line1: shippingAddress.line1,
+        line2: shippingAddress.line2,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
         postalCode: zip,
         country: String(country).trim(),
       })
       if (!verified.ok) {
-        return NextResponse.json({ error: verified.error }, { status: 400 })
+        return NextResponse.json(
+          {
+            error: verified.error,
+            suggested: verified.suggested ?? null,
+            corrections: verified.corrections ?? [],
+          },
+          { status: 400 }
+        )
       }
+      shippingAddress = resolveShippingAddress(
+        {
+          line1: shippingAddress.line1,
+          line2: shippingAddress.line2,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          postalCode: zip,
+          country: String(country).trim(),
+        },
+        verified
+      )
     }
+
+    const addressLine = formatAddressLine(shippingAddress)
 
     const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
     if (!stripeKey) {
@@ -207,11 +248,11 @@ export async function POST(req: NextRequest) {
         user_id: user.id,
         customer_name: String(name).trim(),
         customer_phone: phoneTrim,
-        address_line: String(address).trim(),
-        city: String(city).trim(),
-        state: normalizedState || '',
+        address_line: addressLine,
+        city: shippingAddress.city,
+        state: shippingAddress.state || '',
         country: normalizedCountry || '',
-        postal_code: typeof postalCode === 'string' ? postalCode.trim() : '',
+        postal_code: shippingAddress.postalCode || '',
         shipping_method,
         shipping_zone: shipping.zone,
       },

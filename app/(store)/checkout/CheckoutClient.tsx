@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/store/PageHeader'
 import { AddressAutocomplete } from '@/components/store/AddressAutocomplete'
 import { UsStateSelect } from '@/components/store/UsStateSelect'
 import { isUnitedStatesCountry } from '@/lib/address/verify-us-address'
+import type { ParsedAddress } from '@/lib/address/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CheckoutStripePayment } from './CheckoutStripePayment'
@@ -56,6 +57,8 @@ type CheckoutForm = {
 const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Mexico']
 
 const CHECKOUT_DRAFT_KEY = 'lq_checkout_draft_v1'
+
+type AddressVerifyStatus = 'idle' | 'checking' | 'ok' | 'correction' | 'error'
 
 function loadDraft(): Partial<CheckoutForm> | null {
   if (typeof window === 'undefined') return null
@@ -182,7 +185,10 @@ export function CheckoutClient({
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [returnUrl, setReturnUrl] = useState('')
   const [categoryByProductId, setCategoryByProductId] = useState<Record<string, string>>({})
-  const [addressVerified, setAddressVerified] = useState(Boolean(defaultAddress))
+  const [addressVerified, setAddressVerified] = useState(false)
+  const [addressVerifyStatus, setAddressVerifyStatus] = useState<AddressVerifyStatus>('idle')
+  const [suggestedAddress, setSuggestedAddress] = useState<ParsedAddress | null>(null)
+  const [addressVerifyError, setAddressVerifyError] = useState('')
 
   const cartFingerprint = useMemo(
     () => items.map((i) => `${i.product.id}:${i.quantity}`).join('|'),
@@ -192,6 +198,150 @@ export function CheckoutClient({
   useEffect(() => {
     setReturnUrl(`${getAuthSiteOrigin()}/checkout/success`)
   }, [])
+
+  useEffect(() => {
+    if (shippingMethod === 'pickup' || !isUnitedStatesCountry(form.country)) return
+
+    const zip = form.postalCode.trim()
+    if (!/^\d{5}$/.test(zip)) return
+
+    const ctrl = new AbortController()
+    const timer = window.setTimeout(() => {
+      fetch(`/api/address/city-state?ZIPCode=${encodeURIComponent(zip)}`, {
+        signal: ctrl.signal,
+      })
+        .then((r) => r.json())
+        .then((data: { ok?: boolean; city?: string; state?: string; error?: string }) => {
+          if (!data.ok || !data.city || !data.state) return
+
+          const uspsCity = data.city
+          const uspsState = data.state
+          const cityEmpty = !form.city.trim()
+          const stateEmpty = !form.state.trim()
+
+          if (cityEmpty || stateEmpty) {
+            setForm((prev) => ({
+              ...prev,
+              city: cityEmpty ? uspsCity : prev.city,
+              state: stateEmpty ? uspsState : prev.state,
+            }))
+            return
+          }
+
+          const normCity = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+          const cityMismatch = normCity(form.city) !== normCity(uspsCity)
+          const stateMismatch = form.state.trim().toUpperCase() !== uspsState.toUpperCase()
+          if (cityMismatch || stateMismatch) {
+            setAddressVerifyStatus('correction')
+            setSuggestedAddress({
+              line1: form.address1.trim(),
+              city: uspsCity,
+              state: uspsState,
+              country: 'United States',
+              postalCode: zip,
+            })
+            setAddressVerifyError(`ZIP ${zip} is ${uspsCity}, ${uspsState}.`)
+            setAddressVerified(false)
+          }
+        })
+        .catch((err: { name?: string }) => {
+          if (err?.name === 'AbortError') return
+        })
+    }, 400)
+
+    return () => {
+      window.clearTimeout(timer)
+      ctrl.abort()
+    }
+  }, [form.postalCode, form.city, form.state, form.address1, form.country, shippingMethod])
+
+  useEffect(() => {
+    if (shippingMethod === 'pickup' || !isUnitedStatesCountry(form.country)) {
+      setAddressVerifyStatus('idle')
+      setSuggestedAddress(null)
+      setAddressVerifyError('')
+      setAddressVerified(true)
+      return
+    }
+
+    const line1 = form.address1.trim()
+    const city = form.city.trim()
+    const state = form.state.trim()
+    const zip = form.postalCode.trim()
+    if (line1.length < 5 || city.length < 2 || state.length < 2 || !/^\d{5}/.test(zip)) {
+      setAddressVerifyStatus('idle')
+      setSuggestedAddress(null)
+      setAddressVerifyError('')
+      setAddressVerified(false)
+      return
+    }
+
+    const ctrl = new AbortController()
+    const timer = window.setTimeout(() => {
+      setAddressVerifyStatus('checking')
+      fetch('/api/address/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          line1,
+          line2: form.address2.trim(),
+          city,
+          state,
+          postalCode: zip,
+          country: form.country,
+        }),
+        signal: ctrl.signal,
+      })
+        .then((r) => r.json())
+        .then(
+          (data: {
+            ok?: boolean
+            error?: string
+            suggested?: ParsedAddress | null
+          }) => {
+            if (data.ok) {
+              setAddressVerifyStatus('ok')
+              setSuggestedAddress(null)
+              setAddressVerifyError('')
+              setAddressVerified(true)
+              return
+            }
+            if (data.suggested) {
+              setAddressVerifyStatus('correction')
+              setSuggestedAddress(data.suggested)
+              setAddressVerifyError(
+                data.error ?? 'USPS standardized this address. Use the suggested format.'
+              )
+              setAddressVerified(false)
+              return
+            }
+            setAddressVerifyStatus('error')
+            setSuggestedAddress(null)
+            setAddressVerifyError(data.error ?? 'Could not verify this address.')
+            setAddressVerified(false)
+          }
+        )
+        .catch((err: { name?: string }) => {
+          if (err?.name === 'AbortError') return
+          setAddressVerifyStatus('error')
+          setAddressVerifyError('Address verification unavailable. Try again.')
+          setAddressVerified(false)
+        })
+    }, 600)
+
+    return () => {
+      window.clearTimeout(timer)
+      ctrl.abort()
+    }
+  }, [
+    form.address1,
+    form.address2,
+    form.city,
+    form.state,
+    form.postalCode,
+    form.country,
+    shippingMethod,
+  ])
 
   useEffect(() => {
     const productIds = items.map((i) => i.product.id)
@@ -231,8 +381,26 @@ export function CheckoutClient({
     const addr = savedAddresses.find((a) => a.id === id)
     if (addr) {
       setForm(addressToForm(initialAccount, addr))
-      setAddressVerified(true)
+      setAddressVerified(false)
+      setAddressVerifyStatus('idle')
+      setSuggestedAddress(null)
+      setAddressVerifyError('')
     }
+  }
+
+  function applySuggestedAddress() {
+    if (!suggestedAddress) return
+    setForm((prev) => ({
+      ...prev,
+      address1: suggestedAddress.line1,
+      city: suggestedAddress.city,
+      state: suggestedAddress.state,
+      postalCode: suggestedAddress.postalCode,
+      country: suggestedAddress.country || prev.country,
+    }))
+    setSuggestedAddress(null)
+    setAddressVerifyStatus('idle')
+    setAddressVerifyError('')
   }
 
   const checkoutFingerprint = useMemo(
@@ -289,6 +457,9 @@ export function CheckoutClient({
       name === 'address2'
     ) {
       setAddressVerified(false)
+      setAddressVerifyStatus('idle')
+      setSuggestedAddress(null)
+      setAddressVerifyError('')
       setSelectedAddressId('new')
     }
   }
@@ -305,7 +476,12 @@ export function CheckoutClient({
       isUnitedStatesCountry(form.country) &&
       !addressVerified
     ) {
-      setError('Select a real US address from the suggestions, or choose a saved address.')
+      setError(
+        addressVerifyStatus === 'correction'
+          ? 'Use the USPS suggested address to continue.'
+          : addressVerifyError ||
+              'Enter a deliverable US address — verification runs automatically when city, state, and ZIP are filled in.'
+      )
       return
     }
 
@@ -319,7 +495,8 @@ export function CheckoutClient({
         body: JSON.stringify({
           name: form.name,
           phone: form.phone,
-          address: [form.address1.trim(), form.address2.trim()].filter(Boolean).join(', '),
+          address1: form.address1.trim(),
+          address2: form.address2.trim(),
           city: form.city,
           state: form.state,
           country: form.country,
@@ -336,6 +513,16 @@ export function CheckoutClient({
         if (res.status === 401) {
           router.push('/login?next=/checkout')
           return
+        }
+        if (data.suggested) {
+          setSuggestedAddress(data.suggested as ParsedAddress)
+          setAddressVerifyStatus('correction')
+          setAddressVerifyError(
+            typeof data.error === 'string'
+              ? data.error
+              : 'USPS standardized this address. Use the suggested format.'
+          )
+          setAddressVerified(false)
         }
         setError(typeof data.error === 'string' ? data.error : 'Could not start checkout.')
         return
@@ -509,12 +696,18 @@ export function CheckoutClient({
                     onChange={(v) => {
                       setSelectedAddressId('new')
                       setAddressVerified(false)
+                      setAddressVerifyStatus('idle')
+                      setSuggestedAddress(null)
+                      setAddressVerifyError('')
                       setForm((prev) => ({ ...prev, address1: v }))
                     }}
-                    onVerifiedChange={setAddressVerified}
+                    onVerifiedChange={() => {
+                      /* USPS verify runs when city/state/ZIP are complete */
+                    }}
                     onSelect={(parsed) => {
                       setSelectedAddressId('new')
-                      setAddressVerified(true)
+                      setAddressVerified(false)
+                      setAddressVerifyStatus('idle')
                       setForm((prev) => ({
                         ...prev,
                         address1: parsed.line1 || prev.address1,
@@ -566,6 +759,9 @@ export function CheckoutClient({
                         value={form.state}
                         onChange={(code) => {
                           setAddressVerified(false)
+                          setAddressVerifyStatus('idle')
+                          setSuggestedAddress(null)
+                          setAddressVerifyError('')
                           setSelectedAddressId('new')
                           setForm((prev) => ({ ...prev, state: code }))
                         }}
@@ -618,6 +814,40 @@ export function CheckoutClient({
                     />
                   </div>
                 </div>
+                {shippingMethod !== 'pickup' && isUnitedStatesCountry(form.country) ? (
+                  <div className="space-y-2">
+                    {addressVerifyStatus === 'checking' ? (
+                      <p className="text-xs text-earth-500">Verifying address with USPS…</p>
+                    ) : null}
+                    {addressVerifyStatus === 'ok' ? (
+                      <p className="text-xs font-medium text-brand-700">Address verified for delivery</p>
+                    ) : null}
+                    {addressVerifyStatus === 'correction' && suggestedAddress ? (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-sm">
+                        <p className="font-medium text-earth-900">{addressVerifyError}</p>
+                        <p className="mt-1 text-earth-700">
+                          {suggestedAddress.line1 ? `${suggestedAddress.line1}, ` : ''}
+                          {suggestedAddress.city}, {suggestedAddress.state}{' '}
+                          {suggestedAddress.postalCode}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={applySuggestedAddress}
+                        >
+                          Use suggested address
+                        </Button>
+                      </div>
+                    ) : null}
+                    {addressVerifyStatus === 'error' && addressVerifyError ? (
+                      <p className="text-xs font-medium text-red-700" role="alert">
+                        {addressVerifyError}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </CheckoutStep>
 
