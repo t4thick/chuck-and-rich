@@ -12,7 +12,7 @@ const REMOTE = {
   canned: 'photo-1601598704991-eef6114775e0',
   'caribbean-product': 'photo-1617631716600-6a454b430367',
   cosmetics: 'photo-1556228720-195a672e8a03',
-  'dairy-and-tea': 'photo-1488477181946-6428a0291777',
+  'dairy-and-tea': 'photo-1552593050-477020c5af3f',
   'flours-rice': 'photo-1686820740687-426a7b9b2043',
   'fresh-produce': 'photo-1607349913338-fca6f7fc42d0',
   'frozen-foods': 'photo-1601599967100-f16100982063',
