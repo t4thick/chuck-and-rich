@@ -2,19 +2,24 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { FEATURED_COLLECTIONS } from '@/lib/constants/collections'
-import { getBeveragesCollectionImage, getCategoryImage } from '@/lib/constants/category-images'
+import {
+  getBeveragesCollectionImage,
+  getCategoryImage,
+  getCosmeticsCollectionImage,
+} from '@/lib/constants/category-images'
 
 const COLLECTION_CATEGORY: Record<string, string> = {
   staples: 'Flours & Rice',
   produce: 'Fresh Produce',
-  beverages: 'Beverages',
-  beauty: 'Cosmetics',
 }
 
 export function FeaturedCollections() {
   const collections = FEATURED_COLLECTIONS.map((col) => {
     if (col.id === 'beverages') {
       return { ...col, image: getBeveragesCollectionImage() }
+    }
+    if (col.id === 'beauty') {
+      return { ...col, image: getCosmeticsCollectionImage() }
     }
     const cat = COLLECTION_CATEGORY[col.id]
     const fromCat = cat ? getCategoryImage(cat) : undefined

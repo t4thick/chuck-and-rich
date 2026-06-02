@@ -30,7 +30,7 @@ export const FEATURED_COLLECTIONS = [
     subtitle: 'Lotions, soaps & skincare',
     emoji: '✨',
     href: '/shop?category=Cosmetics',
-    image: '/images/categories/cosmetics.jpg',
+    image: '/images/categories/cosmetics.jpg', // same file as Cosmetics category tile
   },
 ] as const
 

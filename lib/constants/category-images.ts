@@ -85,3 +85,8 @@ export function getCategoryImage(category: string): string | undefined {
 export function getBeveragesCollectionImage(): string {
   return resolveCategoryImage('Beverages') ?? CATEGORY_REMOTE.Beverages
 }
+
+/** Featured “Beauty & Body Care” tile — same photo as Cosmetics category. */
+export function getCosmeticsCollectionImage(): string {
+  return resolveCategoryImage('Cosmetics') ?? CATEGORY_REMOTE.Cosmetics
+}
