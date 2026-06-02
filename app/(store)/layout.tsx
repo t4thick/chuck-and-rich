@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { LocalBusinessJsonLd } from '@/components/seo/LocalBusinessJsonLd'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { MobileBottomNav } from '@/components/store/MobileBottomNav'
@@ -10,6 +11,7 @@ import { StoreMobileChrome } from '@/components/store/StoreMobileChrome'
 export default function StoreLayout({ children }: { children: ReactNode }) {
   return (
     <StoreMobileChrome>
+      <LocalBusinessJsonLd />
       <AnnouncementBar />
       <Navbar />
       <main className="flex-1">{children}</main>

@@ -193,7 +193,7 @@ export function AdminOrderNotifier() {
   }
 
   return (
-    <>
+    <div className="admin-order-notifier">
       <div
         role="status"
         aria-live="polite"
@@ -271,6 +271,6 @@ export function AdminOrderNotifier() {
           </button>
         </div>
       </div>
-    </>
+    </div>
   )
 }

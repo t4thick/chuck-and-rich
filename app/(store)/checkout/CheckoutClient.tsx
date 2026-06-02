@@ -964,7 +964,7 @@ export function CheckoutClient({
                       {loading ? 'Preparing…' : `Continue to pay · $${grandTotal.toFixed(2)}`}
                     </Button>
                     <p className="mt-2 text-center text-xs text-earth-500">
-                      Apple Pay, Google Pay, and cards via Stripe
+                      You&apos;ll enter card or wallet details on the next step
                     </p>
                   </div>
                 )}

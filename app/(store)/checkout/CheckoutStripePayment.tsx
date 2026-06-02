@@ -119,13 +119,6 @@ function PayForm({ clientSecret, returnUrl, totalLabel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-sm font-medium text-earth-800">
-        Apple Pay, Google Pay, or card
-      </p>
-      <p className="text-xs text-earth-500">
-        On iPhone, use Safari and tap the Apple Pay tab when it appears.
-      </p>
-
       <div className="rounded-xl border border-earth-200 bg-white p-3 sm:p-4">
         <PaymentElement
           options={{

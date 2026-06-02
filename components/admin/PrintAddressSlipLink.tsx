@@ -22,8 +22,6 @@ export function PrintAddressSlipLink({
       <div className="mt-3 flex flex-wrap gap-2">
         <Link
           href={`/admin/orders/${orderId}/print-slip?print=1`}
-          target="_blank"
-          rel="noopener noreferrer"
           className={cn(buttonVariants({ variant: 'default', size: 'default' }))}
         >
           <FileText className="h-4 w-4" aria-hidden />
