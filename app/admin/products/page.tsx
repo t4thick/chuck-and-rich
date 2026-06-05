@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { AlertTriangle, Package, Plus, Search } from 'lucide-react'
+import { AlertTriangle, FileText, Package, Plus, Search } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { Button } from '@/components/ui/button'
@@ -138,11 +138,18 @@ export default async function AdminProductsPage({
             {visible.length} shown · {total} total · {inStockCount} in stock · {outOfStockCount} out of stock
           </p>
         </div>
-        <Link href="/admin/products/new" className="no-underline">
-          <Button size="sm" className="gap-1.5">
-            <Plus className="h-4 w-4" /> Add product
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/products/descriptions" className="no-underline">
+            <Button size="sm" variant="outline" className="gap-1.5">
+              <FileText className="h-4 w-4" /> Descriptions
+            </Button>
+          </Link>
+          <Link href="/admin/products/new" className="no-underline">
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-4 w-4" /> Add product
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Low stock alert */}

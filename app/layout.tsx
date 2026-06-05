@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Montserrat } from 'next/font/google'
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
+import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/context/CartContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { RecentlyViewedProvider } from '@/context/RecentlyViewedContext'
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <ToastProvider>{children}</ToastProvider>
           </RecentlyViewedProvider>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   )
