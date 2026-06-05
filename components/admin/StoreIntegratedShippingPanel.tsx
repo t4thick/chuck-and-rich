@@ -61,8 +61,8 @@ export function StoreIntegratedShippingPanel({
               automatically.
             </p>
           </div>
-          <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900">
-            Coming soon
+          <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800">
+            Ready
           </span>
         </div>
       </div>
