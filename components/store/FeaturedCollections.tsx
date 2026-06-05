@@ -31,8 +31,8 @@ export function FeaturedCollections() {
       <div className="store-container">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="section-title">Featured</h2>
-            <p className="section-subtitle">Promotions and curated picks.</p>
+            <h2 className="section-title">Shop by department</h2>
+            <p className="section-subtitle">Rice &amp; flour, fresh produce, drinks, beauty &amp; more.</p>
           </div>
           <Link
             href="/shop"

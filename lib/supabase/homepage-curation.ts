@@ -124,11 +124,13 @@ export async function fetchCuratedHomepageShowcase(
       .select(PRODUCT_SELECT)
       .eq('in_stock', true)
       .neq('category', 'Cosmetics')
+      .not('image_url', 'is', null)
       .order('created_at', { ascending: false })
       .limit(24)
 
     for (const p of (fill ?? []) as Product[]) {
       if (used.has(p.id)) continue
+      if (!p.image_url?.trim()) continue
       used.add(p.id)
       trending.push(p)
       if (trending.length >= trendingTarget) break
@@ -139,15 +141,17 @@ export async function fetchCuratedHomepageShowcase(
     .from('products')
     .select(PRODUCT_SELECT)
     .eq('in_stock', true)
+    .not('image_url', 'is', null)
     .order('created_at', { ascending: false })
     .limit(32)
 
   const newArrivals: Product[] = []
   for (const p of (newest ?? []) as Product[]) {
     if (used.has(p.id)) continue
+    if (!p.image_url?.trim()) continue
     used.add(p.id)
     newArrivals.push(p)
-    if (newArrivals.length >= 8) break
+    if (newArrivals.length >= 4) break
   }
 
   return {

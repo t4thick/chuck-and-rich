@@ -48,12 +48,12 @@ export function HeroSection() {
           <div className="flex justify-center">
             <StoreLogo variant="mark" linked={false} className="mx-auto" />
           </div>
-          <h1 className="mt-2 text-balance text-[1.875rem] font-semibold leading-[1.12] tracking-tight text-earth-900">
+          <h1 className="mt-2 text-balance text-[2rem] font-bold leading-[1.1] tracking-tight text-earth-900">
             African &amp; Caribbean groceries,{' '}
             <span className="text-brand-700">delivered fast.</span>
           </h1>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-earth-600">
-            Search 170+ products. Pickup in Columbus or shipped nationwide.
+            170+ products from West Africa &amp; the Caribbean. Pickup in Columbus or shipped nationwide.
           </p>
 
           <div className="mt-4 w-full">
@@ -122,13 +122,13 @@ export function HeroSection() {
             <div className="flex justify-center">
               <StoreLogo variant="mark" linked={false} />
             </div>
-            <h1 className="mt-4 text-balance text-5xl font-semibold tracking-tight text-earth-900 lg:text-[3.25rem] lg:leading-[1.08]">
+            <h1 className="mt-4 text-balance text-5xl font-bold tracking-tight text-earth-900 lg:text-[3.5rem] lg:leading-[1.08]">
               African &amp; Caribbean groceries,
               <br />
-              <span className="text-brand-700"> delivered fast.</span>
+              <span className="text-brand-700">delivered fast.</span>
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-earth-600 sm:text-lg">
-              Search 170+ products across 14 departments. Pickup in Columbus or shipped to your door.
+              170+ products from West Africa &amp; the Caribbean — fufu, palm oil, spices, drinks &amp; more. Pickup in Columbus or shipped nationwide.
             </p>
 
             <div className="mx-auto mt-8 max-w-xl shadow-[0_8px_30px_rgb(0_0_0/0.06)]">
