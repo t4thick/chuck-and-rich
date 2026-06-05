@@ -5,7 +5,9 @@ import { createClientOptional } from '@/lib/supabase/server'
 import { AccountSignOut } from '@/components/AccountSignOut'
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner'
 import { ORDER_STATUS_LABEL, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
-import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
+import { Button } from '@/components/ui/button'
+import { formatMoney } from '@/lib/utils'
+import { formatOrderNumber } from '@/lib/orders/order-number'
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
@@ -15,9 +17,6 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   delivered: 'bg-emerald-50 text-emerald-700',
   cancelled: 'bg-red-50 text-red-700',
 }
-import { Button } from '@/components/ui/button'
-import { formatMoney } from '@/lib/utils'
-import { formatOrderNumber } from '@/lib/orders/order-number'
 
 type AccountOrderRow = {
   id: string
@@ -31,7 +30,8 @@ type AccountOrderRow = {
 
 function estimatedDelivery(createdAt: string, shippingMethod: string | null): string {
   const method = shippingMethod ?? 'standard'
-  const days = method === 'pickup' ? 0
+  const days =
+    method === 'pickup' ? 0
     : method === 'express' || method === 'overnight' ? 2
     : method === 'economy' ? 10
     : 6
@@ -131,9 +131,7 @@ export default async function AccountPage() {
             <p className="mt-4 font-medium text-earth-800">No orders yet</p>
             <p className="mt-1 text-sm text-earth-600">When you place an order, it will show up here.</p>
             <Link href="/shop" className="mt-6 inline-block no-underline">
-              <Button className="rounded-xl">
-                Start shopping
-              </Button>
+              <Button className="rounded-xl">Start shopping</Button>
             </Link>
           </div>
         ) : (
