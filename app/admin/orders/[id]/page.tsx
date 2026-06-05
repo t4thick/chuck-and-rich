@@ -265,7 +265,7 @@ export default async function AdminOrderDetailPage({
             <div>
               <h2 className="admin-section-title">Ship this order</h2>
               <p className="mt-1 text-sm text-earth-500">
-                Click-N-Ship, Shippo, or in-admin print (coming soon).
+                One-click Shippo label — postage billed to your Shippo account.
               </p>
               <div className="mt-4">
               <FulfillOrderShipping
