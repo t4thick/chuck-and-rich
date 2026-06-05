@@ -18,40 +18,20 @@ export default async function AdminShippingPage() {
           Shipping workflow
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-earth-600">
-          Each order offers three shipping lanes: <strong>Click-N-Ship</strong> and{' '}
-          <strong>Shippo</strong> (ready now — print elsewhere, paste tracking), plus{' '}
-          <strong>Print in admin</strong> (coming soon — one-click USPS API).
+          Shippo is connected and active. Click <strong>Print in admin</strong> on any order to generate a USPS label instantly — postage billed to your Shippo account.
         </p>
       </div>
 
       <section className="admin-card">
-        <h2 className="admin-section-title">Shipping lanes</h2>
+        <h2 className="admin-section-title">Shipping status</h2>
         <ul className="mt-4 space-y-3 text-sm text-earth-700">
           <li className="flex gap-2">
             <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-              Ready
+              Active
             </span>
             <span>
-              <strong>USPS Click-N-Ship</strong> — open cns.usps.com, paste tracking in admin.
-            </span>
-          </li>
-          <li className="flex gap-2">
-            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-              Ready
-            </span>
-            <span>
-              <strong>Shippo</strong> — create label in Shippo, paste tracking
-              {isShippoConfigured() ? ' (API key on file for a future upgrade).' : '.'}
-            </span>
-          </li>
-          <li className="flex gap-2">
-            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
-              Building
-            </span>
-            <span>
-              <strong>Print in admin</strong> — {usps.mailClass.replace(/_/g, ' ')} one-click when USPS approves
-              Labels API
-              {isUspsLabelsLive() && usps.uspsConfigured ? ' (enabled).' : '.'}
+              <strong>Print in admin (Shippo)</strong> — one-click USPS Ground Advantage label from any order page. Postage billed to your Shippo account.
+              {isShippoConfigured() ? ' API key on file ✓' : ''}
             </span>
           </li>
         </ul>

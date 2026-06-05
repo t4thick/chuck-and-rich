@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { PAYMENT_LABEL, type PaymentMethod } from '@/lib/payment-methods'
 import { OrderStatusUpdater } from '@/components/admin/OrderStatusUpdater'
 import { RefundButton } from '@/components/admin/RefundButton'
+import { ManualRefundButton } from '@/components/admin/ManualRefundButton'
+import { AdminNotePanel } from '@/components/admin/AdminNotePanel'
 import { FulfillOrderShipping } from '@/components/admin/FulfillOrderShipping'
 import { PrintAddressSlipLink } from '@/components/admin/PrintAddressSlipLink'
 import {
@@ -298,6 +300,14 @@ export default async function AdminOrderDetailPage({
             </div>
           </section>
 
+          {/* Admin notes */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Internal notes</h2>
+            <div className="mt-4">
+              <AdminNotePanel orderId={order.id} currentStatus={normalizedStatus} />
+            </div>
+          </section>
+
           {/* Status updater */}
           <section className="admin-card">
             <h2 className="admin-section-title">Update status</h2>
@@ -310,7 +320,7 @@ export default async function AdminOrderDetailPage({
             </div>
           </section>
 
-          {/* Refund */}
+          {/* Refund — Stripe */}
           {pm === 'stripe' && !order.refunded_at && (
             <section className="admin-card">
               <h2 className="admin-section-title">Refund</h2>
@@ -318,6 +328,20 @@ export default async function AdminOrderDetailPage({
                 <RefundButton
                   orderId={order.id}
                   maxAmount={Number(order.total_amount ?? 0)}
+                />
+              </div>
+            </section>
+          )}
+
+          {/* Refund — COD / manual */}
+          {pm !== 'stripe' && !order.refunded_at && (
+            <section className="admin-card">
+              <h2 className="admin-section-title">Refund</h2>
+              <p className="mt-1 text-sm text-earth-500">Cash or manual payment — mark refunded after returning money.</p>
+              <div className="mt-4">
+                <ManualRefundButton
+                  orderId={order.id}
+                  amount={Number(order.total_amount ?? 0)}
                 />
               </div>
             </section>

@@ -1,13 +1,13 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { AlertTriangle, Package, Plus, Search } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { DeleteProductButton } from '@/components/admin/DeleteProductButton'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { BulkProductsTable } from '@/components/admin/BulkProductsTable'
 
 type StockFilter = 'all' | 'in' | 'out'
+type SortKey = 'name_asc' | 'name_desc' | 'price_asc' | 'price_desc'
 
 type AdminProduct = {
   id: string
@@ -22,6 +22,11 @@ type AdminProduct = {
 function normalizeStock(raw: string | undefined): StockFilter {
   if (raw === 'in' || raw === 'out') return raw
   return 'all'
+}
+
+function normalizeSort(raw: string | undefined): SortKey {
+  if (raw === 'name_desc' || raw === 'price_asc' || raw === 'price_desc') return raw
+  return 'name_asc'
 }
 
 function buildQuery(
@@ -40,18 +45,19 @@ function buildQuery(
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string; q?: string; stock?: string }>
+  searchParams: Promise<{ cat?: string; q?: string; stock?: string; sort?: string; minPrice?: string; maxPrice?: string }>
 }) {
   await requireAdminPage()
   const sp = await searchParams
   const activeCategory = sp.cat?.trim() || null
   const search = sp.q?.trim() || ''
   const stock = normalizeStock(sp.stock)
+  const sort = normalizeSort(sp.sort)
+  const minPrice = sp.minPrice ? parseFloat(sp.minPrice) : null
+  const maxPrice = sp.maxPrice ? parseFloat(sp.maxPrice) : null
 
-  const linkParams = { cat: sp.cat, q: sp.q, stock: sp.stock }
+  const linkParams = { cat: sp.cat, q: sp.q, stock: sp.stock, sort: sp.sort, minPrice: sp.minPrice, maxPrice: sp.maxPrice }
 
-  // Single source of truth: pull everything, then filter / group in memory.
-  // With ~175 products this is far cheaper than multiple round-trips.
   const { data } = await supabaseAdmin
     .from('products')
     .select('id, name, category, price, image_url, in_stock, created_at')
@@ -63,25 +69,33 @@ export default async function AdminProductsPage({
   const inStockCount = allProducts.filter((p) => p.in_stock).length
   const outOfStockCount = total - inStockCount
 
-  // Visible products after applying search + stock + category filters
   const searchLower = search.toLowerCase()
   const matchesFilters = (p: AdminProduct) => {
     if (stock === 'in' && !p.in_stock) return false
     if (stock === 'out' && p.in_stock) return false
     if (searchLower && !p.name.toLowerCase().includes(searchLower)) return false
     if (activeCategory && (p.category ?? '') !== activeCategory) return false
+    if (minPrice !== null && Number(p.price ?? 0) < minPrice) return false
+    if (maxPrice !== null && Number(p.price ?? 0) > maxPrice) return false
     return true
   }
 
-  const visible = allProducts.filter(matchesFilters)
+  let visible = allProducts.filter(matchesFilters)
 
-  // For the chip strip we want category counts AFTER search/stock filters but
-  // BEFORE category filter is applied — that way you can see how many results
-  // each category would yield from your current search.
+  // Sort
+  visible = [...visible].sort((a, b) => {
+    if (sort === 'price_asc') return Number(a.price ?? 0) - Number(b.price ?? 0)
+    if (sort === 'price_desc') return Number(b.price ?? 0) - Number(a.price ?? 0)
+    if (sort === 'name_desc') return b.name.localeCompare(a.name)
+    return a.name.localeCompare(b.name)
+  })
+
   const productsAfterNonCatFilters = allProducts.filter((p) => {
     if (stock === 'in' && !p.in_stock) return false
     if (stock === 'out' && p.in_stock) return false
     if (searchLower && !p.name.toLowerCase().includes(searchLower)) return false
+    if (minPrice !== null && Number(p.price ?? 0) < minPrice) return false
+    if (maxPrice !== null && Number(p.price ?? 0) > maxPrice) return false
     return true
   })
 
@@ -97,8 +111,6 @@ export default async function AdminProductsPage({
     (a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0])
   )
 
-  // Grouped view: products in `visible`, bucketed by category, only categories
-  // with at least one product after filtering.
   const grouped = new Map<string, AdminProduct[]>()
   for (const p of visible) {
     const cat = p.category ?? 'Uncategorized'
@@ -110,14 +122,20 @@ export default async function AdminProductsPage({
     (a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0])
   )
 
+  const SORT_OPTIONS: Array<{ id: SortKey; label: string }> = [
+    { id: 'name_asc', label: 'Name A–Z' },
+    { id: 'name_desc', label: 'Name Z–A' },
+    { id: 'price_asc', label: 'Price low–high' },
+    { id: 'price_desc', label: 'Price high–low' },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="admin-page-title">Products</h1>
           <p className="mt-1 text-sm text-earth-500">
-            {visible.length} shown · {total} total · {inStockCount} in stock ·{' '}
-            {outOfStockCount} out of stock
+            {visible.length} shown · {total} total · {inStockCount} in stock · {outOfStockCount} out of stock
           </p>
         </div>
         <Link href="/admin/products/new" className="no-underline">
@@ -127,28 +145,80 @@ export default async function AdminProductsPage({
         </Link>
       </div>
 
-      {/* Search + stock filter */}
-      <form method="GET" className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full max-w-md flex-1">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-earth-400"
-            aria-hidden
-          />
-          <Input
-            type="search"
-            name="q"
-            defaultValue={search}
-            placeholder="Search by name…"
-            className="pl-10"
-          />
+      {/* Low stock alert */}
+      {outOfStockCount > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" aria-hidden />
+          <div>
+            <p className="text-sm font-semibold text-amber-900">
+              {outOfStockCount} product{outOfStockCount === 1 ? '' : 's'} out of stock
+            </p>
+            <p className="mt-0.5 text-xs text-amber-700">
+              Customers can&apos;t buy these until you restock them.{' '}
+              <Link href={`/admin/products${buildQuery(linkParams, { stock: 'out', cat: undefined })}`}
+                className="font-medium underline text-amber-800"
+              >
+                View out of stock →
+              </Link>
+            </p>
+          </div>
         </div>
-        {activeCategory && <input type="hidden" name="cat" value={activeCategory} />}
-        {stock !== 'all' && <input type="hidden" name="stock" value={stock} />}
-        <Button type="submit" size="sm">
-          Search
-        </Button>
+      )}
 
-        <div className="flex flex-1 justify-end gap-1.5">
+      {/* Search + filters */}
+      <form method="GET" className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full max-w-sm flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-earth-400" aria-hidden />
+            <Input type="search" name="q" defaultValue={search} placeholder="Search by name…" className="pl-10" />
+          </div>
+          {activeCategory && <input type="hidden" name="cat" value={activeCategory} />}
+          {stock !== 'all' && <input type="hidden" name="stock" value={stock} />}
+          {sort !== 'name_asc' && <input type="hidden" name="sort" value={sort} />}
+          <Button type="submit" size="sm">Search</Button>
+        </div>
+
+        {/* Price range */}
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-earth-600">Price:</span>
+          <div className="flex items-center gap-1">
+            <span className="text-earth-400">$</span>
+            <input
+              type="number"
+              name="minPrice"
+              defaultValue={sp.minPrice ?? ''}
+              placeholder="Min"
+              min="0"
+              step="0.01"
+              className="form-input w-20 py-1 text-sm"
+            />
+          </div>
+          <span className="text-earth-400">—</span>
+          <div className="flex items-center gap-1">
+            <span className="text-earth-400">$</span>
+            <input
+              type="number"
+              name="maxPrice"
+              defaultValue={sp.maxPrice ?? ''}
+              placeholder="Max"
+              min="0"
+              step="0.01"
+              className="form-input w-20 py-1 text-sm"
+            />
+          </div>
+          {(sp.minPrice || sp.maxPrice) && (
+            <Link href={`/admin/products${buildQuery(linkParams, { minPrice: undefined, maxPrice: undefined })}`}
+              className="text-xs text-earth-500 hover:text-earth-700 underline"
+            >
+              Clear
+            </Link>
+          )}
+        </div>
+      </form>
+
+      {/* Sort + stock filter row */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-1.5">
           {([
             { id: 'all', label: 'All' },
             { id: 'in', label: 'In stock' },
@@ -156,50 +226,44 @@ export default async function AdminProductsPage({
           ] as Array<{ id: StockFilter; label: string }>).map((opt) => {
             const active = opt.id === stock
             return (
-              <Link
-                key={opt.id}
+              <Link key={opt.id}
                 href={`/admin/products${buildQuery(linkParams, { stock: opt.id === 'all' ? undefined : opt.id })}`}
-                className={`admin-status-pill no-underline ${
-                  active
-                    ? 'bg-earth-900 text-white'
-                    : 'bg-white text-earth-700 ring-1 ring-earth-200 hover:bg-earth-50'
-                }`}
+                className={`admin-status-pill no-underline ${active ? 'bg-earth-900 text-white' : 'bg-white text-earth-700 ring-1 ring-earth-200 hover:bg-earth-50'}`}
               >
                 {opt.label}
               </Link>
             )
           })}
         </div>
-      </form>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-earth-500">Sort:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {SORT_OPTIONS.map((opt) => (
+              <Link key={opt.id}
+                href={`/admin/products${buildQuery(linkParams, { sort: opt.id === 'name_asc' ? undefined : opt.id })}`}
+                className={`admin-status-pill no-underline ${sort === opt.id ? 'bg-earth-900 text-white' : 'bg-white text-earth-700 ring-1 ring-earth-200 hover:bg-earth-50'}`}
+              >
+                {opt.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Category chips */}
       <div className="-mx-1 flex flex-wrap gap-1.5 px-1">
-        <Link
-          href={`/admin/products${buildQuery(linkParams, { cat: undefined })}`}
-          className={`admin-status-pill no-underline ${
-            !activeCategory
-              ? 'bg-earth-900 text-white'
-              : 'bg-white text-earth-700 ring-1 ring-earth-200 hover:bg-earth-50'
-          }`}
+        <Link href={`/admin/products${buildQuery(linkParams, { cat: undefined })}`}
+          className={`admin-status-pill no-underline ${!activeCategory ? 'bg-earth-900 text-white' : 'bg-white text-earth-700 ring-1 ring-earth-200 hover:bg-earth-50'}`}
         >
           All categories ({productsAfterNonCatFilters.length})
         </Link>
         {sortedCategories.map(([cat, stats]) => {
           const active = activeCategory === cat
           return (
-            <Link
-              key={cat}
+            <Link key={cat}
               href={`/admin/products${buildQuery(linkParams, { cat })}`}
-              className={`admin-status-pill inline-flex items-center gap-1 no-underline ${
-                active
-                  ? 'bg-earth-900 text-white'
-                  : 'bg-white text-earth-700 ring-1 ring-earth-200 hover:bg-earth-50'
-              }`}
-              title={
-                stats.outOfStock > 0
-                  ? `${stats.outOfStock} out of stock`
-                  : undefined
-              }
+              className={`admin-status-pill inline-flex items-center gap-1 no-underline ${active ? 'bg-earth-900 text-white' : 'bg-white text-earth-700 ring-1 ring-earth-200 hover:bg-earth-50'}`}
+              title={stats.outOfStock > 0 ? `${stats.outOfStock} out of stock` : undefined}
             >
               {cat} ({stats.total})
               {stats.outOfStock > 0 && (
@@ -210,7 +274,6 @@ export default async function AdminProductsPage({
         })}
       </div>
 
-      {/* Empty / no results */}
       {visible.length === 0 ? (
         <div className="admin-card flex flex-col items-center text-center">
           <Package className="h-10 w-10 text-earth-300" strokeWidth={1.5} aria-hidden />
@@ -225,33 +288,23 @@ export default async function AdminProductsPage({
             <>
               <p className="mt-3 text-sm text-earth-600">No products match these filters.</p>
               <Link href="/admin/products" className="mt-4 no-underline">
-                <Button size="sm" variant="outline">
-                  Clear filters
-                </Button>
+                <Button size="sm" variant="outline">Clear filters</Button>
               </Link>
             </>
           )}
         </div>
       ) : activeCategory ? (
-        // Single-category flat view
-        <ProductTable products={visible} />
+        <BulkProductsTable products={visible} />
       ) : (
-        // Grouped view — one collapsible section per category
         <div className="space-y-4">
           {groupedEntries.map(([cat, items]) => {
             const outOfStock = items.filter((p) => !p.in_stock).length
             return (
-              <details
-                key={cat}
-                open
-                className="admin-card group overflow-hidden p-0"
-              >
+              <details key={cat} open className="admin-card group overflow-hidden p-0">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-earth-50">
                   <div className="flex items-center gap-3">
                     <h2 className="text-base font-semibold text-earth-900">{cat}</h2>
-                    <span className="admin-status-pill bg-earth-100 text-earth-700">
-                      {items.length}
-                    </span>
+                    <span className="admin-status-pill bg-earth-100 text-earth-700">{items.length}</span>
                     {outOfStock > 0 && (
                       <span className="admin-status-pill inline-flex items-center gap-1 bg-amber-50 text-amber-700">
                         <AlertTriangle className="h-3 w-3" aria-hidden />
@@ -259,15 +312,10 @@ export default async function AdminProductsPage({
                       </span>
                     )}
                   </div>
-                  <span
-                    className="text-earth-400 transition-transform group-open:rotate-180"
-                    aria-hidden
-                  >
-                    ▾
-                  </span>
+                  <span className="text-earth-400 transition-transform group-open:rotate-180" aria-hidden>▾</span>
                 </summary>
                 <div className="border-t border-earth-100">
-                  <ProductTable products={items} compact />
+                  <BulkProductsTable products={items} compact />
                 </div>
               </details>
             )
@@ -275,127 +323,5 @@ export default async function AdminProductsPage({
         </div>
       )}
     </div>
-  )
-}
-
-function ProductTable({
-  products,
-  compact = false,
-}: {
-  products: AdminProduct[]
-  compact?: boolean
-}) {
-  return (
-    <>
-      <div
-        className={`admin-table-wrap hidden overflow-x-auto sm:block ${
-          compact ? '' : 'rounded-xl border border-earth-200'
-        }`}
-      >
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Stock</th>
-              <th className="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              <tr key={p.id}>
-                <td style={{ width: 56 }}>
-                  <div className="relative h-10 w-10 overflow-hidden rounded-md border border-earth-200 bg-earth-50">
-                    {p.image_url ? (
-                      <Image
-                        src={p.image_url}
-                        alt=""
-                        fill
-                        sizes="40px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <Package className="h-4 w-4 text-earth-300" aria-hidden />
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="font-medium text-earth-900">{p.name}</td>
-                <td className="tabular-nums font-medium text-earth-900">
-                  ${Number(p.price ?? 0).toFixed(2)}
-                </td>
-                <td>
-                  <span
-                    className={`admin-status-pill ${
-                      p.in_stock
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : 'bg-red-50 text-red-700'
-                    }`}
-                  >
-                    {p.in_stock ? 'In stock' : 'Out'}
-                  </span>
-                </td>
-                <td className="text-right">
-                  <div className="inline-flex items-center gap-3 text-sm">
-                    <Link
-                      href={`/admin/products/${p.id}/edit`}
-                      className="font-medium text-brand-700 no-underline hover:text-brand-800"
-                    >
-                      Edit
-                    </Link>
-                    <DeleteProductButton id={p.id} name={p.name} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <ul className="space-y-2 sm:hidden">
-        {products.map((p) => (
-          <li key={p.id} className="admin-card flex gap-3">
-            <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border border-earth-200 bg-earth-50">
-              {p.image_url ? (
-                <Image src={p.image_url} alt="" fill sizes="56px" className="object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Package className="h-5 w-5 text-earth-300" aria-hidden />
-                </div>
-              )}
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col">
-              <p className="truncate font-medium text-earth-900">{p.name}</p>
-              <p className="mt-0.5 text-xs text-earth-500">{p.category ?? '—'}</p>
-              <div className="mt-2 flex items-center justify-between gap-3">
-                <span className="tabular-nums text-sm font-semibold text-earth-900">
-                  ${Number(p.price ?? 0).toFixed(2)}
-                </span>
-                <span
-                  className={`admin-status-pill ${
-                    p.in_stock
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-red-50 text-red-700'
-                  }`}
-                >
-                  {p.in_stock ? 'In stock' : 'Out'}
-                </span>
-              </div>
-              <div className="mt-3 flex items-center gap-3 text-sm">
-                <Link
-                  href={`/admin/products/${p.id}/edit`}
-                  className="font-medium text-brand-700 no-underline"
-                >
-                  Edit
-                </Link>
-                <DeleteProductButton id={p.id} name={p.name} />
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </>
   )
 }

@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { ORDER_STATUS_LABEL, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
 import { formatOrderNumber } from '@/lib/orders/order-number'
+import { EditCustomerForm } from '@/components/admin/EditCustomerForm'
 
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
@@ -127,6 +128,11 @@ export default async function CustomerDetail({
               All orders by email →
             </Link>
           )}
+          <EditCustomerForm
+            customerId={profile.id}
+            initialName={profile.full_name}
+            initialPhone={profile.phone}
+          />
         </section>
 
         <section className="admin-card lg:col-span-2">

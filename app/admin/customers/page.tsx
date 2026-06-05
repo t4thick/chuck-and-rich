@@ -4,6 +4,9 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Pagination } from '@/components/admin/Pagination'
+
+const PAGE_SIZE = 50
 
 type CustomerRow = {
   id: string
@@ -32,12 +35,13 @@ const SORT_OPTIONS: Array<{ id: SortKey; label: string }> = [
 export default async function AdminCustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sort?: string }>
+  searchParams: Promise<{ q?: string; sort?: string; page?: string }>
 }) {
   await requireAdminPage()
   const sp = await searchParams
   const q = sp.q?.trim() ?? ''
   const sort = (SORT_OPTIONS.find((o) => o.id === sp.sort)?.id ?? 'recent') as SortKey
+  const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1)
 
   // Pull everything (with a sane upper bound) and aggregate in memory.
   // For >5k customers we'd move to a SQL aggregation; until then this is fine
@@ -101,6 +105,18 @@ export default async function AdminCustomersPage({
   )
   const customersWithOrders = Object.keys(stats).length
 
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paginated = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  function buildPageHref(p: number): string {
+    const u = new URLSearchParams()
+    if (q) u.set('q', q)
+    if (sort !== 'recent') u.set('sort', sort)
+    if (p > 1) u.set('page', String(p))
+    return `/admin/customers${u.toString() ? `?${u.toString()}` : ''}`
+  }
+
   function sortHref(s: SortKey): string {
     const u = new URLSearchParams()
     if (q) u.set('q', q)
@@ -159,7 +175,7 @@ export default async function AdminCustomersPage({
         })}
       </div>
 
-      {!visible || visible.length === 0 ? (
+      {!paginated || paginated.length === 0 ? (
         <div className="admin-card flex flex-col items-center text-center">
           <Users className="h-10 w-10 text-earth-300" strokeWidth={1.5} aria-hidden />
           <p className="mt-3 text-sm text-earth-600">
@@ -184,7 +200,7 @@ export default async function AdminCustomersPage({
                 </tr>
               </thead>
               <tbody>
-                {visible.map((p: CustomerRow) => {
+                {paginated.map((p: CustomerRow) => {
                   const stat = stats[p.id]
                   const isAdmin = p.role === 'admin'
                   return (
@@ -229,7 +245,7 @@ export default async function AdminCustomersPage({
           </div>
 
           <ul className="space-y-2 sm:hidden">
-            {visible.map((p: CustomerRow) => {
+            {paginated.map((p: CustomerRow) => {
               const stat = stats[p.id]
               return (
                 <li key={p.id}>
@@ -261,6 +277,7 @@ export default async function AdminCustomersPage({
               )
             })}
           </ul>
+          <Pagination page={safePage} totalPages={totalPages} buildHref={buildPageHref} />
         </>
       )}
     </div>
