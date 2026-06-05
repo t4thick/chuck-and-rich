@@ -143,36 +143,20 @@ export function CheckoutClient({
 
   const [form, setForm] = useState<CheckoutForm>(() => {
     if (defaultAddress) return addressToForm(initialAccount, defaultAddress)
+    // Load draft synchronously on first render to avoid a blank→filled flash
+    const draft = loadDraft()
     return {
-      name: initialAccount.fullName,
+      name: draft?.name || initialAccount.fullName,
       email: initialAccount.email,
-      phone: initialAccount.phone,
-      address1: '',
-      address2: '',
-      city: '',
-      state: 'OH',
-      country: 'United States',
-      postalCode: '',
+      phone: draft?.phone || initialAccount.phone,
+      address1: draft?.address1 ?? '',
+      address2: draft?.address2 ?? '',
+      city: draft?.city ?? '',
+      state: draft?.state ?? 'OH',
+      country: draft?.country ?? 'United States',
+      postalCode: draft?.postalCode ?? '',
     }
   })
-
-  // Restore unsaved draft from previous session (only if no default address pre-filled).
-  useEffect(() => {
-    if (defaultAddress) return
-    const draft = loadDraft()
-    if (!draft) return
-    setForm((prev) => ({
-      ...prev,
-      name: draft.name || prev.name,
-      phone: draft.phone || prev.phone,
-      address1: draft.address1 ?? prev.address1,
-      address2: draft.address2 ?? prev.address2,
-      city: draft.city ?? prev.city,
-      state: draft.state ?? prev.state,
-      country: draft.country ?? prev.country,
-      postalCode: draft.postalCode ?? prev.postalCode,
-    }))
-  }, [defaultAddress])
 
   // Persist form to localStorage on every change so phone/address survive a page reload or login flow.
   useEffect(() => {

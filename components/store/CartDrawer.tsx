@@ -234,13 +234,22 @@ export function CartDrawer() {
                   Checkout
                 </Button>
               </Link>
-              <Link
-                href="/cart"
-                className="mt-2 block text-center text-sm font-medium text-earth-700 no-underline hover:text-earth-900"
-                onClick={closeCart}
-              >
-                View full cart
-              </Link>
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <Link
+                  href="/cart"
+                  className="font-medium text-earth-700 no-underline hover:text-earth-900"
+                  onClick={closeCart}
+                >
+                  View full cart
+                </Link>
+                <Link
+                  href="/shop"
+                  className="font-medium text-brand-700 no-underline hover:text-brand-800"
+                  onClick={closeCart}
+                >
+                  ← Continue shopping
+                </Link>
+              </div>
             </div>
           </>
         )}

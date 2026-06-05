@@ -166,7 +166,7 @@ export function SearchAutocomplete({ className, compact, placeholder }: Props) {
             compact ? 'h-9' : 'h-10'
           )}
         />
-        {q && (
+        {q ? (
           <button
             type="button"
             className="rounded-md p-1 text-earth-400 transition-colors hover:bg-earth-100 hover:text-earth-700"
@@ -179,7 +179,14 @@ export function SearchAutocomplete({ className, compact, placeholder }: Props) {
           >
             <X className="h-4 w-4" />
           </button>
-        )}
+        ) : null}
+        <button
+          type="submit"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-700 text-white transition-colors hover:bg-brand-800"
+          aria-label="Search"
+        >
+          <Search className="h-3.5 w-3.5" />
+        </button>
       </form>
 
       {showDropdown && (

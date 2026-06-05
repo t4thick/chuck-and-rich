@@ -32,7 +32,7 @@ const LEGAL_LINKS = [
 export function Footer() {
   const supportEmail = getSupportEmail()
   return (
-    <footer className="mt-auto border-t border-earth-200 bg-white text-earth-700">
+    <footer className="mt-auto border-t border-earth-200 bg-white text-earth-700 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
       <div className="store-container py-12 sm:py-14">
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-5 lg:gap-8">
           <div className="lg:col-span-1">

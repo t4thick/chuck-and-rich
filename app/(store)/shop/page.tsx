@@ -8,6 +8,8 @@ import {
   SortMenu,
 } from '@/components/shop/ShopFilters'
 import { fetchCategoryCounts, fetchProductsForShop, type SortOption } from '@/lib/supabase/products'
+import { RecentlyViewed } from '@/components/store/RecentlyViewed'
+import { BackToTop } from '@/components/store/BackToTop'
 import type { Product } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -117,7 +119,7 @@ export default async function ShopPage({
                 </Link>
               </div>
             ) : (
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                 {products.map((product: Product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -127,5 +129,8 @@ export default async function ShopPage({
         </div>
       </div>
     </div>
+
+    <RecentlyViewed />
+    <BackToTop />
   )
 }

@@ -6,6 +6,8 @@ import { parseOrderRef } from '@/lib/orders/order-number'
 
 export async function GET(req: NextRequest) {
   const idRaw = req.nextUrl.searchParams.get('id')?.trim()
+  const emailRaw = req.nextUrl.searchParams.get('email')?.trim().toLowerCase()
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -15,25 +17,41 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Please sign in to track your orders.' }, { status: 401 })
   }
 
-  const ref = parseOrderRef(idRaw)
-  if (!ref) {
-    return NextResponse.json(
-      { error: 'Enter your order number (e.g. LQ-1042) or order ID.' },
-      { status: 400 }
-    )
-  }
+  let order: Record<string, unknown> | null = null
 
-  let query = supabaseAdmin
-    .from('orders')
-    .select('*')
-    .eq('user_id', user.id)
+  // Email search — find most recent order matching that email for this user
+  if (emailRaw && !idRaw) {
+    const { data } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.id)
+      .ilike('customer_email', emailRaw)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    order = data
+    if (!order) {
+      return NextResponse.json(
+        { error: 'No orders found for that email address on your account.' },
+        { status: 404 }
+      )
+    }
+  } else {
+    const ref = parseOrderRef(idRaw)
+    if (!ref) {
+      return NextResponse.json(
+        { error: 'Enter your order number (e.g. LQ-1042) or order ID.' },
+        { status: 400 }
+      )
+    }
 
-  query = ref.type === 'uuid' ? query.eq('id', ref.value) : query.eq('order_number', ref.value)
-
-  const { data: order, error: orderError } = await query.maybeSingle()
-
-  if (orderError || !order) {
-    return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
+    let query = supabaseAdmin.from('orders').select('*').eq('user_id', user.id)
+    query = ref.type === 'uuid' ? query.eq('id', ref.value) : query.eq('order_number', ref.value)
+    const { data, error: orderError } = await query.maybeSingle()
+    if (orderError || !data) {
+      return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
+    }
+    order = data
   }
 
   const [{ data: items }, logsResult] = await Promise.all([
@@ -48,8 +66,6 @@ export async function GET(req: NextRequest) {
       .order('changed_at', { ascending: true }),
   ])
 
-  // PostgREST returns `PGRST205` when a table is missing from the schema cache, and
-  // Postgres returns SQLSTATE `42P01` for "undefined table". Treat either as "no logs".
   const missingTable =
     !!logsResult.error &&
     (logsResult.error.code === 'PGRST205' || logsResult.error.code === '42P01')
@@ -61,7 +77,7 @@ export async function GET(req: NextRequest) {
   const logs = missingTable ? [] : (logsResult.data ?? [])
 
   return NextResponse.json({
-    order: { ...order, status: normalizeOrderStatus(order.status) },
+    order: { ...order, status: normalizeOrderStatus(order.status as string) },
     items: items ?? [],
     logs,
   })

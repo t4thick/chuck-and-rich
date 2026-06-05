@@ -4,7 +4,17 @@ import { ArrowRight, Package, Settings, User } from 'lucide-react'
 import { createClientOptional } from '@/lib/supabase/server'
 import { AccountSignOut } from '@/components/AccountSignOut'
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner'
-import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
+import { ORDER_STATUS_LABEL, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
+import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
+
+const STATUS_COLORS: Record<OrderStatus, string> = {
+  ordered: 'bg-blue-50 text-blue-700',
+  processing: 'bg-amber-50 text-amber-700',
+  shipped: 'bg-violet-50 text-violet-700',
+  out_for_delivery: 'bg-indigo-50 text-indigo-700',
+  delivered: 'bg-emerald-50 text-emerald-700',
+  cancelled: 'bg-red-50 text-red-700',
+}
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/utils'
 import { formatOrderNumber } from '@/lib/orders/order-number'
@@ -16,6 +26,23 @@ type AccountOrderRow = {
   status: string
   created_at: string
   customer_email: string | null
+  shipping_method: string | null
+}
+
+function estimatedDelivery(createdAt: string, shippingMethod: string | null): string {
+  const method = shippingMethod ?? 'standard'
+  const days = method === 'pickup' ? 0
+    : method === 'express' || method === 'overnight' ? 2
+    : method === 'economy' ? 10
+    : 6
+  if (days === 0) return 'Pickup'
+  let count = 0
+  const date = new Date(createdAt)
+  while (count < days) {
+    date.setDate(date.getDate() + 1)
+    if (date.getDay() !== 0 && date.getDay() !== 6) count++
+  }
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 export const dynamic = 'force-dynamic'
@@ -32,7 +59,7 @@ export default async function AccountPage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, order_number, total_amount, status, created_at, customer_email')
+    .select('id, order_number, total_amount, status, created_at, customer_email, shipping_method')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(25)
@@ -136,7 +163,16 @@ export default async function AccountPage() {
                     <p className="mt-2 text-base font-semibold text-earth-900 tabular-nums">
                       {formatMoney(Number(o.total_amount))}
                     </p>
-                    <p className="mt-1 text-sm text-earth-600">{ORDER_STATUS_LABEL[st]}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_COLORS[st]}`}>
+                        {ORDER_STATUS_LABEL[st]}
+                      </span>
+                      {st !== 'delivered' && st !== 'cancelled' && (
+                        <span className="text-xs text-earth-500">
+                          Est. {estimatedDelivery(o.created_at, o.shipping_method)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Link

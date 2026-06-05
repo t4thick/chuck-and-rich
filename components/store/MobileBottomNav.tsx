@@ -19,6 +19,7 @@ const TABS = [
     label: 'Cart',
     icon: ShoppingBag,
     match: (path: string) => path === '/cart' || path.startsWith('/checkout'),
+    isCart: true,
   },
   {
     href: '/track-order',
@@ -40,7 +41,7 @@ const HIDE_ON_PREFIXES = ['/checkout']
 
 export function MobileBottomNav() {
   const pathname = usePathname()
-  const { totalItems } = useCart()
+  const { totalItems, openCart } = useCart()
 
   if (HIDE_ON_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return null
@@ -53,9 +54,40 @@ export function MobileBottomNav() {
       aria-label="Mobile navigation"
     >
       <ul className="mx-auto grid h-[60px] max-w-lg grid-cols-5">
-        {TABS.map(({ href, label, icon: Icon, match }) => {
+        {TABS.map(({ href, label, icon: Icon, match, ...rest }) => {
           const active = match(pathname)
-          const isCart = href === '/cart'
+          const isCart = 'isCart' in rest && rest.isCart
+
+          if (isCart) {
+            return (
+              <li key={href}>
+                <button
+                  type="button"
+                  onClick={openCart}
+                  aria-label={`Cart, ${totalItems} item${totalItems === 1 ? '' : 's'}`}
+                  className={cn(
+                    'group relative flex h-full w-full flex-col items-center justify-center gap-0.5 px-1 transition-colors duration-150',
+                    active ? 'text-brand-700' : 'text-earth-500'
+                  )}
+                >
+                  <span className="relative flex h-6 w-6 items-center justify-center">
+                    <Icon className={cn('h-[22px] w-[22px]', active && 'stroke-[2.25]')} aria-hidden />
+                    {totalItems > 0 && (
+                      <span
+                        key={totalItems}
+                        className="animate-pop absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-700 px-0.5 text-[10px] font-semibold leading-none text-white"
+                      >
+                        {totalItems > 99 ? '99+' : totalItems}
+                      </span>
+                    )}
+                  </span>
+                  <span className={cn('text-[11px] font-medium leading-none tracking-tight', active && 'font-semibold')}>
+                    {label}
+                  </span>
+                </button>
+              </li>
+            )
+          }
 
           return (
             <li key={href}>
@@ -68,25 +100,9 @@ export function MobileBottomNav() {
                 aria-current={active ? 'page' : undefined}
               >
                 <span className="relative flex h-6 w-6 items-center justify-center">
-                  <Icon
-                    className={cn('h-[22px] w-[22px]', active && 'stroke-[2.25]')}
-                    aria-hidden
-                  />
-                  {isCart && totalItems > 0 && (
-                    <span
-                      key={totalItems}
-                      className="animate-pop absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-700 px-0.5 text-[10px] font-semibold leading-none text-white"
-                    >
-                      {totalItems > 99 ? '99+' : totalItems}
-                    </span>
-                  )}
+                  <Icon className={cn('h-[22px] w-[22px]', active && 'stroke-[2.25]')} aria-hidden />
                 </span>
-                <span
-                  className={cn(
-                    'text-[11px] font-medium leading-none tracking-tight',
-                    active && 'font-semibold'
-                  )}
-                >
+                <span className={cn('text-[11px] font-medium leading-none tracking-tight', active && 'font-semibold')}>
                   {label}
                 </span>
               </Link>

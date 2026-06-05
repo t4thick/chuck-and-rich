@@ -49,9 +49,32 @@ type TrackOrderResponse = {
   }>
 }
 
+function estimatedDelivery(createdAt: string, shippingMethod: string): string {
+  const created = new Date(createdAt)
+  const days = shippingMethod === 'pickup' ? 0
+    : shippingMethod === 'express' || shippingMethod === 'overnight' ? 2
+    : shippingMethod === 'economy' ? 10
+    : 6 // standard
+
+  if (days === 0) return 'Available for pickup'
+
+  // Add business days
+  let count = 0
+  const date = new Date(created)
+  while (count < days) {
+    date.setDate(date.getDate() + 1)
+    const day = date.getDay()
+    if (day !== 0 && day !== 6) count++
+  }
+
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export function TrackOrderClient() {
   const searchParams = useSearchParams()
   const [orderId, setOrderId] = useState(searchParams.get('id') ?? '')
+  const [searchMode, setSearchMode] = useState<'order' | 'email'>('order')
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [data, setData] = useState<TrackOrderResponse | null>(null)
@@ -66,11 +89,15 @@ export function TrackOrderClient() {
   const fetchOrder = useCallback(
     async (idOverride?: string) => {
       const id = (idOverride ?? orderId).trim()
-      if (!id) return
+      const emailVal = email.trim()
+      if (!id && !emailVal) return
       setLoading(true)
       setError('')
       try {
-        const res = await fetch(`/api/orders/track?id=${encodeURIComponent(id)}`)
+        const url = emailVal && !id
+          ? `/api/orders/track?email=${encodeURIComponent(emailVal)}`
+          : `/api/orders/track?id=${encodeURIComponent(id)}`
+        const res = await fetch(url)
         const payload = await res.json()
         if (!res.ok) {
           setError(payload.error ?? 'Could not find this order.')
@@ -84,7 +111,7 @@ export function TrackOrderClient() {
         setLoading(false)
       }
     },
-    [orderId]
+    [orderId, email]
   )
 
   async function handleSubmit(e: FormEvent) {
@@ -134,28 +161,72 @@ export function TrackOrderClient() {
 
       <div className="store-container py-8 sm:py-10">
         <form onSubmit={handleSubmit} className="premium-card max-w-2xl p-6">
-          <label htmlFor="track-order-id" className="form-label">
-            Order number
-          </label>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-earth-400" />
-              <Input
-                id="track-order-id"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                required
-                placeholder="LQ-1042"
-                className="pl-9"
-              />
-            </div>
-            <Button type="submit" disabled={loading} className="h-11 rounded-xl sm:min-w-[120px]">
-              {loading ? 'Checking…' : 'Track'}
-            </Button>
+          {/* Toggle: order number vs email */}
+          <div className="mb-4 flex gap-1 rounded-lg border border-earth-200 p-1 w-fit">
+            <button
+              type="button"
+              onClick={() => setSearchMode('order')}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${searchMode === 'order' ? 'bg-earth-900 text-white' : 'text-earth-600 hover:text-earth-900'}`}
+            >
+              Order number
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchMode('email')}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${searchMode === 'email' ? 'bg-earth-900 text-white' : 'text-earth-600 hover:text-earth-900'}`}
+            >
+              Email address
+            </button>
           </div>
-          <p className="mt-3 text-xs text-earth-500">
-            You&apos;ll find this on the order confirmation email and in your account.
-          </p>
+
+          {searchMode === 'order' ? (
+            <>
+              <label htmlFor="track-order-id" className="form-label">Order number</label>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-earth-400" />
+                  <Input
+                    id="track-order-id"
+                    value={orderId}
+                    onChange={(e) => setOrderId(e.target.value)}
+                    required
+                    placeholder="LQ-1042"
+                    className="pl-9"
+                  />
+                </div>
+                <Button type="submit" disabled={loading} className="h-11 rounded-xl sm:min-w-[120px]">
+                  {loading ? 'Checking…' : 'Track'}
+                </Button>
+              </div>
+              <p className="mt-3 text-xs text-earth-500">
+                Found on your order confirmation email and in your account.
+              </p>
+            </>
+          ) : (
+            <>
+              <label htmlFor="track-order-email" className="form-label">Email address</label>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-earth-400" />
+                  <Input
+                    id="track-order-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="you@example.com"
+                    className="pl-9"
+                  />
+                </div>
+                <Button type="submit" disabled={loading} className="h-11 rounded-xl sm:min-w-[120px]">
+                  {loading ? 'Checking…' : 'Find order'}
+                </Button>
+              </div>
+              <p className="mt-3 text-xs text-earth-500">
+                Shows your most recent order placed with this email.
+              </p>
+            </>
+          )}
         </form>
 
         {error && <p className="error mt-6">{error}</p>}
@@ -188,6 +259,14 @@ export function TrackOrderClient() {
                     <dt className="text-earth-500">Shipping</dt>
                     <dd className="font-medium text-earth-900">
                       {SHIPPING_METHOD_LABEL[shippingMethod]}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-earth-500">Est. delivery</dt>
+                    <dd className="font-medium text-earth-900">
+                      {status === 'delivered' ? 'Delivered' :
+                       status === 'cancelled' ? '—' :
+                       estimatedDelivery(data.order.created_at, data.order.shipping_method ?? 'standard')}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4">

@@ -10,6 +10,7 @@ import { ProductCard } from '@/components/ProductCard'
 import { ProductImage } from '@/components/store/ProductImage'
 import { RecordRecentlyViewed } from '@/components/store/RecordRecentlyViewed'
 import { RecentlyViewed } from '@/components/store/RecentlyViewed'
+import { BackToTop } from '@/components/store/BackToTop'
 import { FrequentlyBoughtTogether } from '@/components/store/FrequentlyBoughtTogether'
 import { ProductStockLabel } from '@/components/store/ProductStockLabel'
 import { extractPackSize } from '@/lib/product-display'
@@ -220,7 +221,7 @@ export default async function ProductPage({
             <h2 className="text-xl font-semibold tracking-tight text-earth-900 sm:text-2xl">
               More in {product.category}
             </h2>
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className="mt-6 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
@@ -230,6 +231,7 @@ export default async function ProductPage({
       )}
 
       <RecentlyViewed excludeId={product.id} />
+      <BackToTop />
     </div>
   )
 }
