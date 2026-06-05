@@ -21,8 +21,8 @@ export const ADMIN_SHIP_METHODS: {
   {
     id: 'integrated',
     title: 'Print in admin',
-    subtitle: 'One-click USPS Ground Advantage',
-    badge: 'building',
+    subtitle: 'One-click Shippo label',
+    badge: 'ready',
   },
 ]
 

@@ -159,6 +159,7 @@ export function FulfillOrderShipping({
             mailClass={mailClass}
             labelsLive={uspsLabelsLive}
             uspsConfigured={uspsConfigured}
+            shippoConfigured={shippoConfigured}
             defaultParcel={defaultParcel}
             initialLabelUrl={initialLabelUrl}
             initialTracking={initialTracking}

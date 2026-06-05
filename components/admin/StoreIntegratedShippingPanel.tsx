@@ -10,6 +10,7 @@ type Props = {
   mailClass: string
   labelsLive: boolean
   uspsConfigured: boolean
+  shippoConfigured?: boolean
   defaultParcel: {
     weightLb: number
     lengthIn: number
@@ -25,11 +26,12 @@ export function StoreIntegratedShippingPanel({
   mailClass,
   labelsLive,
   uspsConfigured,
+  shippoConfigured,
   defaultParcel,
   initialLabelUrl,
   initialTracking,
 }: Props) {
-  if (labelsLive && uspsConfigured) {
+  if (shippoConfigured || (labelsLive && uspsConfigured)) {
     return (
       <UspsPrintLabelPanel
         orderId={orderId}
