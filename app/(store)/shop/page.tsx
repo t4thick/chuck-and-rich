@@ -55,6 +55,7 @@ export default async function ShopPage({
       : `${products.length} product${products.length === 1 ? '' : 's'} across all departments`
 
   return (
+    <>
     <div className="min-h-screen bg-white">
       <div className="border-b border-earth-200 bg-white">
         <div className="store-container py-6 sm:py-8">
@@ -129,8 +130,8 @@ export default async function ShopPage({
         </div>
       </div>
     </div>
-
     <RecentlyViewed />
     <BackToTop />
+    </>
   )
 }
