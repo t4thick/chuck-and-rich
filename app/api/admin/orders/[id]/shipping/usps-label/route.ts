@@ -3,6 +3,7 @@ import { requireAdminApi } from '@/lib/auth/require-admin-api'
 import { assertSameOrigin } from '@/lib/security/same-origin'
 import { applyUspsLabelToOrder } from '@/lib/shipping/apply-usps-label'
 import { getDefaultParcel, getShipFromAddress } from '@/lib/shipping/label-config'
+import { isShippoConfigured, createShippoDomesticLabel, type ShippoLabelResult } from '@/lib/shipping/shippo-client'
 import { createUspsDomesticLabel } from '@/lib/shipping/usps-client'
 import { isUspsConfigured } from '@/lib/shipping/usps-config'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -19,11 +20,14 @@ export async function POST(
   const auth = await requireAdminApi()
   if (!auth.ok) return auth.response
 
-  if (!isUspsConfigured()) {
+  const useShippo = isShippoConfigured()
+  const useUsps = isUspsConfigured()
+
+  if (!useShippo && !useUsps) {
     return NextResponse.json(
       {
         error:
-          'USPS API is not configured. Add USPS_API_CLIENT_ID, USPS_API_CLIENT_SECRET, USPS_EPS_ACCOUNT_NUMBER, USPS_CRID, and USPS_MID in Vercel.',
+          'No shipping provider configured. Add SHIPPO_API_TOKEN (recommended) or USPS API credentials in Vercel.',
       },
       { status: 503 }
     )
@@ -50,17 +54,21 @@ export async function POST(
       return NextResponse.json({ error: 'Pickup orders do not need a label.' }, { status: 400 })
     }
 
-    const label = await createUspsDomesticLabel({
-      from,
-      to: {
-        name: order.customer_name ?? 'Customer',
-        street1: order.address_line ?? '',
-        city: order.city ?? '',
-        state: order.state ?? '',
-        zip: order.postal_code ?? '',
-      },
-      parcel,
-    })
+    const to = {
+      name: order.customer_name ?? 'Customer',
+      street1: order.address_line ?? '',
+      city: order.city ?? '',
+      state: order.state ?? '',
+      zip: order.postal_code ?? '',
+    }
+
+    let label: ShippoLabelResult | Awaited<ReturnType<typeof createUspsDomesticLabel>>
+
+    if (useShippo) {
+      label = await createShippoDomesticLabel({ from, to, parcel })
+    } else {
+      label = await createUspsDomesticLabel({ from, to, parcel })
+    }
 
     const applied = await applyUspsLabelToOrder(id, label)
     if (!applied.ok) {
@@ -74,9 +82,10 @@ export async function POST(
       mailClass: label.mailClass,
       labelUrl: applied.labelUrl,
       labelPdfBase64: label.pdf.toString('base64'),
+      provider: useShippo ? 'shippo' : 'usps',
     })
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'Could not create USPS label.'
+    const message = e instanceof Error ? e.message : 'Could not create shipping label.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
