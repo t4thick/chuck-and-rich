@@ -77,34 +77,36 @@ export function BulkOrdersTable({ orders }: { orders: Order[] }) {
   return (
     <div className="space-y-3">
       {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3">
-          <span className="text-sm font-medium text-brand-900">
-            {selected.size} selected
-          </span>
-          <select
-            className="form-select text-sm py-1"
-            value={bulkStatus}
-            onChange={(e) => setBulkStatus(e.target.value as OrderStatus)}
-          >
-            {BULK_STATUSES.map((s) => (
-              <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={applyBulk}
-            disabled={loading}
-            className="rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-          >
-            {loading ? 'Updating…' : 'Apply to selected'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelected(new Set())}
-            className="text-sm text-earth-500 hover:text-earth-700"
-          >
-            Clear
-          </button>
+        <div className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-brand-900">{selected.size} selected</span>
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className="text-xs text-earth-500 hover:text-earth-700 underline"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className="form-select flex-1 text-sm py-2 min-w-[140px]"
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value as OrderStatus)}
+            >
+              {BULK_STATUSES.map((s) => (
+                <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={applyBulk}
+              disabled={loading}
+              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50 whitespace-nowrap"
+            >
+              {loading ? 'Updating…' : 'Apply'}
+            </button>
+          </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
       )}
@@ -185,15 +187,15 @@ export function BulkOrdersTable({ orders }: { orders: Order[] }) {
           const st = normalizeOrderStatus(order.status)
           const isChecked = selected.has(order.id)
           return (
-            <li key={order.id} className="flex gap-3">
-              <div className="flex items-start pt-4">
+            <li key={order.id} className="flex gap-2">
+              <label className="flex items-center justify-center w-11 shrink-0 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => toggleOne(order.id)}
-                  className="h-4 w-4 rounded border-earth-300"
+                  className="h-5 w-5 rounded border-earth-300"
                 />
-              </div>
+              </label>
               <Link
                 href={`/admin/orders/${order.id}`}
                 className="admin-card flex flex-1 flex-col gap-1 no-underline"

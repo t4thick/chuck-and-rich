@@ -112,15 +112,15 @@ export function BulkProductsTable({ products, compact = false }: { products: Pro
 
       <ul className="space-y-2 sm:hidden">
         {products.map((p) => (
-          <li key={p.id} className="flex gap-3">
-            <div className="flex items-start pt-4">
+          <li key={p.id} className="flex gap-2">
+            <label className="flex items-center justify-center w-11 shrink-0 cursor-pointer">
               <input
                 type="checkbox"
                 checked={selected.has(p.id)}
                 onChange={() => toggleOne(p.id)}
-                className="h-4 w-4 rounded border-earth-300"
+                className="h-5 w-5 rounded border-earth-300"
               />
-            </div>
+            </label>
             <div className="admin-card flex flex-1 gap-3">
               <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border border-earth-200 bg-earth-50">
                 {p.image_url ? (

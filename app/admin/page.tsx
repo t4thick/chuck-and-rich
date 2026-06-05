@@ -395,51 +395,83 @@ export default async function AdminDashboard({
             <p className="text-sm text-earth-600">No orders yet.</p>
           </div>
         ) : (
-          <div className="admin-table-wrap overflow-x-auto">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Customer</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th aria-label="Actions"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map((order) => {
-                  const st = normalizeOrderStatus(order.status)
-                  return (
-                    <tr key={order.id}>
-                      <td className="font-mono text-xs font-semibold text-earth-900">
-                        {formatOrderNumber(order.order_number) || '—'}
-                      </td>
-                      <td className="font-medium text-earth-900">{order.customer_name ?? '—'}</td>
-                      <td className="tabular-nums">{money(Number(order.total_amount ?? 0))}</td>
-                      <td>{pill(st)}</td>
-                      <td className="text-earth-600">
-                        {new Date(order.created_at).toLocaleString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}
-                      </td>
-                      <td className="text-right">
-                        <Link
-                          href={`/admin/orders/${order.id}`}
-                          className="text-sm font-medium text-brand-700 no-underline hover:text-brand-800"
-                        >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Mobile cards */}
+            <ul className="space-y-2 sm:hidden">
+              {recentOrders.map((order) => {
+                const st = normalizeOrderStatus(order.status)
+                return (
+                  <li key={order.id}>
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="admin-card flex flex-col gap-1 no-underline"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-mono text-xs font-semibold text-earth-900">
+                            {formatOrderNumber(order.order_number) || '—'}
+                          </p>
+                          <p className="text-sm font-medium text-earth-800">{order.customer_name ?? '—'}</p>
+                        </div>
+                        <span className="tabular-nums text-sm font-semibold text-earth-900">
+                          {money(Number(order.total_amount ?? 0))}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        {pill(st)}
+                        <span className="text-xs text-earth-500">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+            {/* Desktop table */}
+            <div className="admin-table-wrap hidden overflow-x-auto sm:block">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th aria-label="Actions"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentOrders.map((order) => {
+                    const st = normalizeOrderStatus(order.status)
+                    return (
+                      <tr key={order.id}>
+                        <td className="font-mono text-xs font-semibold text-earth-900">
+                          {formatOrderNumber(order.order_number) || '—'}
+                        </td>
+                        <td className="font-medium text-earth-900">{order.customer_name ?? '—'}</td>
+                        <td className="tabular-nums">{money(Number(order.total_amount ?? 0))}</td>
+                        <td>{pill(st)}</td>
+                        <td className="text-earth-600">
+                          {new Date(order.created_at).toLocaleString(undefined, {
+                            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="text-right">
+                          <Link
+                            href={`/admin/orders/${order.id}`}
+                            className="text-sm font-medium text-brand-700 no-underline hover:text-brand-800"
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </div>

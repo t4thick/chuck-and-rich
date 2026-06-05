@@ -94,6 +94,129 @@ export default async function AdminOrderDetailPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
+        {/* Sidebar — floats to top on mobile so actions are immediately visible */}
+        <div className="order-first space-y-6 lg:order-last">
+          {/* Timeline */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Delivery timeline</h2>
+            <ol className="mt-4 space-y-3">
+              {ORDER_STATUS_FLOW.map((step, index) => {
+                const done = statusIndex >= index
+                const tsColumn =
+                  step === 'ordered' ? order.ordered_at
+                  : step === 'processing' ? order.processing_at
+                  : step === 'shipped' ? order.shipped_at
+                  : step === 'out_for_delivery' ? order.out_for_delivery_at
+                  : order.delivered_at
+                return (
+                  <li key={step} className="flex items-start gap-2.5 text-sm">
+                    {done ? (
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" aria-hidden />
+                    ) : (
+                      <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-earth-300" strokeWidth={1.5} aria-hidden />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className={done ? 'font-medium text-earth-900' : 'text-earth-500'}>
+                        {ORDER_STATUS_LABEL[step]}
+                      </p>
+                      {done && tsColumn && (
+                        <p className="mt-0.5 text-xs text-earth-500">
+                          {new Date(tsColumn).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </section>
+          {/* Shipping label */}
+          <section className="admin-card space-y-4">
+            <PrintAddressSlipLink orderId={order.id} isPickup={shippingMethod === 'pickup'} />
+            <div>
+              <h2 className="admin-section-title">Ship this order</h2>
+              <p className="mt-1 text-sm text-earth-500">
+                One-click Shippo label — postage billed to your Shippo account.
+              </p>
+              <div className="mt-4">
+                <FulfillOrderShipping
+                  orderId={order.id}
+                  isPickup={shippingMethod === 'pickup'}
+                  currentStatus={normalizedStatus}
+                  uspsConfigured={isUspsConfigured()}
+                  uspsLabelsLive={isUspsLabelsLive()}
+                  shippoConfigured={isShippoConfigured()}
+                  mailClass={uspsConfig.mailClass}
+                  defaultParcel={defaultParcel}
+                  initialLabelUrl={
+                    typeof orderRecord.shipping_label_url === 'string'
+                      ? orderRecord.shipping_label_url
+                      : null
+                  }
+                  initialTracking={order.tracking_number}
+                  initialCarrier={
+                    typeof orderRecord.shipping_carrier === 'string'
+                      ? orderRecord.shipping_carrier
+                      : null
+                  }
+                  initialService={
+                    typeof orderRecord.shipping_service === 'string'
+                      ? orderRecord.shipping_service
+                      : null
+                  }
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Update status */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Update status</h2>
+            <div className="mt-4">
+              <OrderStatusUpdater
+                orderId={order.id}
+                currentStatus={normalizedStatus}
+                trackingNumber={order.tracking_number}
+              />
+            </div>
+          </section>
+
+          {/* Admin notes */}
+          <section className="admin-card">
+            <h2 className="admin-section-title">Internal notes</h2>
+            <div className="mt-4">
+              <AdminNotePanel orderId={order.id} currentStatus={normalizedStatus} />
+            </div>
+          </section>
+
+          {/* Refund — Stripe */}
+          {pm === 'stripe' && !order.refunded_at && (
+            <section className="admin-card">
+              <h2 className="admin-section-title">Refund</h2>
+              <div className="mt-4">
+                <RefundButton
+                  orderId={order.id}
+                  maxAmount={Number(order.total_amount ?? 0)}
+                />
+              </div>
+            </section>
+          )}
+
+          {/* Refund — COD / manual */}
+          {pm !== 'stripe' && !order.refunded_at && (
+            <section className="admin-card">
+              <h2 className="admin-section-title">Refund</h2>
+              <p className="mt-1 text-sm text-earth-500">Cash or manual payment — mark refunded after returning money.</p>
+              <div className="mt-4">
+                <ManualRefundButton
+                  orderId={order.id}
+                  amount={Number(order.total_amount ?? 0)}
+                />
+              </div>
+            </section>
+          )}
+        </div>
+
         <div className="space-y-6 lg:col-span-2">
           {/* Customer */}
           <section className="admin-card">
@@ -207,146 +330,7 @@ export default async function AdminOrderDetailPage({
           </section>
         </div>
 
-        <div className="space-y-6">
-          {/* Timeline */}
-          <section className="admin-card">
-            <h2 className="admin-section-title">Delivery timeline</h2>
-            <ol className="mt-4 space-y-3">
-              {ORDER_STATUS_FLOW.map((step, index) => {
-                const done = statusIndex >= index
-                const tsColumn =
-                  step === 'ordered'
-                    ? order.ordered_at
-                    : step === 'processing'
-                      ? order.processing_at
-                      : step === 'shipped'
-                        ? order.shipped_at
-                        : step === 'out_for_delivery'
-                          ? order.out_for_delivery_at
-                          : order.delivered_at
-                return (
-                  <li key={step} className="flex items-start gap-2.5 text-sm">
-                    {done ? (
-                      <CheckCircle2
-                        className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600"
-                        aria-hidden
-                      />
-                    ) : (
-                      <Circle
-                        className="mt-0.5 h-4 w-4 flex-shrink-0 text-earth-300"
-                        strokeWidth={1.5}
-                        aria-hidden
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={
-                          done
-                            ? 'font-medium text-earth-900'
-                            : 'text-earth-500'
-                        }
-                      >
-                        {ORDER_STATUS_LABEL[step]}
-                      </p>
-                      {done && tsColumn && (
-                        <p className="mt-0.5 text-xs text-earth-500">
-                          {new Date(tsColumn).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                )
-              })}
-            </ol>
-          </section>
-
-          {/* Shipping label */}
-          <section className="admin-card space-y-4">
-            <PrintAddressSlipLink orderId={order.id} isPickup={shippingMethod === 'pickup'} />
-
-            <div>
-              <h2 className="admin-section-title">Ship this order</h2>
-              <p className="mt-1 text-sm text-earth-500">
-                One-click Shippo label — postage billed to your Shippo account.
-              </p>
-              <div className="mt-4">
-              <FulfillOrderShipping
-                orderId={order.id}
-                isPickup={shippingMethod === 'pickup'}
-                currentStatus={normalizedStatus}
-                uspsConfigured={isUspsConfigured()}
-                uspsLabelsLive={isUspsLabelsLive()}
-                shippoConfigured={isShippoConfigured()}
-                mailClass={uspsConfig.mailClass}
-                defaultParcel={defaultParcel}
-                initialLabelUrl={
-                  typeof orderRecord.shipping_label_url === 'string'
-                    ? orderRecord.shipping_label_url
-                    : null
-                }
-                initialTracking={order.tracking_number}
-                initialCarrier={
-                  typeof orderRecord.shipping_carrier === 'string'
-                    ? orderRecord.shipping_carrier
-                    : null
-                }
-                initialService={
-                  typeof orderRecord.shipping_service === 'string'
-                    ? orderRecord.shipping_service
-                    : null
-                }
-              />
-              </div>
-            </div>
-          </section>
-
-          {/* Admin notes */}
-          <section className="admin-card">
-            <h2 className="admin-section-title">Internal notes</h2>
-            <div className="mt-4">
-              <AdminNotePanel orderId={order.id} currentStatus={normalizedStatus} />
-            </div>
-          </section>
-
-          {/* Status updater */}
-          <section className="admin-card">
-            <h2 className="admin-section-title">Update status</h2>
-            <div className="mt-4">
-              <OrderStatusUpdater
-                orderId={order.id}
-                currentStatus={normalizedStatus}
-                trackingNumber={order.tracking_number}
-              />
-            </div>
-          </section>
-
-          {/* Refund — Stripe */}
-          {pm === 'stripe' && !order.refunded_at && (
-            <section className="admin-card">
-              <h2 className="admin-section-title">Refund</h2>
-              <div className="mt-4">
-                <RefundButton
-                  orderId={order.id}
-                  maxAmount={Number(order.total_amount ?? 0)}
-                />
-              </div>
-            </section>
-          )}
-
-          {/* Refund — COD / manual */}
-          {pm !== 'stripe' && !order.refunded_at && (
-            <section className="admin-card">
-              <h2 className="admin-section-title">Refund</h2>
-              <p className="mt-1 text-sm text-earth-500">Cash or manual payment — mark refunded after returning money.</p>
-              <div className="mt-4">
-                <ManualRefundButton
-                  orderId={order.id}
-                  amount={Number(order.total_amount ?? 0)}
-                />
-              </div>
-            </section>
-          )}
-        </div>
+        {/* Timeline — desktop only alongside main content */}
       </div>
 
       {/* Audit log — full width below */}
