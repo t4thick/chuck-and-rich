@@ -109,40 +109,62 @@ export async function createShippoDomesticLabel(input: {
     }
   }
 
-  const transaction = await shippoPost<TransactionResponse>('/transactions', {
-    shipment: {
-      address_from: {
-        name: input.from.name,
-        street1: input.from.street1,
-        street2: input.from.street2 ?? '',
-        city: input.from.city,
-        state: input.from.state,
-        zip: input.from.zip,
-        country: input.from.country,
-        phone: input.from.phone,
-        email: input.from.email,
-      },
-      address_to: {
-        name: input.to.name,
-        street1: input.to.street1,
-        city: input.to.city,
-        state: input.to.state,
-        zip: input.to.zip,
-        country: 'US',
-      },
-      parcels: [
-        {
-          weight: String(input.parcel.weightLb),
-          length: String(input.parcel.lengthIn),
-          width: String(input.parcel.widthIn),
-          height: String(input.parcel.heightIn),
-          distance_unit: 'in',
-          mass_unit: 'lb',
-        },
-      ],
+  // First create a shipment to get live rates, then purchase the cheapest USPS ground rate
+  const shipment = await shippoPost<{
+    object_id?: string
+    rates?: Array<{
+      object_id?: string
+      amount?: string
+      provider?: string
+      servicelevel?: { token?: string; name?: string }
+    }>
+  }>('/shipments', {
+    address_from: {
+      name: input.from.name,
+      street1: input.from.street1,
+      street2: input.from.street2 ?? '',
+      city: input.from.city,
+      state: input.from.state,
+      zip: input.from.zip,
+      country: input.from.country,
+      phone: input.from.phone,
+      email: input.from.email,
     },
-    carrier_account: 'usps',
-    servicelevel_token: 'usps_ground_advantage',
+    address_to: {
+      name: input.to.name,
+      street1: input.to.street1,
+      city: input.to.city,
+      state: input.to.state,
+      zip: input.to.zip,
+      country: 'US',
+    },
+    parcels: [
+      {
+        weight: String(input.parcel.weightLb),
+        length: String(input.parcel.lengthIn),
+        width: String(input.parcel.widthIn),
+        height: String(input.parcel.heightIn),
+        distance_unit: 'in',
+        mass_unit: 'lb',
+      },
+    ],
+    async: false,
+  })
+
+  const uspsRates = (shipment.rates ?? []).filter((r) =>
+    r.provider?.toUpperCase().includes('USPS')
+  )
+  const chosenRate =
+    uspsRates.find((r) => r.servicelevel?.token?.toUpperCase().includes('GROUND')) ??
+    uspsRates[0] ??
+    shipment.rates?.[0]
+
+  if (!chosenRate?.object_id) {
+    throw new Error('No USPS rate available for this shipment.')
+  }
+
+  const transaction = await shippoPost<TransactionResponse>('/transactions', {
+    rate: chosenRate.object_id,
     label_file_type: 'PDF_4x6',
     async: false,
   })
