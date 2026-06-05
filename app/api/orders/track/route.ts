@@ -54,6 +54,10 @@ export async function GET(req: NextRequest) {
     order = data
   }
 
+  if (!order) {
+    return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
+  }
+
   const [{ data: items }, logsResult] = await Promise.all([
     supabaseAdmin
       .from('order_items')
