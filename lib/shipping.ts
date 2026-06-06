@@ -132,12 +132,15 @@ export function normalizeShippingRegion(value: string | null | undefined) {
 }
 
 function getZoneRate(stateCode: string): number {
-  const zone = STATE_ZONE[stateCode.toUpperCase()] ?? 6
+  const code = stateCode.toUpperCase()
+  // Unknown state defaults to zone 6 (West/Mountain) — US only
+  const zone = STATE_ZONE[code] ?? 6
   return ZONE_RATE[zone] ?? 9.99
 }
 
 function getZoneLabel(stateCode: string): ShippingQuote['zone'] {
-  const zone = STATE_ZONE[stateCode.toUpperCase()] ?? 6
+  const code = stateCode.toUpperCase()
+  const zone = STATE_ZONE[code] ?? 6
   if (zone <= 2) return 'local'
   if (zone <= 3) return 'regional'
   return 'national'

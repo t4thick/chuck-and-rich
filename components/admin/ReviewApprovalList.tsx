@@ -40,17 +40,17 @@ export function ReviewApprovalList({
 
   async function approve(id: string) {
     setLoading(id)
-    await fetch(`/api/admin/reviews/${id}/approve`, { method: 'POST' })
+    const res = await fetch(`/api/admin/reviews/${id}/approve`, { method: 'POST' })
     setLoading(null)
-    router.refresh()
+    if (res.ok) router.refresh()
   }
 
   async function reject(id: string) {
     if (!confirm('Delete this review?')) return
     setLoading(id)
-    await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' })
     setLoading(null)
-    router.refresh()
+    if (res.ok) router.refresh()
   }
 
   return (

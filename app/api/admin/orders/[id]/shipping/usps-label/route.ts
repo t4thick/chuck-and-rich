@@ -37,12 +37,16 @@ export async function POST(
     const { id } = await params
     const body = await _req.json().catch(() => ({}))
     const defaultParcel = getDefaultParcel()
-    // Allow per-request parcel override from admin UI
+    // Allow per-request parcel override — clamp to USPS maximums (70 lb, 108 in per dimension)
+    function safeParcelNum(val: unknown, fallback: number, max: number): number {
+      const n = Number(val)
+      return Number.isFinite(n) && n > 0 && n <= max ? n : fallback
+    }
     const parcel = {
-      weightLb: Number(body?.parcel?.weightLb) > 0 ? Number(body.parcel.weightLb) : defaultParcel.weightLb,
-      lengthIn: Number(body?.parcel?.lengthIn) > 0 ? Number(body.parcel.lengthIn) : defaultParcel.lengthIn,
-      widthIn:  Number(body?.parcel?.widthIn)  > 0 ? Number(body.parcel.widthIn)  : defaultParcel.widthIn,
-      heightIn: Number(body?.parcel?.heightIn) > 0 ? Number(body.parcel.heightIn) : defaultParcel.heightIn,
+      weightLb: safeParcelNum(body?.parcel?.weightLb, defaultParcel.weightLb, 70),
+      lengthIn: safeParcelNum(body?.parcel?.lengthIn, defaultParcel.lengthIn, 108),
+      widthIn:  safeParcelNum(body?.parcel?.widthIn,  defaultParcel.widthIn,  108),
+      heightIn: safeParcelNum(body?.parcel?.heightIn, defaultParcel.heightIn, 108),
     }
     const from = getShipFromAddress()!
 

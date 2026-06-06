@@ -36,7 +36,6 @@ export function ProductGallery({ mainImage, extraImages, productName }: Props) {
       {/* Main image */}
       <div className="relative overflow-hidden rounded-xl border border-earth-200 bg-earth-50 aspect-square">
         <Image
-          key={allImages[active]}
           src={allImages[active]}
           alt={`${productName} — photo ${active + 1}`}
           fill

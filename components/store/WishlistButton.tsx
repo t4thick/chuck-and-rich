@@ -36,15 +36,17 @@ export function WishlistButton({ productId }: { productId: string }) {
     setLoading(true)
     const supabase = createClient()
     if (saved) {
-      await supabase
+      const { error } = await supabase
         .from('wishlists')
         .delete()
         .eq('user_id', userId)
         .eq('product_id', productId)
-      setSaved(false)
+      if (!error) setSaved(false)
     } else {
-      await supabase.from('wishlists').insert({ user_id: userId, product_id: productId })
-      setSaved(true)
+      const { error } = await supabase
+        .from('wishlists')
+        .insert({ user_id: userId, product_id: productId })
+      if (!error) setSaved(true)
     }
     setLoading(false)
   }

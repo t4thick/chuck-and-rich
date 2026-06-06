@@ -171,8 +171,9 @@ export async function searchProductsLite(q: string, limit = 6): Promise<Product[
     // Expand search with synonyms
     const terms = expandSearchTerms(term)
 
-    // Build OR filter across all terms
-    const orFilter = terms.map((t) => `name.ilike.%${t}%`).join(',')
+    // Build OR filter — filter empty terms to prevent malformed ilike.%%
+    const cleanTerms = terms.filter((t) => t.trim().length > 0)
+    const orFilter = cleanTerms.map((t) => `name.ilike.%${t}%`).join(',')
 
     const { data } = await supabase
       .from('products')

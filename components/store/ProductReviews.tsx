@@ -86,6 +86,7 @@ export function ProductReviews({ productId }: { productId: string }) {
         setReviews((data ?? []) as Review[])
         setLoading(false)
       })
+      .catch(() => setLoading(false))
   }, [productId])
 
   async function submitReview(e: React.FormEvent) {
