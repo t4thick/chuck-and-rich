@@ -113,7 +113,15 @@ export function AddressesManager({ userId, initial }: { userId: string; initial:
     }
 
     if (draft.is_default) {
-      await supabase.from('addresses').update({ is_default: false }).eq('user_id', userId)
+      const { error: clearErr } = await supabase
+        .from('addresses')
+        .update({ is_default: false })
+        .eq('user_id', userId)
+      if (clearErr) {
+        setError(clearErr.message)
+        setSaving(false)
+        return
+      }
     }
 
     if (draft.id) {
@@ -146,7 +154,10 @@ export function AddressesManager({ userId, initial }: { userId: string; initial:
 
   async function remove(id: string) {
     if (!confirm('Delete this address?')) return
-    if (!isSupabaseBrowserConfigured()) return
+    if (!isSupabaseBrowserConfigured()) {
+      setError('Delete temporarily unavailable.')
+      return
+    }
     const supabase = createClient()
     const { error: delErr } = await supabase.from('addresses').delete().eq('id', id).eq('user_id', userId)
     if (delErr) {
@@ -158,9 +169,19 @@ export function AddressesManager({ userId, initial }: { userId: string; initial:
   }
 
   async function makeDefault(id: string) {
-    if (!isSupabaseBrowserConfigured()) return
+    if (!isSupabaseBrowserConfigured()) {
+      setError('Update temporarily unavailable.')
+      return
+    }
     const supabase = createClient()
-    await supabase.from('addresses').update({ is_default: false }).eq('user_id', userId)
+    const { error: clearErr } = await supabase
+      .from('addresses')
+      .update({ is_default: false })
+      .eq('user_id', userId)
+    if (clearErr) {
+      setError(clearErr.message)
+      return
+    }
     const { error: upErr } = await supabase
       .from('addresses')
       .update({ is_default: true })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminApi } from '@/lib/auth/require-admin-api'
 import { assertSameOrigin } from '@/lib/security/same-origin'
+import { normalizeOrderStatus } from '@/lib/order-status'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(
@@ -20,7 +21,7 @@ export async function POST(
 
     const { data: order, error: fetchErr } = await supabaseAdmin
       .from('orders')
-      .select('id, total_amount, payment_method, refunded_at')
+      .select('id, total_amount, payment_method, refunded_at, status')
       .eq('id', id)
       .single()
 
@@ -32,25 +33,32 @@ export async function POST(
       return NextResponse.json({ error: 'Order already refunded.' }, { status: 400 })
     }
 
+    const fromStatus = normalizeOrderStatus(order.status)
     const nowIso = new Date().toISOString()
+
     const { error } = await supabaseAdmin
       .from('orders')
       .update({
         refunded_at: nowIso,
         refund_amount: order.total_amount,
         status: 'cancelled',
+        cancelled_at: nowIso,
       })
       .eq('id', id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    await supabaseAdmin.from('order_status_logs').insert({
+    const { error: logErr } = await supabaseAdmin.from('order_status_logs').insert({
       order_id: id,
-      from_status: 'ordered',
+      from_status: fromStatus,
       to_status: 'cancelled',
       changed_by: 'admin',
       note: `Manual refund marked${reason ? `: ${reason}` : ''} ($${Number(order.total_amount ?? 0).toFixed(2)})`,
     })
+
+    if (logErr) {
+      console.error('[manual-refund] audit log failed:', logErr.message)
+    }
 
     return NextResponse.json({ ok: true })
   } catch {
