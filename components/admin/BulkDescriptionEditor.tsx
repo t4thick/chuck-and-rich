@@ -76,11 +76,11 @@ export function BulkDescriptionEditor({ products }: { products: Product[] }) {
               placeholder={`Describe ${product.name} — ingredients, weight, origin, how to use…`}
               value={descriptions[product.id] ?? ''}
               onChange={(e) => setDescriptions((d) => ({ ...d, [product.id]: e.target.value }))}
-              maxLength={500}
+              maxLength={5000}
             />
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] text-earth-400">
-                {(descriptions[product.id] ?? '').length}/500
+                {(descriptions[product.id] ?? '').length}/5000
               </span>
               <div className="flex items-center gap-2">
                 {errors[product.id] && (

@@ -201,9 +201,14 @@ export default async function ProductPage({
             <ProductStickyBar product={product} sentinelId="product-cta" />
 
             {product.description && (
-              <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-earth-600">
-                {product.description}
-              </p>
+              <div className="mt-6 border-t border-earth-100 pt-5">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-earth-500 mb-2">
+                  About this product
+                </h2>
+                <p className="max-w-xl text-[15px] leading-relaxed text-earth-700">
+                  {product.description}
+                </p>
+              </div>
             )}
 
             <p className="mt-5 flex items-center gap-2 text-xs text-earth-500">

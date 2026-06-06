@@ -177,15 +177,15 @@ export function ProductForm({ initialData, productId }: Props) {
         </label>
         <textarea
           id="description"
-          rows={3}
-          maxLength={500}
+          rows={4}
+          maxLength={5000}
           className="form-input"
-          placeholder="e.g. Ready-to-cook fufu flour for smooth, stretchy fufu. Serve with soup or stew."
+          placeholder="e.g. Ready-to-cook fufu flour for smooth, stretchy fufu. Serve with soup or stew. Great for making pounded yam swallow."
           value={form.description}
           onChange={(e) => update('description', e.target.value)}
         />
-        <p className={`text-[11px] ${descLength > 450 ? 'text-amber-600' : 'text-earth-400'}`}>
-          {descLength}/500
+        <p className={`text-[11px] ${descLength > 4500 ? 'text-amber-600' : 'text-earth-400'}`}>
+          {descLength}/5000
         </p>
       </div>
 

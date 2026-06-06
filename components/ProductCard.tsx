@@ -59,6 +59,11 @@ export function ProductCard({ product, priority }: { product: Product; priority?
           <h3 className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-snug text-earth-900 transition-colors duration-150 group-hover:text-brand-700 sm:text-[15px]">
             {product.name}
           </h3>
+          {product.description && (
+            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-earth-500">
+              {product.description}
+            </p>
+          )}
           {(product.in_stock || packSize) && (
             <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
               {product.in_stock && <ProductStockLabel inStock compact />}
