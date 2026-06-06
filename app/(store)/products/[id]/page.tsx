@@ -13,6 +13,7 @@ import { RecentlyViewed } from '@/components/store/RecentlyViewed'
 import { BackToTop } from '@/components/store/BackToTop'
 import { FrequentlyBoughtTogether } from '@/components/store/FrequentlyBoughtTogether'
 import { ProductReviews } from '@/components/store/ProductReviews'
+import { ProductGallery } from '@/components/store/ProductGallery'
 import { WishlistButton } from '@/components/store/WishlistButton'
 import { ProductStockLabel } from '@/components/store/ProductStockLabel'
 import { extractPackSize } from '@/lib/product-display'
@@ -24,7 +25,7 @@ export const dynamic = 'force-dynamic'
 async function loadProduct(id: string): Promise<Product | null> {
   const supabase = await createClientOptional()
   if (!supabase) return null
-  const { data } = await supabase.from('products').select('*').eq('id', id).single()
+  const { data } = await supabase.from('products').select('*, image_urls').eq('id', id).single()
   return (data as Product | null) ?? null
 }
 
@@ -179,15 +180,11 @@ export default async function ProductPage({
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          <div className="overflow-hidden rounded-xl border border-earth-200 bg-earth-50">
-            <ProductImage
-              src={product.image_url}
-              alt={product.name}
-              className="rounded-none"
-              sizes="(max-width:1024px) 100vw, 50vw"
-              priority
-            />
-          </div>
+          <ProductGallery
+            mainImage={product.image_url}
+            extraImages={product.image_urls}
+            productName={product.name}
+          />
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">

@@ -5,6 +5,7 @@ export type Product = {
   price: number
   category: string
   image_url: string | null
+  image_urls?: string[] | null
   in_stock: boolean
   created_at: string
 }

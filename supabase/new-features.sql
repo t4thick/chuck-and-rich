@@ -1,50 +1,49 @@
 -- ============================================================
 -- Run this in Supabase Dashboard → SQL Editor
--- Adds: product_reviews + wishlists tables
+-- Adds: product_reviews, wishlists, product image gallery
 -- ============================================================
 
--- Product Reviews
+-- 1. Product image gallery (extra photos per product)
+alter table public.products
+  add column if not exists image_urls text[] default '{}';
+
+-- 2. Product Reviews
 create table if not exists public.product_reviews (
-  id           uuid primary key default gen_random_uuid(),
-  product_id   uuid not null references public.products(id) on delete cascade,
-  user_id      uuid references auth.users(id) on delete set null,
+  id            uuid primary key default gen_random_uuid(),
+  product_id    uuid not null references public.products(id) on delete cascade,
+  user_id       uuid references auth.users(id) on delete set null,
   reviewer_name text not null,
-  rating       smallint not null check (rating between 1 and 5),
-  comment      text,
-  approved     boolean not null default false,
-  created_at   timestamptz not null default now()
+  rating        smallint not null check (rating between 1 and 5),
+  comment       text,
+  approved      boolean not null default false,
+  created_at    timestamptz not null default now()
 );
 
--- Index for fast product lookup
-create index if not exists product_reviews_product_id_idx on public.product_reviews(product_id);
+create index if not exists product_reviews_product_id_idx
+  on public.product_reviews(product_id);
 
--- RLS: anyone can read approved reviews
 alter table public.product_reviews enable row level security;
+
 create policy "approved reviews are public" on public.product_reviews
   for select using (approved = true);
 
--- Authenticated users can insert their own reviews
 create policy "users can submit reviews" on public.product_reviews
-  for insert with check (auth.uid() is not null or true);
+  for insert with check (true);
 
--- Only service role can approve (admin uses service role key)
-create policy "service role manages reviews" on public.product_reviews
-  using (auth.role() = 'service_role');
-
-
--- Wishlists
+-- 3. Wishlists
 create table if not exists public.wishlists (
-  id           uuid primary key default gen_random_uuid(),
-  user_id      uuid not null references auth.users(id) on delete cascade,
-  product_id   uuid not null references public.products(id) on delete cascade,
-  created_at   timestamptz not null default now(),
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  product_id  uuid not null references public.products(id) on delete cascade,
+  created_at  timestamptz not null default now(),
   unique(user_id, product_id)
 );
 
-create index if not exists wishlists_user_id_idx on public.wishlists(user_id);
+create index if not exists wishlists_user_id_idx
+  on public.wishlists(user_id);
 
--- RLS: users can only see and manage their own wishlist
 alter table public.wishlists enable row level security;
+
 create policy "users manage own wishlist" on public.wishlists
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);

@@ -14,7 +14,7 @@ export default async function EditProductPage({
   const { id } = await params
   const { data: product } = await supabaseAdmin
     .from('products')
-    .select('*')
+    .select('*, image_urls')
     .eq('id', id)
     .single()
 
@@ -43,6 +43,7 @@ export default async function EditProductPage({
           price: String(product.price),
           category: product.category,
           image_url: product.image_url ?? '',
+          image_urls: (product as any).image_urls ?? [],
           in_stock: product.in_stock,
         }}
       />

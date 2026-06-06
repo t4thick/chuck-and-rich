@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ExternalLink, ImagePlus, Loader2 } from 'lucide-react'
+import { ExternalLink, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PRODUCT_CATEGORIES } from '@/lib/constants/categories'
@@ -18,11 +18,12 @@ type FormData = {
   price: string
   category: string
   image_url: string
+  image_urls: string[]
   in_stock: boolean
 }
 
 type Props = {
-  initialData?: Partial<FormData>
+  initialData?: Partial<FormData> & { image_urls?: string[] | null }
   productId?: string
 }
 
@@ -34,6 +35,7 @@ export function ProductForm({ initialData, productId }: Props) {
     price: initialData?.price ?? '',
     category: initialData?.category ?? CATEGORIES[0],
     image_url: initialData?.image_url ?? '',
+    image_urls: initialData?.image_urls?.filter(Boolean) ?? [],
     in_stock: initialData?.in_stock ?? true,
   })
   const [uploading, setUploading] = useState(false)
@@ -46,33 +48,57 @@ export function ProductForm({ initialData, productId }: Props) {
     setSaved(false)
   }
 
+  async function uploadFile(file: File): Promise<string | null> {
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5 MB.')
+      return null
+    }
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+    const data = await res.json()
+    return data.url ?? null
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-
-    // Validate file size client-side before uploading
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be under 5 MB.')
-      return
-    }
-
     setUploading(true)
     setError('')
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (data.url) {
-        update('image_url', data.url)
-      } else {
-        setError(data.error || 'Upload failed.')
-      }
+      const url = await uploadFile(file)
+      if (url) update('image_url', url)
+      else if (!error) setError('Upload failed.')
     } catch {
       setError('Upload failed — check your connection.')
     } finally {
       setUploading(false)
     }
+  }
+
+  async function handleExtraImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    setUploading(true)
+    setError('')
+    try {
+      const urls: string[] = []
+      for (const file of files) {
+        const url = await uploadFile(file)
+        if (url) urls.push(url)
+      }
+      update('image_urls', [...form.image_urls, ...urls])
+    } catch {
+      setError('Upload failed.')
+    } finally {
+      setUploading(false)
+      // Reset input so same file can be re-selected
+      e.target.value = ''
+    }
+  }
+
+  function removeExtraImage(url: string) {
+    update('image_urls', form.image_urls.filter((u) => u !== url))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -266,6 +292,49 @@ export function ProductForm({ initialData, productId }: Props) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Extra images */}
+      <div className="space-y-1.5">
+        <label className="form-label">
+          Extra photos
+          <span className="ml-1.5 font-normal text-earth-400">(optional — customers can swipe through these)</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {form.image_urls.map((url, i) => (
+            <div key={url} className="relative">
+              <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-earth-200 bg-earth-50">
+                <Image src={url} alt={`Extra photo ${i + 1}`} fill className="object-cover" sizes="80px" />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeExtraImage(url)}
+                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
+                aria-label="Remove photo"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+          <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-earth-300 bg-earth-50 text-earth-400 hover:border-brand-400 hover:bg-brand-50/20 transition-colors">
+            {uploading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <ImagePlus className="h-5 w-5" strokeWidth={1.5} />
+            )}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              className="sr-only"
+              onChange={handleExtraImageUpload}
+              disabled={uploading}
+            />
+          </label>
+        </div>
+        <p className="text-[11px] text-earth-400">
+          Click + to add more photos. Customers see all photos on the product page.
+        </p>
       </div>
 
       {/* In stock toggle */}
