@@ -29,7 +29,15 @@ export async function POST(
   try {
     const { id } = await params
     const from = getShipFromAddress()!
-    const parcel = getDefaultParcel()
+    const body = await _req.json().catch(() => ({}))
+    const defaultParcel = getDefaultParcel()
+    // Allow per-request parcel override from admin UI
+    const parcel = {
+      weightLb: Number(body?.parcel?.weightLb) > 0 ? Number(body.parcel.weightLb) : defaultParcel.weightLb,
+      lengthIn: Number(body?.parcel?.lengthIn) > 0 ? Number(body.parcel.lengthIn) : defaultParcel.lengthIn,
+      widthIn:  Number(body?.parcel?.widthIn)  > 0 ? Number(body.parcel.widthIn)  : defaultParcel.widthIn,
+      heightIn: Number(body?.parcel?.heightIn) > 0 ? Number(body.parcel.heightIn) : defaultParcel.heightIn,
+    }
 
     const { data: order, error } = await supabaseAdmin
       .from('orders')
