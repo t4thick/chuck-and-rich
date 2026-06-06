@@ -252,7 +252,7 @@ export function CheckoutClient({
     const city = form.city.trim()
     const state = form.state.trim()
     const zip = form.postalCode.trim()
-    if (line1.length < 5 || city.length < 2 || state.length < 2 || !/^\d{5}/.test(zip)) {
+    if (line1.length < 5 || city.length < 2 || state.length < 2 || !/^\d{5}$/.test(zip)) {
       setAddressVerifyStatus('idle')
       setSuggestedAddress(null)
       setAddressVerifyError('')
@@ -383,8 +383,10 @@ export function CheckoutClient({
       country: suggestedAddress.country || prev.country,
     }))
     setSuggestedAddress(null)
-    setAddressVerifyStatus('idle')
+    // USPS already suggested this address — mark as verified immediately
+    setAddressVerifyStatus('ok')
     setAddressVerifyError('')
+    setAddressVerified(true)
   }
 
   const checkoutFingerprint = useMemo(
@@ -437,8 +439,8 @@ export function CheckoutClient({
       name === 'city' ||
       name === 'state' ||
       name === 'postalCode' ||
-      name === 'country' ||
-      name === 'address2'
+      name === 'country'
+      // address2 (apt/suite) intentionally excluded — doesn't affect delivery verification
     ) {
       setAddressVerified(false)
       setAddressVerifyStatus('idle')
