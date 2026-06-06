@@ -140,7 +140,7 @@ export function AddressAutocomplete({
   }
 
   function handleBlur() {
-    if (!verified && value.trim().length >= 3) {
+    if (!verified && value.trim().length >= 3 && suggestions.length === 0) {
       setTouchError('Select your address from the US list — do not type a made-up street.')
     }
   }
@@ -241,7 +241,7 @@ export function AddressAutocomplete({
         </p>
       )}
 
-      {touchError ? (
+      {touchError && !verified ? (
         <p className="mt-1 text-xs font-medium text-red-700" role="alert">
           {touchError}
         </p>
