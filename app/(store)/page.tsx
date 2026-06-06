@@ -1,3 +1,5 @@
+export const revalidate = 60 // Refresh homepage data every 60 seconds — keeps stock status current
+
 import { HeroSection } from '@/components/store/HeroSection'
 import { TrustStrip } from '@/components/store/TrustStrip'
 import { CategoryBrowse } from '@/components/store/CategoryBrowse'
