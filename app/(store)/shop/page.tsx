@@ -75,8 +75,8 @@ export default async function ShopPage({
       </div>
 
       <div className="store-container py-6 sm:py-8 lg:py-10">
-        <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-10">
-          <aside className="hidden lg:block">
+        <div className="md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-10">
+          <aside className="hidden md:block">
             <div className="sticky top-24">
               <Suspense fallback={<p className="muted">Loading filters…</p>}>
                 <ShopFiltersSidebar categoryCount={categoryCount} />
@@ -85,7 +85,7 @@ export default async function ShopPage({
           </aside>
 
           <div>
-            <div className="sticky top-14 z-40 -mx-4 border-b border-earth-200 bg-white/95 px-4 py-2.5 backdrop-blur-sm sm:top-16 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+            <div className="sticky top-14 z-40 -mx-4 border-b border-earth-200 bg-white/95 px-4 py-2.5 backdrop-blur-sm sm:top-16 md:hidden lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
               <Suspense fallback={null}>
                 <ShopFiltersBar categoryCount={categoryCount} />
               </Suspense>
@@ -120,7 +120,7 @@ export default async function ShopPage({
                 </Link>
               </div>
             ) : (
-              <div className="mt-6 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
                 {products.map((product: Product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

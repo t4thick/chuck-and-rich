@@ -64,11 +64,11 @@ export function Navbar() {
           <div className="flex h-14 items-center justify-between gap-3 sm:h-16">
             <StoreLogo />
 
-            <div className="hidden flex-1 px-4 md:block md:max-w-md lg:max-w-xl">
+            <div className="hidden flex-1 px-4 md:block md:max-w-sm lg:max-w-xl">
               <ShopSearchBar compact />
             </div>
 
-            <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Main">
+            <nav className="hidden items-center gap-0.5 md:flex" aria-label="Main">
               {NAV_LINKS.map(({ href, label }) => {
                 const active = isActive(pathname, href)
                 return (
@@ -106,8 +106,8 @@ export function Navbar() {
               </Button>
             </nav>
 
-            {/* Mobile: cart + hamburger */}
-            <div className="flex items-center gap-0.5 lg:hidden">
+            {/* Mobile only: cart + hamburger */}
+            <div className="flex items-center gap-0.5 md:hidden">
               <Button
                 type="button"
                 variant="ghost"
@@ -140,7 +140,7 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Mobile search — sits flush under the icon row */}
+          {/* Mobile search — sits flush under the icon row, hidden on tablet+ */}
           <div className="pb-2.5 md:hidden">
             <ShopSearchBar compact />
           </div>
@@ -151,13 +151,13 @@ export function Navbar() {
       {open && (
         <>
           <div
-            className="fixed inset-0 z-[60] bg-black/25 lg:hidden"
+            className="fixed inset-0 z-[60] bg-black/25 md:hidden"
             onClick={() => setOpen(false)}
             aria-hidden
           />
           <nav
             id="mobile-nav"
-            className="animate-slide-in-right fixed inset-y-0 right-0 z-[70] flex w-72 flex-col bg-white shadow-2xl lg:hidden"
+            className="animate-slide-in-right fixed inset-y-0 right-0 z-[70] flex w-72 flex-col bg-white shadow-2xl md:hidden"
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
             aria-label="Mobile"
           >
