@@ -107,7 +107,7 @@ export default async function CustomerDetail({
       </section>
 
       {/* Contact + addresses */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         <section className="admin-card lg:col-span-1">
           <h2 className="admin-section-title mb-3">Contact</h2>
           <dl className="space-y-2 text-sm">

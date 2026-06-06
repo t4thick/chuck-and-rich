@@ -559,7 +559,7 @@ export function CheckoutClient({
           Back to cart
         </Link>
 
-        <div className="grid gap-8 lg:grid-cols-5 lg:gap-12">
+        <div className="grid gap-8 md:grid-cols-5 md:gap-10 lg:gap-12">
           <form
             ref={detailsFormRef}
             onSubmit={(e) => e.preventDefault()}

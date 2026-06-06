@@ -179,7 +179,7 @@ export default async function ProductPage({
           Back to shop
         </Link>
 
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+        <div className="grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
           <ProductGallery
             mainImage={product.image_url}
             extraImages={product.image_urls}
@@ -228,7 +228,7 @@ export default async function ProductPage({
             <h2 className="text-xl font-semibold tracking-tight text-earth-900 sm:text-2xl">
               More in {product.category}
             </h2>
-            <div className="mt-6 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}

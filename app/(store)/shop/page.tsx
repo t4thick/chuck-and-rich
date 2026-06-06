@@ -120,7 +120,7 @@ export default async function ShopPage({
                 </Link>
               </div>
             ) : (
-              <div className="mt-6 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
                 {products.map((product: Product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

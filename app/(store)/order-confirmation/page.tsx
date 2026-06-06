@@ -95,7 +95,7 @@ export default async function OrderConfirmationPage({
         </div>
 
         {order && (
-          <div className="mx-auto mt-12 grid max-w-4xl gap-8 lg:grid-cols-2">
+          <div className="mx-auto mt-12 grid max-w-4xl gap-8 md:grid-cols-2">
             <div className="premium-card p-6 sm:p-8">
               <h2 className="text-base font-semibold text-earth-900">Delivery progress</h2>
               <div className="mt-6">

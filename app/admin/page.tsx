@@ -296,8 +296,8 @@ export default async function AdminDashboard({
       </section>
 
       {/* Best sellers + operations */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <section className="lg:col-span-2">
+      <div className="grid gap-6 md:grid-cols-3">
+        <section className="md:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="admin-section-title">Top products in this period</h2>
             <Link

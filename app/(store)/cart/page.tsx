@@ -46,7 +46,7 @@ export default function CartPage() {
       </div>
 
       <div className="store-container py-6 sm:py-8">
-        <div className="grid gap-8 lg:grid-cols-3 lg:gap-10">
+        <div className="grid gap-8 md:grid-cols-3 md:gap-8 lg:gap-10">
           <div className="space-y-3 lg:col-span-2">
             {items.map(({ product, quantity }) => (
               <article

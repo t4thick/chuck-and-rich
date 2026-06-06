@@ -232,7 +232,7 @@ export function TrackOrderClient() {
         {error && <p className="error mt-6">{error}</p>}
 
         {data && (
-          <div className="mt-10 grid gap-8 lg:grid-cols-2 lg:gap-12">
+          <div className="mt-10 grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
             <div className="premium-card p-6 sm:p-8">
               <p className="text-xs font-bold uppercase tracking-wider text-earth-500">Status</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight text-earth-900">
