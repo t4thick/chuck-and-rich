@@ -109,6 +109,56 @@ export async function fetchCategoryCounts(): Promise<Record<string, number>> {
   }
 }
 
+// Synonym map for African & Caribbean grocery search
+// If someone types the left term, we also search the right terms
+const SEARCH_SYNONYMS: Record<string, string[]> = {
+  'fufu': ['fufuf', 'cassava', 'cocoyam'],
+  'garri': ['gari', 'cassava'],
+  'gari': ['garri', 'cassava'],
+  'palm oil': ['zomi', 'red palm'],
+  'zomi': ['palm oil', 'red palm'],
+  'stockfish': ['stock fish', 'dried fish', 'okporoko'],
+  'stock fish': ['stockfish', 'dried fish'],
+  'egusi': ['melon seed', 'agushi'],
+  'crayfish': ['dried shrimp', 'ground crayfish'],
+  'plantain': ['dodo', 'boli'],
+  'ogbono': ['draw soup', 'apon'],
+  'groundnut': ['peanut', 'groundnut oil'],
+  'peanut': ['groundnut'],
+  'malt': ['malta', 'maltina', 'supermalt'],
+  'malta': ['malt', 'maltina'],
+  'suya': ['suya spice', 'yaji'],
+  'jollof': ['jollof rice', 'benachin'],
+  'pepper soup': ['peppersoup', 'pepper soup spice'],
+  'eba': ['cassava', 'garri'],
+  'amala': ['yam flour', 'poundo'],
+  'pounded yam': ['poundo', 'pound yam', 'iyan'],
+  'poundo': ['pounded yam', 'pound yam'],
+  'ofe': ['soup', 'stew'],
+  'bitters': ['alomo', 'orijin', 'adonko'],
+  'semovita': ['semo', 'semolina'],
+  'konkonte': ['cassava flour', 'abolo'],
+  'banku': ['banku mix', 'corn dough'],
+  'shea butter': ['nkuto', 'ori', 'shea'],
+  'black soap': ['alata soap', 'dudu osun'],
+}
+
+function expandSearchTerms(term: string): string[] {
+  const lower = term.toLowerCase()
+  const terms = new Set([lower])
+  // Check if any synonym key is in the search term
+  for (const [key, synonyms] of Object.entries(SEARCH_SYNONYMS)) {
+    if (lower.includes(key)) {
+      synonyms.forEach((s) => terms.add(s))
+    }
+    // Also check if search term matches a synonym value
+    if (synonyms.some((s) => lower.includes(s))) {
+      terms.add(key)
+    }
+  }
+  return [...terms]
+}
+
 export async function searchProductsLite(q: string, limit = 6): Promise<Product[]> {
   const term = q.trim()
   if (!term) return []
@@ -117,13 +167,30 @@ export async function searchProductsLite(q: string, limit = 6): Promise<Product[
   try {
     const supabase = await createClientOptional()
     if (!supabase) return []
+
+    // Expand search with synonyms
+    const terms = expandSearchTerms(term)
+
+    // Build OR filter across all terms
+    const orFilter = terms.map((t) => `name.ilike.%${t}%`).join(',')
+
     const { data } = await supabase
       .from('products')
       .select('id,name,price,image_url,category,in_stock')
-      .ilike('name', `%${term}%`)
+      .or(orFilter)
       .order('in_stock', { ascending: false })
       .limit(limit)
-    return ((data ?? []) as Product[]) ?? []
+
+    // Sort: exact matches first, then in-stock, then by name match quality
+    const sorted = ((data ?? []) as Product[]).sort((a, b) => {
+      const aExact = a.name.toLowerCase().includes(term.toLowerCase()) ? 1 : 0
+      const bExact = b.name.toLowerCase().includes(term.toLowerCase()) ? 1 : 0
+      if (bExact !== aExact) return bExact - aExact
+      if (b.in_stock !== a.in_stock) return b.in_stock ? 1 : -1
+      return 0
+    })
+
+    return sorted
   } catch {
     return []
   }
@@ -139,6 +206,57 @@ export async function fetchFrequentlyBoughtTogether(
   try {
     const supabase = await createClientOptional()
     if (!supabase) return []
+
+    // Try real purchase data first — find orders that contained this product
+    // then surface other products from those same orders
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select('order_id')
+      .eq('product_id', excludeId)
+      .limit(50)
+
+    if (orderItems && orderItems.length > 0) {
+      const orderIds = orderItems.map((o) => o.order_id)
+
+      // Find other products bought in those same orders
+      const { data: coItems } = await supabase
+        .from('order_items')
+        .select('product_id')
+        .in('order_id', orderIds)
+        .neq('product_id', excludeId)
+        .limit(200)
+
+      if (coItems && coItems.length > 0) {
+        // Count how many times each product appears
+        const freq: Record<string, number> = {}
+        for (const item of coItems) {
+          if (item.product_id) {
+            freq[item.product_id] = (freq[item.product_id] ?? 0) + 1
+          }
+        }
+
+        // Get top product IDs by frequency
+        const topIds = Object.entries(freq)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, limit * 2)
+          .map(([id]) => id)
+
+        if (topIds.length > 0) {
+          const { data: products } = await supabase
+            .from('products')
+            .select('id,name,price,image_url,category,in_stock,description,created_at')
+            .in('id', topIds)
+            .eq('in_stock', true)
+            .limit(limit)
+
+          if (products && products.length > 0) {
+            return products as Product[]
+          }
+        }
+      }
+    }
+
+    // Fallback: same category (original behaviour)
     const { data } = await supabase
       .from('products')
       .select('id,name,price,image_url,category,in_stock,description,created_at')

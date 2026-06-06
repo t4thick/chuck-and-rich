@@ -12,6 +12,8 @@ import { RecordRecentlyViewed } from '@/components/store/RecordRecentlyViewed'
 import { RecentlyViewed } from '@/components/store/RecentlyViewed'
 import { BackToTop } from '@/components/store/BackToTop'
 import { FrequentlyBoughtTogether } from '@/components/store/FrequentlyBoughtTogether'
+import { ProductReviews } from '@/components/store/ProductReviews'
+import { WishlistButton } from '@/components/store/WishlistButton'
 import { ProductStockLabel } from '@/components/store/ProductStockLabel'
 import { extractPackSize } from '@/lib/product-display'
 import { formatMoney } from '@/lib/utils'
@@ -191,9 +193,12 @@ export default async function ProductPage({
             <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
               {product.category}
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-earth-900 sm:text-3xl lg:text-4xl">
-              {product.name}
-            </h1>
+            <div className="mt-2 flex items-start justify-between gap-3">
+              <h1 className="text-2xl font-semibold tracking-tight text-earth-900 sm:text-3xl lg:text-4xl">
+                {product.name}
+              </h1>
+              <WishlistButton productId={product.id} />
+            </div>
 
             <ProductPurchaseBlock product={product} />
             <ProductStickyBar product={product} sentinelId="product-cta" />
@@ -230,6 +235,7 @@ export default async function ProductPage({
         </section>
       )}
 
+      <ProductReviews productId={product.id} />
       <RecentlyViewed excludeId={product.id} />
       <BackToTop />
     </div>

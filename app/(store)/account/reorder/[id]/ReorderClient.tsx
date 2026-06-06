@@ -3,8 +3,11 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { ArrowRight, Check, ShoppingBag } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { formatMoney } from '@/lib/utils'
 import type { Product } from '@/types'
 
 type OrderItem = {
@@ -18,16 +21,14 @@ export function ReorderClient({ items }: { items: OrderItem[] }) {
   const { addItem } = useCart()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
-  const [report, setReport] = useState<{ added: number; missing: string[] } | null>(null)
+  const [done, setDone] = useState(false)
+  const [missing, setMissing] = useState<string[]>([])
 
   async function reorder() {
     setBusy(true)
-    setReport(null)
-    const added: string[] = []
-    const missing: string[] = []
+    const missedItems: string[] = []
 
     if (!isSupabaseBrowserConfigured()) {
-      setReport({ added: 0, missing: items.map((i) => i.product_name) })
       setBusy(false)
       return
     }
@@ -36,55 +37,96 @@ export function ReorderClient({ items }: { items: OrderItem[] }) {
 
     for (const item of items) {
       if (!item.product_id) {
-        missing.push(item.product_name)
+        missedItems.push(item.product_name)
         continue
       }
       const { data } = await supabase
         .from('products')
         .select('*')
         .eq('id', item.product_id)
+        .eq('in_stock', true)
         .maybeSingle()
+
       if (!data) {
-        missing.push(item.product_name)
+        missedItems.push(item.product_name)
         continue
       }
       addItem(data as Product, item.quantity)
-      added.push(item.product_name)
     }
-    setReport({ added: added.length, missing })
+
+    setMissing(missedItems)
+    setDone(true)
     setBusy(false)
   }
 
-  return (
-    <div className="stack">
-      <table>
-        <thead><tr><th>Item</th><th>Qty</th><th>Was</th></tr></thead>
-        <tbody>
-          {items.map((it, i) => (
-            <tr key={i}>
-              <td>{it.product_name}</td>
-              <td>{it.quantity}</td>
-              <td>${Number(it.product_price).toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  const addedCount = items.length - missing.length
 
-      {report && (
-        <p className="success">
-          Added {report.added} item{report.added === 1 ? '' : 's'} to cart.
-          {report.missing.length > 0 && (
-            <> Could not re-add: {report.missing.join(', ')} (no longer available).</>
+  return (
+    <div className="space-y-6">
+      {/* Item list */}
+      <div className="premium-card overflow-hidden p-0">
+        <div className="border-b border-earth-100 px-5 py-4">
+          <p className="text-sm font-semibold text-earth-900">Items in this order</p>
+        </div>
+        <ul className="divide-y divide-earth-100">
+          {items.map((it, i) => (
+            <li key={i} className="flex items-center justify-between gap-4 px-5 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-earth-900">{it.product_name}</p>
+                <p className="text-xs text-earth-500">Qty: {it.quantity}</p>
+              </div>
+              <p className="text-sm font-semibold text-earth-900 tabular-nums">
+                {formatMoney(it.product_price * it.quantity)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Success state */}
+      {done && (
+        <div className={`rounded-xl border p-4 ${addedCount > 0 ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+          {addedCount > 0 && (
+            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-900">
+              <Check className="h-4 w-4" />
+              {addedCount} item{addedCount === 1 ? '' : 's'} added to your cart
+            </p>
           )}
-        </p>
+          {missing.length > 0 && (
+            <p className="mt-1 text-xs text-amber-800">
+              No longer available: {missing.join(', ')}
+            </p>
+          )}
+        </div>
       )}
 
-      <div className="row">
-        <button type="button" onClick={() => void reorder()} disabled={busy}>
-          {busy ? 'Adding…' : 'Add all to cart'}
-        </button>
-        {report && <button type="button" onClick={() => router.push('/cart')}>Go to cart</button>}
-        <Link href="/shop">Continue shopping</Link>
+      {/* Actions */}
+      <div className="flex flex-wrap gap-3">
+        {!done ? (
+          <Button
+            type="button"
+            size="lg"
+            className="gap-2"
+            onClick={() => void reorder()}
+            disabled={busy}
+          >
+            <ShoppingBag className="h-4 w-4" />
+            {busy ? 'Adding to cart…' : 'Add all to cart'}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="lg"
+            className="gap-2"
+            onClick={() => router.push('/cart')}
+          >
+            Go to cart
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
+        <Link href="/shop" className="no-underline">
+          <Button variant="outline" size="lg">Continue shopping</Button>
+        </Link>
       </div>
     </div>
   )

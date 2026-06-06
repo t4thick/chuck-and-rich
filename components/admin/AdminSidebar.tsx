@@ -10,6 +10,7 @@ import {
   Menu,
   Package,
   ShoppingBag,
+  Star,
   Truck,
   Users,
   X,
@@ -22,6 +23,7 @@ const NAV = [
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/shipping', label: 'Shipping', icon: Truck },
+  { href: '/admin/reviews', label: 'Reviews', icon: Star },
 ] as const
 
 function isActive(pathname: string, href: string, exact?: boolean) {
