@@ -20,6 +20,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ids and status are required.' }, { status: 400 })
     }
 
+    // Fetch current statuses before updating so audit log has from_status
+    const { data: currentOrders } = await supabaseAdmin
+      .from('orders')
+      .select('id, status')
+      .in('id', ids)
+
+    const fromStatusMap = new Map(
+      (currentOrders ?? []).map((o) => [o.id, normalizeOrderStatus(o.status)])
+    )
+
     const nowIso = new Date().toISOString()
     const updatePayload: Record<string, unknown> = { status }
     updatePayload[ORDER_STATUS_TIMESTAMP_COLUMN[status]] = nowIso
@@ -31,10 +41,11 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Log each status change
+    // Log each status change with correct from_status
     await supabaseAdmin.from('order_status_logs').insert(
       ids.map((id) => ({
         order_id: id,
+        from_status: fromStatusMap.get(id) ?? null,
         to_status: status,
         changed_by: 'admin-bulk',
         note: `Bulk update to ${status}`,

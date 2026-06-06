@@ -169,7 +169,7 @@ export async function createShippoDomesticLabel(input: {
     async: false,
   })
 
-  if (transaction.status !== 'SUCCESS' || !transaction.tracking_number) {
+  if (transaction.status !== 'SUCCESS' || !transaction.tracking_number || !transaction.label_url) {
     const errMsg =
       transaction.messages?.map((m) => m.text).filter(Boolean).join('; ') ??
       'Shippo label creation failed.'
@@ -177,7 +177,7 @@ export async function createShippoDomesticLabel(input: {
   }
 
   // Download the PDF label
-  const labelRes = await fetch(transaction.label_url!)
+  const labelRes = await fetch(transaction.label_url)
   if (!labelRes.ok) throw new Error('Could not download label PDF from Shippo.')
   const pdf = Buffer.from(await labelRes.arrayBuffer())
 
@@ -189,7 +189,7 @@ export async function createShippoDomesticLabel(input: {
     postage,
     mailClass,
     pdf,
-    labelUrl: transaction.label_url!,
+    labelUrl: transaction.label_url,
     metadata: transaction as unknown as Record<string, unknown>,
   }
 }

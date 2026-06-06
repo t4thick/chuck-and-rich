@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { requireAdminApi } from '@/lib/auth/require-admin-api'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { assertSameOrigin } from '@/lib/security/same-origin'
+import { normalizeOrderStatus } from '@/lib/order-status'
 
 export async function POST(
   req: NextRequest,
@@ -78,10 +79,13 @@ export async function POST(
       })
       .eq('id', id)
 
+    const fromStatus = normalizeOrderStatus(order.status)
+    const toStatus = isFullRefund ? 'cancelled' : fromStatus
+
     await supabaseAdmin.from('order_status_logs').insert({
       order_id: id,
-      from_status: order.status ?? null,
-      to_status: isFullRefund ? 'cancelled' : (order.status ?? 'processing'),
+      from_status: fromStatus,
+      to_status: toStatus,
       changed_by: 'admin',
       note: `Refunded $${(amountCents / 100).toFixed(2)}${reason ? ` — ${reason}` : ''}`,
     })
