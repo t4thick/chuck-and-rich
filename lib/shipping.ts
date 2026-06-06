@@ -48,13 +48,13 @@ const STATE_ZONE: Record<string, number> = {
 // Shipping rates per zone for standard USPS Ground Advantage (Shippo commercial)
 // Based on 12×8×6 in box, ~2 lb from Columbus OH
 const ZONE_RATE: Record<number, number> = {
-  2: 5.99,   // Ohio + neighbors
-  3: 7.49,   // Mid-Atlantic, Great Lakes
-  4: 7.99,   // South, Upper Midwest, New England
-  5: 8.99,   // Deep South, Plains
-  6: 9.99,   // West, Mountain
-  7: 11.49,  // Pacific Coast
-  8: 16.99,  // AK, HI, PR
+  2: 6.99,   // Ohio + neighbors
+  3: 8.49,   // Mid-Atlantic, Great Lakes
+  4: 8.99,   // South, Upper Midwest, New England
+  5: 9.99,   // Deep South, Plains
+  6: 10.99,  // West, Mountain
+  7: 12.49,  // Pacific Coast
+  8: 17.99,  // AK, HI, PR
 }
 
 const COUNTRY_ALIASES: Record<string, string> = {
