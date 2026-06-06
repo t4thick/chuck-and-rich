@@ -48,13 +48,13 @@ const STATE_ZONE: Record<string, number> = {
 // Shipping rates per zone for standard USPS Ground Advantage (Shippo commercial)
 // Based on 12×8×6 in box, ~2 lb from Columbus OH
 const ZONE_RATE: Record<number, number> = {
-  2: 6.99,   // Ohio + neighbors
-  3: 8.49,   // Mid-Atlantic, Great Lakes
-  4: 8.99,   // South, Upper Midwest, New England
+  2: 9.99,   // Ohio + neighbors
+  3: 9.99,   // Mid-Atlantic, Great Lakes
+  4: 9.99,   // South, Upper Midwest, New England
   5: 9.99,   // Deep South, Plains
   6: 10.99,  // West, Mountain
-  7: 12.49,  // Pacific Coast
-  8: 17.99,  // AK, HI, PR
+  7: 13.49,  // Pacific Coast
+  8: 19.99,  // AK, HI, PR
 }
 
 const COUNTRY_ALIASES: Record<string, string> = {
@@ -92,7 +92,7 @@ export const SHIPPING_METHOD_LABEL: Record<ShippingMethod, string> = {
 }
 
 /** Subtotal for free standard US shipping at checkout */
-export const FREE_STANDARD_SHIPPING_SUBTOTAL = 75
+export const FREE_STANDARD_SHIPPING_SUBTOTAL = 120
 
 export function freeStandardShippingRemaining(subtotal: number): number {
   const safe = Number.isFinite(subtotal) ? Math.max(0, subtotal) : 0
