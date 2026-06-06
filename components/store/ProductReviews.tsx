@@ -74,6 +74,7 @@ export function ProductReviews({ productId }: { productId: string }) {
 
   useEffect(() => {
     if (!isSupabaseBrowserConfigured()) { setLoading(false); return }
+    let cancelled = false
     const supabase = createClient()
     supabase
       .from('product_reviews')
@@ -83,10 +84,13 @@ export function ProductReviews({ productId }: { productId: string }) {
       .order('created_at', { ascending: false })
       .limit(20)
       .then(({ data }) => {
+        if (cancelled) return
         setReviews((data ?? []) as Review[])
         setLoading(false)
+      }, () => {
+        if (!cancelled) setLoading(false)
       })
-      .catch(() => setLoading(false))
+    return () => { cancelled = true }
   }, [productId])
 
   async function submitReview(e: React.FormEvent) {
