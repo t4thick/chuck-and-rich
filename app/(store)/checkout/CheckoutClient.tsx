@@ -910,14 +910,7 @@ export function CheckoutClient({
                 </div>
                 {taxQuote.applies ? (
                   <div className="flex justify-between text-earth-600">
-                    <span className="max-w-[14rem] text-xs sm:text-sm">
-                      Sales tax
-                      <span className="block text-earth-400">{taxQuote.jurisdictionLabel}</span>
-                      <span className="block text-earth-400">All US states · grocery exempt</span>
-                      {taxQuote.taxAmount === 0 && taxQuote.taxableSubtotal === 0 ? (
-                        <span className="block text-earth-400">No tax on food items</span>
-                      ) : null}
-                    </span>
+                    <span>Sales tax</span>
                     <span className="font-medium text-earth-900">
                       ${taxQuote.taxAmount.toFixed(2)}
                     </span>
