@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Package } from 'lucide-react'
 import { BulkStockActions } from '@/components/admin/BulkStockActions'
 import { DeleteProductButton } from '@/components/admin/DeleteProductButton'
+import { ProductStockToggle } from '@/components/admin/ProductStockToggle'
 
 type Product = {
   id: string
@@ -92,9 +93,7 @@ export function BulkProductsTable({ products, compact = false }: { products: Pro
                   ${Number(p.price ?? 0).toFixed(2)}
                 </td>
                 <td>
-                  <span className={`admin-status-pill ${p.in_stock ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                    {p.in_stock ? 'In stock' : 'Out'}
-                  </span>
+                  <ProductStockToggle id={p.id} inStock={p.in_stock} />
                 </td>
                 <td className="text-right">
                   <div className="inline-flex items-center gap-3 text-sm">
@@ -138,9 +137,7 @@ export function BulkProductsTable({ products, compact = false }: { products: Pro
                   <span className="tabular-nums text-sm font-semibold text-earth-900">
                     ${Number(p.price ?? 0).toFixed(2)}
                   </span>
-                  <span className={`admin-status-pill ${p.in_stock ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                    {p.in_stock ? 'In stock' : 'Out'}
-                  </span>
+                  <ProductStockToggle id={p.id} inStock={p.in_stock} />
                 </div>
                 <div className="mt-3 flex items-center gap-3 text-sm">
                   <Link href={`/admin/products/${p.id}/edit`} className="font-medium text-brand-700 no-underline">Edit</Link>
