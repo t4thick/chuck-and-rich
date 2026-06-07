@@ -15,6 +15,7 @@
     "build": "node scripts/next-dist-dir.cjs build && next build",
     "start": "next start",
     "lint": "eslint",
+    "ci": "node scripts/ci.mjs",
     "typecheck": "node -e \"require('./scripts/next-dist-dir.cjs').cleanNextTypes()\" && tsc --noEmit",
     "check:env": "node --env-file=.env.local scripts/check-env.mjs",
     "check:env:prod": "node --env-file=.env.local scripts/check-env.mjs --production",
