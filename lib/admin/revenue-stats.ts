@@ -15,6 +15,15 @@ export function getReportTimeZone(): string {
   return 'America/New_York'
 }
 
+/** Human label for dashboards (store is in Columbus, OH — Eastern Time). */
+export function getReportTimeZoneLabel(): string {
+  const custom = process.env.STORE_REPORT_TIMEZONE_LABEL?.trim()
+  if (custom) return custom
+  const zone = getReportTimeZone()
+  if (zone === 'America/New_York') return 'Columbus, OH · Eastern Time'
+  return zone.replace(/_/g, ' ')
+}
+
 export function isCountableForGross(o: OrderMoneyRow): boolean {
   const st = normalizeOrderStatus(o.status)
   if (st === 'cancelled') return false

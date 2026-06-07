@@ -16,7 +16,7 @@ import {
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { ORDER_STATUS_LABEL, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
-import { getReportTimeZone, money } from '@/lib/admin/revenue-stats'
+import { getReportTimeZoneLabel, money } from '@/lib/admin/revenue-stats'
 import {
   RANGE_OPTIONS,
   deltaPct,
@@ -160,9 +160,7 @@ export default async function AdminDashboard({
             {' · '}
             {range.formattedRange}
             {' · '}
-            <code className="rounded bg-earth-100 px-1 py-0.5 text-[11px] text-earth-700">
-              {getReportTimeZone()}
-            </code>
+            {getReportTimeZoneLabel()}
           </p>
         </div>
         <Link href={exportHref} className="no-underline">
