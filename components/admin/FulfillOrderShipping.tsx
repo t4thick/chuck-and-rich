@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, Printer } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { StoreIntegratedShippingPanel } from '@/components/admin/StoreIntegratedShippingPanel'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'

@@ -38,7 +38,7 @@ export function AccountShell({ children }: { children: ReactNode }) {
             <p className="text-xs font-bold uppercase tracking-wider text-earth-500">Account</p>
             <nav className="mt-4 space-y-1" aria-label="Account">
               {NAV.map((item) => {
-                const { href, label, icon: Icon, exact } = item
+                const { href, label, icon: Icon } = item
                 const active = item.exact ? pathname === href : pathname.startsWith(href)
                 return (
                   <Link

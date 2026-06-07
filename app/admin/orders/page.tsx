@@ -11,7 +11,7 @@ import {
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { formatOrderNumber, parseOrderRef } from '@/lib/orders/order-number'
+import { parseOrderRef } from '@/lib/orders/order-number'
 import { getReportTimeZone } from '@/lib/admin/revenue-stats'
 import { BulkOrdersTable } from '@/components/admin/BulkOrdersTable'
 import { Pagination } from '@/components/admin/Pagination'

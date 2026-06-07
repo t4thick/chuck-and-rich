@@ -84,12 +84,12 @@ async function uspsJson<T>(
   return { data: {} as T, contentType, buffer }
 }
 
-async function getRatesOAuthToken(_cfg: UspsApiConfig): Promise<string> {
-  return getUspsOAuthToken('domestic-prices')
+async function getRatesOAuthToken(): Promise<string> {
+  return getUspsOAuthToken(RATES_SCOPE)
 }
 
-async function getLabelsOAuthToken(_cfg: UspsApiConfig): Promise<string> {
-  return getUspsOAuthToken('labels')
+async function getLabelsOAuthToken(): Promise<string> {
+  return getUspsOAuthToken(LABELS_SCOPE)
 }
 
 async function getPaymentToken(cfg: UspsApiConfig, bearer: string): Promise<string> {
@@ -190,7 +190,7 @@ export async function getUspsDomesticRate(input: {
     })
   }
 
-  let bearer = await getRatesOAuthToken(cfg)
+  let bearer = await getRatesOAuthToken()
   let data: Awaited<ReturnType<typeof fetchRate>>['data']
   try {
     ;({ data } = await fetchRate(bearer))
@@ -199,7 +199,7 @@ export async function getUspsDomesticRate(input: {
     const status = e && typeof e === 'object' && 'status' in e ? Number(e.status) : 0
     if (status === 401 && /insufficient oauth scope/i.test(msg)) {
       resetUspsOAuthCache(RATES_SCOPE)
-      bearer = await getRatesOAuthToken(cfg)
+      bearer = await getRatesOAuthToken()
       ;({ data } = await fetchRate(bearer))
     } else {
       throw e
@@ -233,7 +233,7 @@ export async function createUspsDomesticLabel(input: {
     throw new Error('USPS API is not configured.')
   }
 
-  const bearer = await getLabelsOAuthToken(cfg)
+  const bearer = await getLabelsOAuthToken()
   const paymentToken = await getPaymentToken(cfg, bearer)
 
   const { contentType, buffer } = await uspsJson<unknown>(cfg, '/labels/v3/label', {

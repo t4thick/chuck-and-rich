@@ -1,4 +1,3 @@
-import { STORE } from '@/lib/constants/store'
 import {
   normalizeShippingCountry,
   normalizeShippingRegion,

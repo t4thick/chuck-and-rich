@@ -20,7 +20,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 text-lg font-semibold text-earth-900">1. Who we are</h2>
             <p>
-              {STORE.name} ("we", "us", "our") is an African and Caribbean grocery store located at{' '}
+              {STORE.name} (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is an African and Caribbean grocery store located at{' '}
               {STORE.address}, Columbus, Ohio 43229. We operate the website{' '}
               lovelyqueenafricanmarket.com and ship products across the United States.
             </p>

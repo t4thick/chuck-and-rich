@@ -160,7 +160,6 @@ export function SearchAutocomplete({ className, compact, placeholder }: Props) {
           aria-label="Search products"
           aria-autocomplete="list"
           aria-controls={listboxId}
-          aria-expanded={showDropdown}
           className={cn(
             'min-w-0 flex-1 bg-transparent text-sm text-earth-900 placeholder:text-earth-400 focus:outline-none',
             compact ? 'h-9' : 'h-10'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, Plus } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useToast } from '@/context/ToastContext'

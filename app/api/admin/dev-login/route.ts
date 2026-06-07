@@ -36,7 +36,7 @@ async function issue(): Promise<NextResponse> {
   return res
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST() {
   const blocked = devGate()
   if (blocked) return blocked
   return issue()

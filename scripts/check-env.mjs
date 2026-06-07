@@ -11,10 +11,6 @@ function set(name) {
   return Boolean(v)
 }
 
-function any(...names) {
-  return names.some(set)
-}
-
 const checks = [
   {
     phase: '1 — Local dev (minimum)',

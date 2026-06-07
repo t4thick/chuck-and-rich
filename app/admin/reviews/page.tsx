@@ -1,6 +1,6 @@
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { ReviewApprovalList } from '@/components/admin/ReviewApprovalList'
+import { ReviewApprovalList, type AdminReview } from '@/components/admin/ReviewApprovalList'
 
 export default async function AdminReviewsPage() {
   await requireAdminPage()
@@ -27,8 +27,8 @@ export default async function AdminReviewsPage() {
         </p>
       </div>
       <ReviewApprovalList
-        pending={(pending ?? []) as any}
-        approved={(approved ?? []) as any}
+        pending={(pending ?? []) as AdminReview[]}
+        approved={(approved ?? []) as AdminReview[]}
       />
     </div>
   )

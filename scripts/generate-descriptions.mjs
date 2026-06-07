@@ -19,10 +19,6 @@ const supabase = createClient(
 // Description generator — uses product name + category to write smart copy
 // ---------------------------------------------------------------------------
 
-function titleCase(str) {
-  return str.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-}
-
 function extractWeight(name) {
   const m = name.match(/(\d+\.?\d*)\s*(kg|g|lb|lbs|oz|ml|l|litre|liter|cl|gallon)/i)
   if (m) return `${m[1]}${m[2].toLowerCase()}`

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { CheckCircle2, Circle, Truck } from 'lucide-react'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { getShippingLabelConfigPublic } from '@/lib/shipping/label-config'
-import { isShippoConfigured, isUspsLabelsLive } from '@/lib/shipping/admin-ship-methods'
+import { isShippoConfigured } from '@/lib/shipping/admin-ship-methods'
 import { getUspsConfigPublic } from '@/lib/shipping/usps-config'
 
 export default async function AdminShippingPage() {

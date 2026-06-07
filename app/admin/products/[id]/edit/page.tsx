@@ -20,6 +20,8 @@ export default async function EditProductPage({
 
   if (!product) notFound()
 
+  const row = product as typeof product & { image_urls?: string[] | null }
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -43,7 +45,7 @@ export default async function EditProductPage({
           price: String(product.price),
           category: product.category,
           image_url: product.image_url ?? '',
-          image_urls: (product as any).image_urls ?? [],
+          image_urls: row.image_urls ?? [],
           in_stock: product.in_stock,
         }}
       />

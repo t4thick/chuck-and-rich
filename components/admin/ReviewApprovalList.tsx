@@ -12,7 +12,13 @@ type Review = {
   rating: number
   comment: string | null
   created_at: string
-  products: { name: string } | null
+  products: { name: string } | { name: string }[] | null
+}
+
+function reviewProductName(products: Review['products']): string | null {
+  if (!products) return null
+  if (Array.isArray(products)) return products[0]?.name ?? null
+  return products.name
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -27,6 +33,8 @@ function Stars({ rating }: { rating: number }) {
     </span>
   )
 }
+
+export type AdminReview = Review
 
 export function ReviewApprovalList({
   pending,
@@ -76,7 +84,7 @@ export function ReviewApprovalList({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-earth-900">{r.reviewer_name}</p>
-                    <p className="text-xs text-earth-500">{r.products?.name ?? r.product_id}</p>
+                    <p className="text-xs text-earth-500">{reviewProductName(r.products) ?? r.product_id}</p>
                     <Stars rating={r.rating} />
                   </div>
                   <p className="text-xs text-earth-400">
@@ -132,7 +140,7 @@ export function ReviewApprovalList({
               <tbody>
                 {approved.map((r) => (
                   <tr key={r.id}>
-                    <td className="font-medium text-earth-900">{r.products?.name ?? '—'}</td>
+                    <td className="font-medium text-earth-900">{reviewProductName(r.products) ?? '—'}</td>
                     <td>{r.reviewer_name}</td>
                     <td><Stars rating={r.rating} /></td>
                     <td className="max-w-xs truncate text-earth-600">{r.comment ?? '—'}</td>
