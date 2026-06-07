@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Lock, MapPin, Phone, ShieldCheck } from 'lucide-react'
 import { getSupportEmail, STORE } from '@/lib/constants/store'
 import { PaymentMethodIcons } from '@/components/store/PaymentMethodIcons'
+import { SocialLinks } from '@/components/store/SocialLinks'
 import { StoreLogo } from '@/components/ui/StoreLogo'
 
 const SHOP_LINKS = [
@@ -48,6 +49,10 @@ export function Footer() {
               <span className="inline-flex items-center gap-1.5">
                 <Lock className="h-3.5 w-3.5 text-brand-600" /> Stripe
               </span>
+            </div>
+            <div className="mt-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">Follow</p>
+              <SocialLinks className="mt-3" />
             </div>
           </div>
 

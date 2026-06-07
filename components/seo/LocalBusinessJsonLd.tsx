@@ -1,4 +1,5 @@
 import { getSupportEmail, STORE } from '@/lib/constants/store'
+import { SOCIAL_SAME_AS } from '@/lib/constants/social'
 import { getPublicSiteUrl } from '@/lib/site-url'
 
 /** Structured data for Google local / knowledge panel (homepage + store pages). */
@@ -39,6 +40,7 @@ export function LocalBusinessJsonLd() {
     ],
     priceRange: '$$',
     servesCuisine: ['African', 'Caribbean'],
+    sameAs: SOCIAL_SAME_AS,
   }
 
   return (
