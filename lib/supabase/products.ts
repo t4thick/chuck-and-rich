@@ -277,6 +277,7 @@ export async function fetchHomepageProducts(): Promise<{
   trending: Product[]
   newArrivals: Product[]
   categoryCount: Record<string, number>
+  inStockCount: number
   configured: boolean
   errorMessage: string | null
 }> {
@@ -287,6 +288,7 @@ export async function fetchHomepageProducts(): Promise<{
       trending: [],
       newArrivals: [],
       categoryCount: {},
+      inStockCount: 0,
       configured: false,
       errorMessage: formatCatalogError(null, false),
     }
@@ -300,6 +302,7 @@ export async function fetchHomepageProducts(): Promise<{
         trending: [],
         newArrivals: [],
         categoryCount: {},
+        inStockCount: 0,
         configured: false,
         errorMessage: formatCatalogError(null, false),
       }
@@ -315,6 +318,7 @@ export async function fetchHomepageProducts(): Promise<{
         trending: [],
         newArrivals: [],
         categoryCount: {},
+        inStockCount: 0,
         configured: true,
         errorMessage: formatCatalogError(catRes.error, true),
       }
@@ -329,11 +333,14 @@ export async function fetchHomepageProducts(): Promise<{
       return acc
     }, {})
 
+    const inStockCount = Object.values(categoryCount).reduce((sum, n) => sum + n, 0)
+
     return {
       staples: showcase.staples,
       trending: showcase.trending,
       newArrivals: showcase.newArrivals,
       categoryCount,
+      inStockCount,
       configured: true,
       errorMessage: null,
     }
@@ -343,6 +350,7 @@ export async function fetchHomepageProducts(): Promise<{
       trending: [],
       newArrivals: [],
       categoryCount: {},
+      inStockCount: 0,
       configured: configured,
       errorMessage: formatCatalogError(e instanceof Error ? e : { message: String(e) }, configured),
     }

@@ -4,10 +4,12 @@ import { HeroSection } from '@/components/store/HeroSection'
 import { TrustStrip } from '@/components/store/TrustStrip'
 import { CategoryBrowse } from '@/components/store/CategoryBrowse'
 import { FeaturedCollections } from '@/components/store/FeaturedCollections'
+import { HomepageReviews } from '@/components/store/HomepageReviews'
 import { ProductShowcase } from '@/components/store/ProductShowcase'
 import { RecentlyViewed } from '@/components/store/RecentlyViewed'
 import { VisitSection } from '@/components/store/VisitSection'
 import { PRODUCT_CATEGORIES } from '@/lib/constants/categories'
+import { fetchHomepageReviews } from '@/lib/supabase/homepage-reviews'
 import { fetchHomepageProducts } from '@/lib/supabase/products'
 
 const HOME_CATEGORY_ORDER = [
@@ -24,7 +26,8 @@ const HOME_CATEGORY_ORDER = [
 ] as const
 
 export default async function Home() {
-  const { staples, trending, newArrivals, categoryCount, errorMessage } = await fetchHomepageProducts()
+  const [{ staples, trending, newArrivals, categoryCount, inStockCount, errorMessage }, reviewData] =
+    await Promise.all([fetchHomepageProducts(), fetchHomepageReviews()])
 
   const withStock = PRODUCT_CATEGORIES.filter((c) => (categoryCount[c] ?? 0) > 0)
   const ordered = HOME_CATEGORY_ORDER.filter((c) => (categoryCount[c] ?? 0) > 0)
@@ -34,7 +37,7 @@ export default async function Home() {
 
   return (
     <>
-      <HeroSection />
+      <HeroSection inStockCount={inStockCount} />
       <CategoryBrowse displayCategories={displayCategories} categoryCount={categoryCount} />
       {staples.length > 0 && (
         <ProductShowcase
@@ -61,7 +64,12 @@ export default async function Home() {
         errorMessage={errorMessage}
       />
       <RecentlyViewed />
-      <TrustStrip />
+      <HomepageReviews
+        reviews={reviewData.reviews}
+        totalCount={reviewData.totalCount}
+        averageRating={reviewData.averageRating}
+      />
+      <TrustStrip inStockCount={inStockCount} />
       <VisitSection />
     </>
   )

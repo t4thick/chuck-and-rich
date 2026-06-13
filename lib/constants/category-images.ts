@@ -70,10 +70,7 @@ function resolveCategoryImage(category: string, minBytes = 10_000): string | und
   const remote = CATEGORY_REMOTE[category]
   if (!slug || !remote) return undefined
 
-  const local =
-    category === 'Beverages'
-      ? localCategoryImage(categoryLocalFiles('beverages'), 50_000)
-      : localCategoryImage(categoryLocalFiles(slug), minBytes)
+  const local = localCategoryImage(categoryLocalFiles(slug), minBytes)
 
   return local ?? remote
 }

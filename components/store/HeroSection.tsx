@@ -1,17 +1,39 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Clock, Package, Truck } from 'lucide-react'
+import { formatInStockCount } from '@/lib/catalog-stats'
 import { StoreLogo } from '@/components/ui/StoreLogo'
 import { Button } from '@/components/ui/button'
 import { SearchAutocomplete } from '@/components/store/SearchAutocomplete'
 
-const HERO_STATS = [
-  { icon: Package, label: '170+ products in stock' },
-  { icon: Truck, label: 'Pickup & delivery in Columbus' },
-  { icon: Clock, label: 'Ships within 24h' },
-]
+function heroStats(inStockCount: number) {
+  const stockLabel = formatInStockCount(inStockCount)
+  return [
+    { icon: Package, label: stockLabel },
+    { icon: Truck, label: 'Pickup & delivery in Columbus' },
+    { icon: Clock, label: 'Ships within 24h' },
+  ] as const
+}
 
-export function HeroSection() {
+function heroSubtitle(inStockCount: number): string {
+  const countPart =
+    inStockCount > 0
+      ? `${inStockCount.toLocaleString()} products`
+      : 'Products'
+  return `${countPart} from West Africa & the Caribbean. Pickup in Columbus or shipped nationwide.`
+}
+
+function heroSubtitleDesktop(inStockCount: number): string {
+  const countPart =
+    inStockCount > 0
+      ? `${inStockCount.toLocaleString()} products`
+      : 'Products'
+  return `${countPart} from West Africa & the Caribbean — fufu, palm oil, spices, drinks & more. Pickup in Columbus or shipped nationwide.`
+}
+
+export function HeroSection({ inStockCount }: { inStockCount: number }) {
+  const stats = heroStats(inStockCount)
+
   return (
     <section className="overflow-hidden border-b border-earth-200" aria-label="Welcome to Lovely Queen Market">
 
@@ -53,7 +75,7 @@ export function HeroSection() {
             <span className="text-brand-700">delivered fast.</span>
           </h1>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-earth-600">
-            170+ products from West Africa &amp; the Caribbean. Pickup in Columbus or shipped nationwide.
+            {heroSubtitle(inStockCount)}
           </p>
 
           <div className="mt-4 w-full">
@@ -77,7 +99,7 @@ export function HeroSection() {
           </div>
 
           <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-earth-500">
-            {HERO_STATS.map(({ icon: Icon, label }) => (
+            {stats.map(({ icon: Icon, label }) => (
               <li key={label} className="inline-flex items-center gap-1.5">
                 <Icon className="h-3.5 w-3.5 shrink-0 text-brand-600" aria-hidden />
                 {label}
@@ -128,7 +150,7 @@ export function HeroSection() {
               <span className="text-brand-700">delivered fast.</span>
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-earth-600 sm:text-lg">
-              170+ products from West Africa &amp; the Caribbean — fufu, palm oil, spices, drinks &amp; more. Pickup in Columbus or shipped nationwide.
+              {heroSubtitleDesktop(inStockCount)}
             </p>
 
             <div className="mx-auto mt-8 max-w-xl shadow-[0_8px_30px_rgb(0_0_0/0.06)]">
@@ -150,7 +172,7 @@ export function HeroSection() {
             </div>
 
             <ul className="mx-auto mt-8 flex max-w-2xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-earth-600">
-              {HERO_STATS.map(({ icon: Icon, label }) => (
+              {stats.map(({ icon: Icon, label }) => (
                 <li key={label} className="inline-flex items-center gap-1.5">
                   <Icon className="h-4 w-4 shrink-0 text-brand-600" aria-hidden />
                   {label}

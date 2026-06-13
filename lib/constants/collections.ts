@@ -22,7 +22,7 @@ export const FEATURED_COLLECTIONS = [
     subtitle: 'Malt, beer, juices & African favorites',
     emoji: '🥤',
     href: '/shop?category=Beverages',
-    image: '/images/categories/beverages.jpg',
+    image: '/images/categories/beverages.png',
   },
   {
     id: 'beauty',
