@@ -857,7 +857,7 @@ export function CheckoutClient({
                     />
                   </div>
                 </div>
-                {shippingMethod !== 'pickup' && isUnitedStatesCountry(form.country) ? (
+                {isUnitedStatesCountry(form.country) ? (
                   <div className="space-y-2">
                     {addressVerifyStatus === 'checking' ? (
                       <p className="text-xs text-earth-500">Verifying address with USPS…</p>
