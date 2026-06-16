@@ -3,19 +3,25 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ORDER_STATUS_LABEL, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
+import {
+  isPickupShippingMethod,
+  normalizeOrderStatus,
+  orderStatusLabel,
+  type OrderStatus,
+} from '@/lib/order-status'
 import { formatOrderNumber } from '@/lib/orders/order-number'
 
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
   processing: 'bg-amber-50 text-amber-700',
+  ready_for_pickup: 'bg-teal-50 text-teal-700',
   shipped: 'bg-violet-50 text-violet-700',
   out_for_delivery: 'bg-indigo-50 text-indigo-700',
   delivered: 'bg-emerald-50 text-emerald-700',
   cancelled: 'bg-red-50 text-red-700',
 }
 
-const BULK_STATUSES: OrderStatus[] = ['processing', 'shipped', 'delivered', 'cancelled']
+const BULK_STATUSES: OrderStatus[] = ['processing', 'ready_for_pickup', 'shipped', 'delivered', 'cancelled']
 
 type Order = {
   id: string
@@ -26,7 +32,10 @@ type Order = {
   total_amount: number | null
   status: string | null
   created_at: string
+  shipping_method?: string | null
 }
+
+const PICKUP_CHIP = 'inline-flex items-center rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700'
 
 export function BulkOrdersTable({ orders }: { orders: Order[] }) {
   const router = useRouter()
@@ -95,7 +104,7 @@ export function BulkOrdersTable({ orders }: { orders: Order[] }) {
               onChange={(e) => setBulkStatus(e.target.value as OrderStatus)}
             >
               {BULK_STATUSES.map((s) => (
-                <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>
+                <option key={s} value={s}>{orderStatusLabel(s)}</option>
               ))}
             </select>
             <button
@@ -138,6 +147,7 @@ export function BulkOrdersTable({ orders }: { orders: Order[] }) {
           <tbody>
             {orders.map((order) => {
               const st = normalizeOrderStatus(order.status)
+              const pickup = isPickupShippingMethod(order.shipping_method)
               const isChecked = selected.has(order.id)
               return (
                 <tr key={order.id} className={isChecked ? 'bg-brand-50/40' : ''}>
@@ -160,9 +170,12 @@ export function BulkOrdersTable({ orders }: { orders: Order[] }) {
                     ${Number(order.total_amount ?? 0).toFixed(2)}
                   </td>
                   <td>
-                    <span className={`admin-status-pill ${STATUS_PILL_COLORS[st]}`}>
-                      {ORDER_STATUS_LABEL[st]}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={`admin-status-pill ${STATUS_PILL_COLORS[st]}`}>
+                        {orderStatusLabel(st, { pickup })}
+                      </span>
+                      {pickup && <span className={PICKUP_CHIP}>Pickup</span>}
+                    </div>
                   </td>
                   <td className="text-earth-600">
                     {new Date(order.created_at).toLocaleDateString()}
@@ -185,6 +198,7 @@ export function BulkOrdersTable({ orders }: { orders: Order[] }) {
       <ul className="space-y-2 sm:hidden">
         {orders.map((order) => {
           const st = normalizeOrderStatus(order.status)
+          const pickup = isPickupShippingMethod(order.shipping_method)
           const isChecked = selected.has(order.id)
           return (
             <li key={order.id} className="flex gap-2">
@@ -212,9 +226,12 @@ export function BulkOrdersTable({ orders }: { orders: Order[] }) {
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3">
-                  <span className={`admin-status-pill ${STATUS_PILL_COLORS[st]}`}>
-                    {ORDER_STATUS_LABEL[st]}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className={`admin-status-pill ${STATUS_PILL_COLORS[st]}`}>
+                      {orderStatusLabel(st, { pickup })}
+                    </span>
+                    {pickup && <span className={PICKUP_CHIP}>Pickup</span>}
+                  </div>
                   <span className="text-xs text-earth-500">
                     {new Date(order.created_at).toLocaleDateString()}
                   </span>

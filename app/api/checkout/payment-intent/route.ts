@@ -13,7 +13,8 @@ import {
   resolveShippingAddress,
   verifyUsDeliveryAddress,
 } from '@/lib/address/verify-us-address'
-import { normalizeShippingCountry, normalizeShippingRegion } from '@/lib/shipping'
+import { normalizeShippingCountry, normalizeShippingMethod, normalizeShippingRegion } from '@/lib/shipping'
+import { STORE } from '@/lib/constants/store'
 import type { CartItem } from '@/types'
 import { CHECKOUT_STRIPE_PAYMENT_METHOD_TYPES, getStripe } from '@/lib/stripe'
 import type { CheckoutSnapshotPayload } from '@/lib/orders/checkout-snapshot'
@@ -53,7 +54,10 @@ export async function POST(req: NextRequest) {
       postalCode,
       items,
       shippingMethod: rawShippingMethod,
+      pickupName,
     } = body
+
+    const isPickup = normalizeShippingMethod(rawShippingMethod) === 'pickup'
 
     const addressLine1 =
       typeof address1 === 'string'
@@ -63,9 +67,19 @@ export async function POST(req: NextRequest) {
           : ''
     const addressLine2 = typeof address2 === 'string' ? address2.trim() : ''
 
-    if (!name || !addressLine1 || !city || !country || !items?.length) {
+    // Pickup orders are collected at the store, so a delivery address is not
+    // required — only a name (for the order) and items.
+    if (!name || !items?.length) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
     }
+    if (!isPickup && (!addressLine1 || !city || !country)) {
+      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
+    }
+
+    const pickupContactName =
+      isPickup && typeof pickupName === 'string' && pickupName.trim()
+        ? pickupName.trim().slice(0, 120)
+        : null
 
     const cartItems = (Array.isArray(items) ? items : []) as CartItem[]
     const phoneTrim = typeof phone === 'string' ? phone.trim() : ''
@@ -116,8 +130,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const normalizedCountry = normalizeShippingCountry(country)
-    const normalizedState = normalizeShippingRegion(state)
+    const normalizedCountry = isPickup ? 'united states' : normalizeShippingCountry(country)
+    const normalizedState = isPickup ? STORE.shipFrom.state : normalizeShippingRegion(state)
     const totals = computeCheckoutTotals({
       items: sanitizedItems,
       productMap,
@@ -128,13 +142,21 @@ export async function POST(req: NextRequest) {
     const { subtotal, shipping, tax } = totals
     const shipping_method = shipping.method
 
-    let shippingAddress = {
-      line1: addressLine1,
-      line2: addressLine2,
-      city: String(city).trim(),
-      state: normalizedState || String(state).trim(),
-      postalCode: typeof postalCode === 'string' ? postalCode.trim() : '',
-    }
+    let shippingAddress = isPickup
+      ? {
+          line1: `Store pickup — ${STORE.shipFrom.street1}`,
+          line2: '',
+          city: STORE.shipFrom.city,
+          state: STORE.shipFrom.state,
+          postalCode: STORE.shipFrom.zip,
+        }
+      : {
+          line1: addressLine1,
+          line2: addressLine2,
+          city: String(city ?? '').trim(),
+          state: normalizedState || String(state ?? '').trim(),
+          postalCode: typeof postalCode === 'string' ? postalCode.trim() : '',
+        }
 
     if (shipping_method !== 'pickup' && isUnitedStatesCountry(String(country))) {
       const zip = shippingAddress.postalCode
@@ -226,6 +248,7 @@ export async function POST(req: NextRequest) {
       shipping_method,
       shipping_zone: shipping.zone,
       account_email: accountEmail,
+      pickup_contact_name: pickupContactName,
     }
 
     const { data: snap, error: snapErr } = await supabaseAdmin

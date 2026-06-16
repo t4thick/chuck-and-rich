@@ -9,8 +9,8 @@ const DISMISS_KEY = 'lq_bar_v1'
 
 const MESSAGES = [
   `Free standard US shipping on orders $${FREE_STANDARD_SHIPPING_SUBTOTAL}+`,
-  `Pickup at ${STORE.address}`,
-  'Same-day Columbus delivery · Ships within 24h',
+  `Same-day store pickup · ${STORE.address}`,
+  'Send an Uber or pick up yourself · Ships within 24h',
 ] as const
 
 export function AnnouncementBar() {

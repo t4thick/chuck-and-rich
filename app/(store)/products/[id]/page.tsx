@@ -76,7 +76,7 @@ export async function generateMetadata({
 
 const TRUST = [
   { icon: CreditCard, label: 'Secure checkout' },
-  { icon: Truck, label: 'Pickup & delivery' },
+  { icon: Truck, label: 'Pickup or shipping' },
   { icon: RotateCcw, label: 'Easy returns' },
 ] as const
 

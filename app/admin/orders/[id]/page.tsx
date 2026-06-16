@@ -11,11 +11,14 @@ import { FulfillOrderShipping } from '@/components/admin/FulfillOrderShipping'
 import { PrintAddressSlipLink } from '@/components/admin/PrintAddressSlipLink'
 import {
   ORDER_STATUS_LABEL,
-  ORDER_STATUS_FLOW,
+  getStatusFlow,
   getStatusStepIndex,
+  isPickupShippingMethod,
   normalizeOrderStatus,
+  orderStatusLabel,
   type OrderStatus,
 } from '@/lib/order-status'
+import { STORE } from '@/lib/constants/store'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
 import { requireAdminPage } from '@/lib/auth/require-admin-page'
 import { formatOrderNumber } from '@/lib/orders/order-number'
@@ -26,6 +29,7 @@ import { getUspsConfigPublic, isUspsConfigured } from '@/lib/shipping/usps-confi
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
   processing: 'bg-amber-50 text-amber-700',
+  ready_for_pickup: 'bg-teal-50 text-teal-700',
   shipped: 'bg-violet-50 text-violet-700',
   out_for_delivery: 'bg-indigo-50 text-indigo-700',
   delivered: 'bg-emerald-50 text-emerald-700',
@@ -55,10 +59,14 @@ export default async function AdminOrderDetailPage({
   const pm = (order.payment_method as PaymentMethod | null | undefined) ?? 'cod'
   const paymentLabel = PAYMENT_LABEL[pm] ?? pm
   const normalizedStatus = normalizeOrderStatus(order.status)
-  const statusIndex = getStatusStepIndex(order.status)
   const shippingMethod =
     (order.shipping_method as ShippingMethod | null | undefined) ?? 'standard'
+  const isPickup = isPickupShippingMethod(order.shipping_method)
+  const statusFlow = getStatusFlow(order.shipping_method)
+  const statusIndex = getStatusStepIndex(order.status, statusFlow)
   const shippingLabel = SHIPPING_METHOD_LABEL[shippingMethod] ?? shippingMethod
+  const pickupContactName =
+    (order as { pickup_contact_name?: string | null }).pickup_contact_name ?? null
   const statusLogs =
     logsResult.error &&
     /relation .* does not exist|could not find the table/i.test(logsResult.error.message)
@@ -89,7 +97,7 @@ export default async function AdminOrderDetailPage({
           <p className="mt-1 break-all font-mono text-xs text-earth-400">{order.id}</p>
         </div>
         <span className={`admin-status-pill self-start ${STATUS_PILL_COLORS[normalizedStatus]}`}>
-          {ORDER_STATUS_LABEL[normalizedStatus]}
+          {orderStatusLabel(normalizedStatus, { pickup: isPickup })}
         </span>
       </div>
 
@@ -98,13 +106,14 @@ export default async function AdminOrderDetailPage({
         <div className="order-first space-y-6 lg:order-last">
           {/* Timeline */}
           <section className="admin-card">
-            <h2 className="admin-section-title">Delivery timeline</h2>
+            <h2 className="admin-section-title">{isPickup ? 'Pickup timeline' : 'Delivery timeline'}</h2>
             <ol className="mt-4 space-y-3">
-              {ORDER_STATUS_FLOW.map((step, index) => {
+              {statusFlow.map((step, index) => {
                 const done = statusIndex >= index
                 const tsColumn =
                   step === 'ordered' ? order.ordered_at
                   : step === 'processing' ? order.processing_at
+                  : step === 'ready_for_pickup' ? order.ready_for_pickup_at
                   : step === 'shipped' ? order.shipped_at
                   : step === 'out_for_delivery' ? order.out_for_delivery_at
                   : order.delivered_at
@@ -117,7 +126,7 @@ export default async function AdminOrderDetailPage({
                     )}
                     <div className="min-w-0 flex-1">
                       <p className={done ? 'font-medium text-earth-900' : 'text-earth-500'}>
-                        {ORDER_STATUS_LABEL[step]}
+                        {orderStatusLabel(step, { pickup: isPickup })}
                       </p>
                       {done && tsColumn && (
                         <p className="mt-0.5 text-xs text-earth-500">
@@ -177,6 +186,7 @@ export default async function AdminOrderDetailPage({
                 orderId={order.id}
                 currentStatus={normalizedStatus}
                 trackingNumber={order.tracking_number}
+                shippingMethod={order.shipping_method}
               />
             </div>
           </section>
@@ -233,10 +243,13 @@ export default async function AdminOrderDetailPage({
               />
               <Field label="Payment" value={paymentLabel} />
               <Field
-                label="Shipping"
-                value={`${shippingLabel} (zone: ${order.shipping_zone ?? 'n/a'})`}
+                label={isPickup ? 'Fulfillment' : 'Shipping'}
+                value={isPickup ? shippingLabel : `${shippingLabel} (zone: ${order.shipping_zone ?? 'n/a'})`}
               />
-              <Field label="Tracking #" value={order.tracking_number ?? '—'} />
+              {isPickup && pickupContactName && (
+                <Field label="Collected by" value={pickupContactName} />
+              )}
+              {!isPickup && <Field label="Tracking #" value={order.tracking_number ?? '—'} />}
               {order.refunded_at && (
                 <Field
                   label="Refunded"
@@ -246,18 +259,30 @@ export default async function AdminOrderDetailPage({
             </dl>
           </section>
 
-          {/* Delivery address */}
+          {/* Fulfillment */}
           <section className="admin-card">
-            <h2 className="admin-section-title">Delivery address</h2>
-            <address className="mt-3 not-italic text-sm leading-relaxed text-earth-700">
-              {order.address_line}
-              <br />
-              {order.city}
-              {order.state ? `, ${order.state}` : ''}
-              {order.postal_code ? ` ${order.postal_code}` : ''}
-              <br />
-              {order.country}
-            </address>
+            <h2 className="admin-section-title">{isPickup ? 'Pickup' : 'Delivery address'}</h2>
+            {isPickup ? (
+              <div className="mt-3 text-sm leading-relaxed text-earth-700">
+                <p className="font-medium text-earth-900">Store pickup</p>
+                <p className="mt-1">{STORE.address}</p>
+                <p>{STORE.hours}</p>
+                <p className="mt-2">
+                  <span className="text-earth-500">Collected by: </span>
+                  {pickupContactName || order.customer_name || '—'}
+                </p>
+              </div>
+            ) : (
+              <address className="mt-3 not-italic text-sm leading-relaxed text-earth-700">
+                {order.address_line}
+                <br />
+                {order.city}
+                {order.state ? `, ${order.state}` : ''}
+                {order.postal_code ? ` ${order.postal_code}` : ''}
+                <br />
+                {order.country}
+              </address>
+            )}
           </section>
 
           {/* Items */}

@@ -10,7 +10,7 @@ function heroStats(inStockCount: number) {
   const stockLabel = formatInStockCount(inStockCount)
   return [
     { icon: Package, label: stockLabel },
-    { icon: Truck, label: 'Pickup & delivery in Columbus' },
+    { icon: Truck, label: 'Store pickup in Columbus' },
     { icon: Clock, label: 'Ships within 24h' },
   ] as const
 }

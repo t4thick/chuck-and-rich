@@ -6,9 +6,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { OrderStatusTimeline } from '@/components/account/OrderStatusTimeline'
 import { PageHeader } from '@/components/store/PageHeader'
 import { Button } from '@/components/ui/button'
-import { ORDER_STATUS_LABEL, normalizeOrderStatus } from '@/lib/order-status'
+import { isPickupShippingMethod, normalizeOrderStatus, orderStatusLabel } from '@/lib/order-status'
 import { normalizePaymentMethod } from '@/lib/payment-methods'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
+import { STORE } from '@/lib/constants/store'
 import { formatMoney } from '@/lib/utils'
 import { formatOrderNumber } from '@/lib/orders/order-number'
 
@@ -56,6 +57,7 @@ export default async function OrderConfirmationPage({
 
   const normalizedStatus = normalizeOrderStatus(order?.status)
   const shippingMethod = (order?.shipping_method as ShippingMethod | null | undefined) ?? 'standard'
+  const isPickup = isPickupShippingMethod(order?.shipping_method)
   const paymentMethod = order ? normalizePaymentMethod(order.payment_method) : null
 
   return (
@@ -97,10 +99,19 @@ export default async function OrderConfirmationPage({
         {order && (
           <div className="mx-auto mt-12 grid max-w-4xl gap-8 md:grid-cols-2">
             <div className="premium-card p-6 sm:p-8">
-              <h2 className="text-base font-semibold text-earth-900">Delivery progress</h2>
+              <h2 className="text-base font-semibold text-earth-900">
+                {isPickup ? 'Pickup progress' : 'Delivery progress'}
+              </h2>
               <div className="mt-6">
-                <OrderStatusTimeline status={order.status} />
+                <OrderStatusTimeline status={order.status} shippingMethod={order.shipping_method} />
               </div>
+              {isPickup && (
+                <p className="mt-6 rounded-lg bg-brand-50/60 p-3 text-xs leading-relaxed text-earth-600">
+                  We&apos;ll email you when your order is ready at {STORE.address}. Sending an Uber,
+                  DoorDash, or a friend? Have them show order {orderNumberLabel || ''} at the
+                  counter.
+                </p>
+              )}
             </div>
 
             <div className="premium-card p-6 sm:p-8">
@@ -109,17 +120,17 @@ export default async function OrderConfirmationPage({
                 <div className="flex justify-between gap-4">
                   <dt className="text-earth-500">Status</dt>
                   <dd className="font-semibold text-earth-900">
-                    {ORDER_STATUS_LABEL[normalizedStatus]}
+                    {orderStatusLabel(normalizedStatus, { pickup: isPickup })}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-earth-500">Shipping</dt>
+                  <dt className="text-earth-500">{isPickup ? 'Fulfillment' : 'Shipping'}</dt>
                   <dd className="font-medium text-earth-900">
                     {SHIPPING_METHOD_LABEL[shippingMethod]}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-earth-500">Shipping fee</dt>
+                  <dt className="text-earth-500">{isPickup ? 'Pickup fee' : 'Shipping fee'}</dt>
                   <dd className="font-medium text-earth-900">
                     {formatMoney(Number(order.shipping_fee ?? 0))}
                   </dd>

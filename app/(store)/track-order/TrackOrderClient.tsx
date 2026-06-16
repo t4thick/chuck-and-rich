@@ -5,11 +5,13 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { Package, Search } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import {
-  ORDER_STATUS_LABEL,
+  isPickupShippingMethod,
   normalizeOrderStatus,
+  orderStatusLabel,
   type OrderStatus,
 } from '@/lib/order-status'
 import { SHIPPING_METHOD_LABEL, type ShippingMethod } from '@/lib/shipping'
+import { STORE } from '@/lib/constants/store'
 import { createClient, isSupabaseBrowserConfigured } from '@/lib/supabase/client'
 import { OrderStatusTimeline } from '@/components/account/OrderStatusTimeline'
 import { PageHeader } from '@/components/store/PageHeader'
@@ -85,6 +87,7 @@ export function TrackOrderClient() {
     [data?.order?.status]
   )
   const shippingMethod = (data?.order?.shipping_method as ShippingMethod | undefined) ?? 'standard'
+  const isPickup = isPickupShippingMethod(data?.order?.shipping_method)
 
   const fetchOrder = useCallback(
     async (idOverride?: string) => {
@@ -236,7 +239,7 @@ export function TrackOrderClient() {
             <div className="premium-card p-6 sm:p-8">
               <p className="text-xs font-bold uppercase tracking-wider text-earth-500">Status</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight text-earth-900">
-                {ORDER_STATUS_LABEL[status]}
+                {orderStatusLabel(status, { pickup: isPickup })}
               </p>
               {data.order.order_number ? (
                 <p className="mt-1 font-mono text-sm font-semibold text-earth-700">
@@ -247,38 +250,52 @@ export function TrackOrderClient() {
               )}
 
               <div className="mt-8">
-                <OrderStatusTimeline status={data.order.status} />
+                <OrderStatusTimeline
+                  status={data.order.status}
+                  shippingMethod={data.order.shipping_method}
+                />
               </div>
             </div>
 
             <div className="space-y-6">
               <div className="premium-card p-6">
-                <h3 className="text-base font-semibold text-earth-900">Delivery details</h3>
+                <h3 className="text-base font-semibold text-earth-900">
+                  {isPickup ? 'Pickup details' : 'Delivery details'}
+                </h3>
                 <dl className="mt-4 space-y-3 text-sm">
                   <div className="flex justify-between gap-4">
-                    <dt className="text-earth-500">Shipping</dt>
+                    <dt className="text-earth-500">{isPickup ? 'Fulfillment' : 'Shipping'}</dt>
                     <dd className="font-medium text-earth-900">
                       {SHIPPING_METHOD_LABEL[shippingMethod]}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="text-earth-500">Est. delivery</dt>
+                    <dt className="text-earth-500">{isPickup ? 'Ready by' : 'Est. delivery'}</dt>
                     <dd className="font-medium text-earth-900">
-                      {status === 'delivered' ? 'Delivered' :
-                       status === 'cancelled' ? '—' :
-                       estimatedDelivery(data.order.created_at, data.order.shipping_method ?? 'standard')}
+                      {isPickup
+                        ? status === 'delivered' ? 'Picked up'
+                          : status === 'cancelled' ? '—'
+                          : status === 'ready_for_pickup' ? 'Ready now'
+                          : 'Same day'
+                        : status === 'delivered' ? 'Delivered'
+                          : status === 'cancelled' ? '—'
+                          : estimatedDelivery(data.order.created_at, data.order.shipping_method ?? 'standard')}
                     </dd>
                   </div>
+                  {!isPickup && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-earth-500">Tracking #</dt>
+                      <dd className="font-medium text-earth-900">
+                        {data.order.tracking_number ?? 'Not assigned yet'}
+                      </dd>
+                    </div>
+                  )}
                   <div className="flex justify-between gap-4">
-                    <dt className="text-earth-500">Tracking #</dt>
-                    <dd className="font-medium text-earth-900">
-                      {data.order.tracking_number ?? 'Not assigned yet'}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-earth-500">Destination</dt>
-                    <dd className="font-medium text-earth-900">
-                      {data.order.city ?? '—'}, {data.order.country ?? '—'}
+                    <dt className="text-earth-500">{isPickup ? 'Pick up at' : 'Destination'}</dt>
+                    <dd className="max-w-[14rem] text-right font-medium text-earth-900">
+                      {isPickup
+                        ? STORE.address
+                        : `${data.order.city ?? '—'}, ${data.order.country ?? '—'}`}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4 border-t border-earth-100 pt-3">

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Check, Lock, Truck } from 'lucide-react'
+import { ArrowLeft, Check, Clock, Lock, MapPin, Phone, Truck } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { PageHeader } from '@/components/store/PageHeader'
 import { AddressAutocomplete } from '@/components/store/AddressAutocomplete'
@@ -20,6 +20,7 @@ import {
 } from '@/lib/shipping'
 import { calculateSalesTax } from '@/lib/tax/sales-tax'
 import { getAuthSiteOrigin } from '@/lib/site-url-client'
+import { STORE } from '@/lib/constants/store'
 import { cn } from '@/lib/utils'
 
 type CheckoutAccount = {
@@ -52,6 +53,7 @@ type CheckoutForm = {
   state: string
   country: string
   postalCode: string
+  pickupName: string
 }
 
 const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Mexico']
@@ -118,6 +120,7 @@ function addressToForm(
     state: addr.state ?? '',
     country: addr.country || 'United States',
     postalCode: addr.postal_code ?? '',
+    pickupName: '',
   }
 }
 
@@ -155,6 +158,7 @@ export function CheckoutClient({
       state: draft?.state ?? 'OH',
       country: draft?.country ?? 'United States',
       postalCode: draft?.postalCode ?? '',
+      pickupName: draft?.pickupName ?? '',
     }
   })
 
@@ -164,6 +168,7 @@ export function CheckoutClient({
   }, [form])
 
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('standard')
+  const isPickup = shippingMethod === 'pickup'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -490,6 +495,7 @@ export function CheckoutClient({
           addressVerified: shippingMethod === 'pickup' || addressVerified,
           items,
           shippingMethod,
+          pickupName: form.pickupName.trim(),
         }),
       })
 
@@ -612,7 +618,58 @@ export function CheckoutClient({
               </div>
             </CheckoutStep>
 
-            <CheckoutStep step={2} title="Delivery address">
+            <CheckoutStep step={2} title={isPickup ? 'Pickup details' : 'Delivery address'}>
+              {isPickup ? (
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-earth-200 bg-earth-50 p-4">
+                    <p className="text-sm font-semibold text-earth-900">Pick up at our store</p>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      <div className="flex items-start gap-2.5">
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+                        <dd className="text-earth-700">{STORE.address}</dd>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+                        <dd className="text-earth-700">{STORE.hours}</dd>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <Phone className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+                        <dd>
+                          <a
+                            href={STORE.phoneHref}
+                            className="font-medium text-brand-700 no-underline hover:text-brand-800"
+                          >
+                            {STORE.phone}
+                          </a>
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <div>
+                    <label htmlFor="checkout-pickup-name" className="form-label">
+                      Who&apos;s picking up?{' '}
+                      <span className="font-normal text-earth-400">(optional)</span>
+                    </label>
+                    <Input
+                      id="checkout-pickup-name"
+                      type="text"
+                      name="pickupName"
+                      value={form.pickupName}
+                      onChange={handleChange}
+                      placeholder={`e.g. ${form.name || 'a friend'} or "Uber driver"`}
+                      autoComplete="off"
+                      maxLength={120}
+                    />
+                    <p className="mt-2 text-xs leading-relaxed text-earth-500">
+                      Sending an Uber, DoorDash, or a friend? Pay now and have them show your
+                      order number at the counter — we&apos;ll email you the moment it&apos;s
+                      ready.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+              <>
               {savedAddresses.length > 0 && (
                 <div className="mb-5 space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-earth-500">
@@ -835,6 +892,8 @@ export function CheckoutClient({
                   </div>
                 ) : null}
               </div>
+              </>
+              )}
             </CheckoutStep>
 
             <CheckoutStep step={3} title="Shipping method">
@@ -869,7 +928,10 @@ export function CheckoutClient({
                           {SHIPPING_METHOD_LABEL[method]}
                         </span>
                         <span className="block text-earth-600">
-                          {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`} · {quote.zone}
+                          {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`}
+                          {method === 'pickup'
+                            ? ' · Ready same day · send a driver or come in'
+                            : ` · ${quote.zone}`}
                         </span>
                       </span>
                     </label>

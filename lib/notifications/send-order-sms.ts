@@ -23,6 +23,7 @@ export type OrderSmsInput = {
   customerName: string
   totalAmount: number
   city?: string | null
+  shippingMethod?: string | null
   shortIdLength?: number
 }
 
@@ -56,8 +57,14 @@ export async function sendOrderSmsToMerchant(input: OrderSmsInput): Promise<void
 
   const shortIdLen = input.shortIdLength ?? 8
   const friendly = formatOrderNumber(input.orderNumber) || `#${input.orderId.slice(0, shortIdLen)}`
-  const cityClause = input.city ? ` to ${input.city}` : ''
-  const body = `[Lovely Queen] New order ${friendly} — ${formatMoney(input.totalAmount)} from ${input.customerName}${cityClause}. Open admin to confirm.`
+  const isPickup = (input.shippingMethod ?? '').trim().toLowerCase() === 'pickup'
+  const tag = isPickup ? '[PICKUP] ' : ''
+  const fulfillmentClause = isPickup
+    ? ' — prep for pickup'
+    : input.city
+      ? ` to ${input.city}`
+      : ''
+  const body = `${tag}[Lovely Queen] New order ${friendly} — ${formatMoney(input.totalAmount)} from ${input.customerName}${fulfillmentClause}. Open admin to confirm.`
 
   const url = `https://api.twilio.com/${TWILIO_API_VERSION}/Accounts/${encodeURIComponent(accountSid)}/Messages.json`
   const params = new URLSearchParams({

@@ -11,7 +11,7 @@ export function VisitSection() {
           <div>
             <h2 className="section-title">Visit the store</h2>
             <p className="section-subtitle">
-              Shop online for pickup or delivery — or stop by our Columbus location.
+              Shop online for store pickup or nationwide shipping — or stop by our Columbus location.
             </p>
             <dl className="mt-6 space-y-3 text-sm">
               <div className="flex items-start gap-3">

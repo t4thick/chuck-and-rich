@@ -122,32 +122,48 @@ export async function fulfillOrderFromPaymentIntent(
   const totalFromStripe = received / 100
   const customerEmail = payload.account_email.trim().toLowerCase()
 
-  const { data: order, error: orderError } = await supabaseAdmin
+  const baseOrderInsert = {
+    customer_name: payload.customer_name.trim(),
+    customer_email: customerEmail,
+    customer_phone: payload.customer_phone.trim(),
+    address_line: payload.address_line.trim(),
+    city: payload.city.trim(),
+    state: payload.state?.trim() || null,
+    country: normalizedCountry,
+    postal_code: payload.postal_code?.trim() || null,
+    subtotal_amount: subtotal,
+    shipping_fee: shipping.fee,
+    tax_amount: tax.taxAmount,
+    shipping_method,
+    shipping_zone: shipping.zone,
+    total_amount: totalFromStripe,
+    status: 'ordered',
+    ordered_at: new Date().toISOString(),
+    payment_method: 'stripe',
+    user_id: userId,
+    stripe_checkout_session_id: null,
+    stripe_payment_intent_id: paymentIntentId,
+  }
+
+  const pickupContactName = payload.pickup_contact_name?.trim() || null
+
+  let { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
-    .insert({
-      customer_name: payload.customer_name.trim(),
-      customer_email: customerEmail,
-      customer_phone: payload.customer_phone.trim(),
-      address_line: payload.address_line.trim(),
-      city: payload.city.trim(),
-      state: payload.state?.trim() || null,
-      country: normalizedCountry,
-      postal_code: payload.postal_code?.trim() || null,
-      subtotal_amount: subtotal,
-      shipping_fee: shipping.fee,
-      tax_amount: tax.taxAmount,
-      shipping_method,
-      shipping_zone: shipping.zone,
-      total_amount: totalFromStripe,
-      status: 'ordered',
-      ordered_at: new Date().toISOString(),
-      payment_method: 'stripe',
-      user_id: userId,
-      stripe_checkout_session_id: null,
-      stripe_payment_intent_id: paymentIntentId,
-    })
+    .insert({ ...baseOrderInsert, pickup_contact_name: pickupContactName })
     .select()
     .single()
+
+  // Retry without the pickup column if the DB migration hasn't been applied yet.
+  if (
+    orderError &&
+    /column .* does not exist|could not find the .* column/i.test(orderError.message)
+  ) {
+    ;({ data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .insert(baseOrderInsert)
+      .select()
+      .single())
+  }
 
   if (orderError || !order) {
     if (
@@ -218,6 +234,9 @@ export async function fulfillOrderFromPaymentIntent(
         total_amount: Number(order.total_amount),
         shipping_method: order.shipping_method,
         payment_method: order.payment_method,
+        pickup_contact_name:
+          (order as { pickup_contact_name?: string | null }).pickup_contact_name ??
+          pickupContactName,
       },
       authoritativeItems
     )
@@ -232,6 +251,7 @@ export async function fulfillOrderFromPaymentIntent(
       customerName: order.customer_name,
       totalAmount: Number(order.total_amount),
       city: order.city,
+      shippingMethod: order.shipping_method,
     })
   } catch (e) {
     console.error('[stripe] post-order SMS error:', e)

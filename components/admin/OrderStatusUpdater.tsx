@@ -3,21 +3,28 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check } from 'lucide-react'
-import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, type OrderStatus } from '@/lib/order-status'
+import {
+  getStatusFlow,
+  isPickupShippingMethod,
+  orderStatusLabel,
+  type OrderStatus,
+} from '@/lib/order-status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-const STATUSES: OrderStatus[] = [...ORDER_STATUS_FLOW, 'cancelled']
 
 export function OrderStatusUpdater({
   orderId,
   currentStatus,
   trackingNumber,
+  shippingMethod,
 }: {
   orderId: string
   currentStatus: string
   trackingNumber?: string | null
+  shippingMethod?: string | null
 }) {
+  const pickup = isPickupShippingMethod(shippingMethod)
+  const statuses: OrderStatus[] = [...getStatusFlow(shippingMethod), 'cancelled']
   const router = useRouter()
   const [selected, setSelected] = useState<OrderStatus>(
     (currentStatus as OrderStatus) ?? 'ordered'
@@ -75,25 +82,27 @@ export function OrderStatusUpdater({
             value={selected}
             onChange={(e) => setSelected(e.target.value as OrderStatus)}
           >
-            {STATUSES.map((s) => (
+            {statuses.map((s) => (
               <option key={s} value={s}>
-                {ORDER_STATUS_LABEL[s]}
+                {orderStatusLabel(s, { pickup })}
               </option>
             ))}
           </select>
         </div>
-        <div className="space-y-1.5">
-          <label className="form-label" htmlFor="tracking">
-            Tracking number
-          </label>
-          <Input
-            id="tracking"
-            type="text"
-            value={tracking}
-            onChange={(e) => setTracking(e.target.value)}
-            placeholder="e.g. LQAM-2026-00124"
-          />
-        </div>
+        {!pickup && (
+          <div className="space-y-1.5">
+            <label className="form-label" htmlFor="tracking">
+              Tracking number
+            </label>
+            <Input
+              id="tracking"
+              type="text"
+              value={tracking}
+              onChange={(e) => setTracking(e.target.value)}
+              placeholder="e.g. LQAM-2026-00124"
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-1.5">

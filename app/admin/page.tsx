@@ -37,6 +37,7 @@ import { Button } from '@/components/ui/button'
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
   processing: 'bg-amber-50 text-amber-700',
+  ready_for_pickup: 'bg-teal-50 text-teal-700',
   shipped: 'bg-violet-50 text-violet-700',
   out_for_delivery: 'bg-indigo-50 text-indigo-700',
   delivered: 'bg-emerald-50 text-emerald-700',

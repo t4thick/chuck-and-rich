@@ -27,7 +27,7 @@ export async function PATCH(
 
     const { data: existingOrder, error: existingError } = await supabaseAdmin
       .from('orders')
-      .select('status, order_number, customer_name, customer_email, total_amount')
+      .select('status, order_number, customer_name, customer_email, total_amount, shipping_method')
       .eq('id', id)
       .single()
 
@@ -106,6 +106,7 @@ export async function PATCH(
             tracking_number: updatePayload.tracking_number
               ? String(updatePayload.tracking_number)
               : null,
+            shipping_method: existingOrder.shipping_method ?? null,
           },
           normalized,
           typeof note === 'string' && note.trim() ? note.trim() : null,

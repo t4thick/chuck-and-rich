@@ -11,4 +11,6 @@ export type CheckoutSnapshotPayload = {
   shipping_method: string
   shipping_zone: string | null
   account_email: string
+  /** For pickup orders: who is collecting (customer, friend, or courier). */
+  pickup_contact_name?: string | null
 }

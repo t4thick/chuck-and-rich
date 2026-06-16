@@ -1,22 +1,30 @@
-import { ORDER_STATUS_FLOW, ORDER_STATUS_LABEL, getStatusStepIndex } from '@/lib/order-status'
+import {
+  getStatusFlow,
+  getStatusStepIndex,
+  isPickupShippingMethod,
+  orderStatusLabel,
+} from '@/lib/order-status'
 import { cn } from '@/lib/utils'
 
 type OrderStatusTimelineProps = {
   status: string | null | undefined
+  shippingMethod?: string | null
   className?: string
 }
 
-export function OrderStatusTimeline({ status, className }: OrderStatusTimelineProps) {
-  const stepIndex = getStatusStepIndex(status)
+export function OrderStatusTimeline({ status, shippingMethod, className }: OrderStatusTimelineProps) {
+  const pickup = isPickupShippingMethod(shippingMethod)
+  const flow = getStatusFlow(shippingMethod)
+  const stepIndex = getStatusStepIndex(status, flow)
 
   return (
     <ol className={cn('space-y-0', className)}>
-      {ORDER_STATUS_FLOW.map((step, index) => {
+      {flow.map((step, index) => {
         const done = stepIndex >= index
         const current = stepIndex === index
         return (
           <li key={step} className="relative flex gap-4 pb-8 last:pb-0">
-            {index < ORDER_STATUS_FLOW.length - 1 && (
+            {index < flow.length - 1 && (
               <span
                 className={cn(
                   'absolute left-[11px] top-6 h-[calc(100%-1.5rem)] w-0.5',
@@ -43,7 +51,7 @@ export function OrderStatusTimeline({ status, className }: OrderStatusTimelinePr
                   current ? 'text-brand-800' : done ? 'text-earth-900' : 'text-earth-500'
                 )}
               >
-                {ORDER_STATUS_LABEL[step]}
+                {orderStatusLabel(step, { pickup })}
               </p>
             </div>
           </li>

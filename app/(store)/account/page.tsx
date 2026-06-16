@@ -4,7 +4,12 @@ import { ArrowRight, Package, Settings, User } from 'lucide-react'
 import { createClientOptional } from '@/lib/supabase/server'
 import { AccountSignOut } from '@/components/AccountSignOut'
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner'
-import { ORDER_STATUS_LABEL, normalizeOrderStatus, type OrderStatus } from '@/lib/order-status'
+import {
+  isPickupShippingMethod,
+  normalizeOrderStatus,
+  orderStatusLabel,
+  type OrderStatus,
+} from '@/lib/order-status'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/utils'
 import { formatOrderNumber } from '@/lib/orders/order-number'
@@ -12,6 +17,7 @@ import { formatOrderNumber } from '@/lib/orders/order-number'
 const STATUS_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
   processing: 'bg-amber-50 text-amber-700',
+  ready_for_pickup: 'bg-teal-50 text-teal-700',
   shipped: 'bg-violet-50 text-violet-700',
   out_for_delivery: 'bg-indigo-50 text-indigo-700',
   delivered: 'bg-emerald-50 text-emerald-700',
@@ -138,6 +144,7 @@ export default async function AccountPage() {
           <div className="mt-6 space-y-3">
             {orders.map((o: AccountOrderRow) => {
               const st = normalizeOrderStatus(o.status)
+              const pickup = isPickupShippingMethod(o.shipping_method)
               const number = formatOrderNumber(o.order_number)
               return (
                 <article
@@ -163,11 +170,11 @@ export default async function AccountPage() {
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_COLORS[st]}`}>
-                        {ORDER_STATUS_LABEL[st]}
+                        {orderStatusLabel(st, { pickup })}
                       </span>
                       {st !== 'delivered' && st !== 'cancelled' && (
                         <span className="text-xs text-earth-500">
-                          Est. {estimatedDelivery(o.created_at, o.shipping_method)}
+                          {pickup ? 'Same-day pickup' : `Est. ${estimatedDelivery(o.created_at, o.shipping_method)}`}
                         </span>
                       )}
                     </div>

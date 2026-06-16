@@ -19,6 +19,7 @@ import { Pagination } from '@/components/admin/Pagination'
 const STATUS_PILL_COLORS: Record<OrderStatus, string> = {
   ordered: 'bg-blue-50 text-blue-700',
   processing: 'bg-amber-50 text-amber-700',
+  ready_for_pickup: 'bg-teal-50 text-teal-700',
   shipped: 'bg-violet-50 text-violet-700',
   out_for_delivery: 'bg-indigo-50 text-indigo-700',
   delivered: 'bg-emerald-50 text-emerald-700',
@@ -55,7 +56,7 @@ export default async function AdminOrdersPage({
 
   let query = supabaseAdmin
     .from('orders')
-    .select('id, order_number, customer_name, customer_email, city, total_amount, status, created_at')
+    .select('id, order_number, customer_name, customer_email, city, total_amount, status, created_at, shipping_method')
     .order('created_at', { ascending: false })
 
   if (whenStart && whenEnd) {
