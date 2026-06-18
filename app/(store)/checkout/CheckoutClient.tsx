@@ -898,7 +898,7 @@ export function CheckoutClient({
 
             <CheckoutStep step={3} title="Shipping method">
               <div className="space-y-3">
-                {(['standard', 'express', 'pickup'] as ShippingMethod[]).map((method) => {
+                {(['standard', 'pickup'] as ShippingMethod[]).map((method) => {
                   const quote = calculateShipping({
                     subtotal: totalPrice,
                     country: form.country,
@@ -906,6 +906,12 @@ export function CheckoutClient({
                     method,
                   })
                   const selected = shippingMethod === method
+                  const deliveryEta: Record<string, string> = {
+                    local: '3–5 business days',
+                    regional: '4–6 business days',
+                    national: '6–9 business days',
+                    international: '10–14 business days',
+                  }
                   return (
                     <label
                       key={method}
@@ -930,8 +936,8 @@ export function CheckoutClient({
                         <span className="block text-earth-600">
                           {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`}
                           {method === 'pickup'
-                            ? ' · Ready same day · send a driver or come in'
-                            : ` · ${quote.zone}`}
+                            ? ' · Ready same day · come in or send a driver'
+                            : ` · ${deliveryEta[quote.zone] ?? '5–8 business days'}`}
                         </span>
                       </span>
                     </label>

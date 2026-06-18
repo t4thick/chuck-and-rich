@@ -159,23 +159,20 @@ export function calculateShipping(input: ShippingQuoteInput): ShippingQuote {
   const isUnitedStates = !country || country === 'united states'
 
   if (!isUnitedStates) {
-    const base = method === 'express' ? 52 : 34
-    return { method, fee: base, zone: 'international', label: SHIPPING_METHOD_LABEL[method] }
+    return { method, fee: 34, zone: 'international', label: SHIPPING_METHOD_LABEL[method] ?? 'International Shipping' }
   }
 
   // Free standard shipping threshold
-  if (method === 'standard' && subtotal >= FREE_STANDARD_SHIPPING_SUBTOTAL) {
-    return { method, fee: 0, zone: getZoneLabel(stateCode), label: SHIPPING_METHOD_LABEL[method] }
+  if (subtotal >= FREE_STANDARD_SHIPPING_SUBTOTAL) {
+    return { method, fee: 0, zone: getZoneLabel(stateCode), label: SHIPPING_METHOD_LABEL[method] ?? 'Standard Delivery' }
   }
 
-  const base = getZoneRate(stateCode)
-  const expressAddon = method === 'express' ? 8 : 0
   const zone = getZoneLabel(stateCode)
 
   return {
     method,
-    fee: base + expressAddon,
+    fee: getZoneRate(stateCode),
     zone,
-    label: SHIPPING_METHOD_LABEL[method],
+    label: SHIPPING_METHOD_LABEL[method] ?? 'Standard Delivery',
   }
 }

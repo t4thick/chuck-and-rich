@@ -53,10 +53,7 @@ type TrackOrderResponse = {
 
 function estimatedDelivery(createdAt: string, shippingMethod: string): string {
   const created = new Date(createdAt)
-  const days = shippingMethod === 'pickup' ? 0
-    : shippingMethod === 'express' || shippingMethod === 'overnight' ? 2
-    : shippingMethod === 'economy' ? 10
-    : 6 // standard
+  const days = shippingMethod === 'pickup' ? 0 : 6
 
   if (days === 0) return 'Available for pickup'
 

@@ -36,11 +36,7 @@ type AccountOrderRow = {
 
 function estimatedDelivery(createdAt: string, shippingMethod: string | null): string {
   const method = shippingMethod ?? 'standard'
-  const days =
-    method === 'pickup' ? 0
-    : method === 'express' || method === 'overnight' ? 2
-    : method === 'economy' ? 10
-    : 6
+  const days = method === 'pickup' ? 0 : 6
   if (days === 0) return 'Pickup'
   let count = 0
   const date = new Date(createdAt)
