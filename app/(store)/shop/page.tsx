@@ -92,10 +92,7 @@ export default async function ShopPage({
             </div>
 
             <Suspense fallback={null}>
-              <div className="mt-4 hidden lg:block">
-                <ActiveFilterChips />
-              </div>
-              <div className="mt-3 lg:hidden">
+              <div className="mt-3 lg:mt-4">
                 <ActiveFilterChips />
               </div>
             </Suspense>

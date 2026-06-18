@@ -9,8 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PRODUCT_CATEGORIES } from '@/lib/constants/categories'
 
-// Use the single source of truth from constants — no more drift
-const CATEGORIES = [...PRODUCT_CATEGORIES].filter((c) => c !== 'Sample').sort()
+const CATEGORIES = [...PRODUCT_CATEGORIES].sort()
 
 type FormData = {
   name: string

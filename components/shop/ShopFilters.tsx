@@ -37,14 +37,16 @@ function useShopFilterState() {
   }, [sp])
 
   const activeCategory = sp.get('category')
-  const hasFilters = !!(
-    sp.get('q') ||
-    sp.get('category') ||
-    sp.get('minPrice') ||
-    sp.get('maxPrice') ||
-    sp.get('inStock') === '1' ||
-    (sp.get('sort') && sp.get('sort') !== 'featured')
-  )
+
+  const activeFilterCount = [
+    sp.get('q') ? 1 : 0,
+    sp.get('category') ? 1 : 0,
+    sp.get('minPrice') || sp.get('maxPrice') ? 1 : 0,
+    sp.get('inStock') === '1' ? 1 : 0,
+    sp.get('sort') && sp.get('sort') !== 'featured' ? 1 : 0,
+  ].reduce((a, b) => a + b, 0)
+
+  const hasFilters = activeFilterCount > 0
 
   const pushFilters = useCallback(
     (next: Partial<{
@@ -57,7 +59,7 @@ function useShopFilterState() {
     }>) => {
       const p = new URLSearchParams()
       const qVal = next.q ?? q
-      const catVal = next.category ?? category
+      const catVal = next.category !== undefined ? next.category : category
       const minVal = next.minPrice ?? minPrice
       const maxVal = next.maxPrice ?? maxPrice
       const stockVal = next.inStock ?? inStockOnly
@@ -93,6 +95,7 @@ function useShopFilterState() {
   function setCategoryAndGo(cat: string) {
     setCategory(cat)
     pushFilters({ category: cat })
+    setMobileOpen(false)
   }
 
   function setSortAndGo(s: string) {
@@ -106,27 +109,18 @@ function useShopFilterState() {
   }
 
   return {
-    q,
-    setQ,
-    category,
-    setCategory,
-    minPrice,
-    setMinPrice,
-    maxPrice,
-    setMaxPrice,
-    inStockOnly,
-    setInStockOnly,
-    sort,
-    setSort,
-    mobileOpen,
-    setMobileOpen,
+    q, setQ,
+    category, setCategory,
+    minPrice, setMinPrice,
+    maxPrice, setMaxPrice,
+    inStockOnly, setInStockOnly,
+    sort, setSort,
+    mobileOpen, setMobileOpen,
     activeCategory,
     hasFilters,
-    apply,
-    reset,
-    setCategoryAndGo,
-    setSortAndGo,
-    toggleStockAndGo,
+    activeFilterCount,
+    apply, reset,
+    setCategoryAndGo, setSortAndGo, toggleStockAndGo,
   }
 }
 
@@ -410,17 +404,21 @@ export function ShopFiltersBar({
 }) {
   const state = useShopFilterState()
 
+  // iOS-safe scroll lock: position:fixed the body while the drawer is open.
+  // removeProperty + behavior:'instant' avoids the Safari scroll-jump bug.
   useEffect(() => {
     if (!state.mobileOpen) return
     const y = window.scrollY
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${y}px`
-    document.body.style.width = '100%'
+    document.body.style.setProperty('position', 'fixed')
+    document.body.style.setProperty('top', `-${y}px`)
+    document.body.style.setProperty('width', '100%')
+    document.body.style.setProperty('overflow-y', 'scroll')
     return () => {
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.width = ''
-      window.scrollTo(0, y)
+      document.body.style.removeProperty('position')
+      document.body.style.removeProperty('top')
+      document.body.style.removeProperty('width')
+      document.body.style.removeProperty('overflow-y')
+      window.scrollTo({ top: y, behavior: 'instant' } as ScrollToOptions)
     }
   }, [state.mobileOpen])
 
@@ -432,34 +430,37 @@ export function ShopFiltersBar({
 
   return (
     <div className="space-y-2 lg:hidden">
-      <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
-        <button
-          type="button"
-          onClick={() => state.setCategoryAndGo('')}
-          className={cn(
-            'shrink-0 rounded-full px-4 py-2.5 text-xs font-medium transition-colors min-h-11',
-            !state.activeCategory
-              ? 'bg-earth-900 text-white'
-              : 'border border-earth-200 bg-white text-earth-700 hover:border-earth-300'
-          )}
-        >
-          All
-        </button>
-        {mobileCategories.slice(0, 12).map((c) => (
+      {/* Horizontal category pills with right-fade gradient */}
+      <div className="relative">
+        <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none [mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent_100%)]">
           <button
-            key={c}
             type="button"
-            onClick={() => state.setCategoryAndGo(c)}
+            onClick={() => state.setCategoryAndGo('')}
             className={cn(
               'shrink-0 rounded-full px-4 py-2.5 text-xs font-medium transition-colors min-h-11',
-              state.activeCategory === c
+              !state.activeCategory
                 ? 'bg-earth-900 text-white'
                 : 'border border-earth-200 bg-white text-earth-700 hover:border-earth-300'
             )}
           >
-            {c}
+            All
           </button>
-        ))}
+          {mobileCategories.slice(0, 12).map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => state.setCategoryAndGo(c)}
+              className={cn(
+                'shrink-0 rounded-full px-4 py-2.5 text-xs font-medium transition-colors min-h-11',
+                state.activeCategory === c
+                  ? 'bg-earth-900 text-white'
+                  : 'border border-earth-200 bg-white text-earth-700 hover:border-earth-300'
+              )}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -472,9 +473,9 @@ export function ShopFiltersBar({
         >
           <Filter className="h-3.5 w-3.5" />
           Filters
-          {state.hasFilters && (
+          {state.activeFilterCount > 0 && (
             <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-700 px-1 text-[10px] font-semibold text-white">
-              !
+              {state.activeFilterCount}
             </span>
           )}
         </Button>
@@ -496,13 +497,23 @@ export function ShopFiltersBar({
             role="dialog"
             aria-modal="true"
             aria-label="Filters"
-            className="animate-slide-up fixed inset-x-0 bottom-0 z-50 flex max-h-[80dvh] flex-col rounded-t-2xl border-t border-earth-200 bg-white shadow-[var(--shadow-premium)]"
+            className="animate-slide-up fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-earth-200 bg-white shadow-[var(--shadow-premium)]"
           >
+            {/* Drag handle */}
             <div className="flex shrink-0 flex-col items-center pb-1 pt-3">
               <div className="h-1 w-10 rounded-full bg-earth-200" />
             </div>
+
+            {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-earth-100 px-5 py-3">
-              <p className="text-sm font-semibold text-earth-900">Filters</p>
+              <p className="text-sm font-semibold text-earth-900">
+                Filters
+                {state.activeFilterCount > 0 && (
+                  <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-700 px-1.5 text-[10px] font-semibold text-white">
+                    {state.activeFilterCount}
+                  </span>
+                )}
+              </p>
               <button
                 type="button"
                 className="flex h-11 w-11 items-center justify-center rounded-md text-earth-600 transition-colors hover:bg-earth-50"
@@ -512,11 +523,65 @@ export function ShopFiltersBar({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={state.apply} className="flex flex-1 flex-col overflow-hidden">
-              <div className="flex-1 space-y-5 overflow-y-auto p-5">
-                <StockToggle checked={state.inStockOnly} onChange={state.toggleStockAndGo} />
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-5">
+              <form
+                id="mobile-filter-form"
+                onSubmit={state.apply}
+                className="space-y-6"
+              >
+                {/* Category */}
                 <div>
-                  <p className="form-label mb-1.5">Price range</p>
+                  <p className="form-label mb-2.5">Category</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => state.setCategoryAndGo('')}
+                      className={cn(
+                        'rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
+                        !state.activeCategory
+                          ? 'bg-earth-900 text-white'
+                          : 'border border-earth-200 bg-white text-earth-700'
+                      )}
+                    >
+                      All
+                    </button>
+                    {mobileCategories.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => state.setCategoryAndGo(c)}
+                        className={cn(
+                          'rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
+                          state.activeCategory === c
+                            ? 'bg-earth-900 text-white'
+                            : 'border border-earth-200 bg-white text-earth-700'
+                        )}
+                      >
+                        {c}
+                        {categoryCount?.[c] != null && (
+                          <span className={cn(
+                            'ml-1 tabular-nums',
+                            state.activeCategory === c ? 'text-white/70' : 'text-earth-400'
+                          )}>
+                            {categoryCount[c]}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stock */}
+                <div>
+                  <p className="form-label mb-2.5">Availability</p>
+                  <StockToggle checked={state.inStockOnly} onChange={state.toggleStockAndGo} />
+                </div>
+
+                {/* Price */}
+                <div>
+                  <p className="form-label mb-2.5">Price range</p>
                   <PriceFields
                     minPrice={state.minPrice}
                     maxPrice={state.maxPrice}
@@ -524,18 +589,20 @@ export function ShopFiltersBar({
                     setMaxPrice={state.setMaxPrice}
                   />
                 </div>
-              </div>
-              <div className="flex shrink-0 gap-2 border-t border-earth-100 p-4">
-                <Button type="submit" size="lg" className="h-11 flex-1">
-                  Apply filters
+              </form>
+            </div>
+
+            {/* Footer */}
+            <div className="flex shrink-0 gap-2 border-t border-earth-100 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <Button form="mobile-filter-form" type="submit" size="lg" className="h-11 flex-1">
+                Apply filters
+              </Button>
+              {state.hasFilters && (
+                <Button type="button" size="lg" variant="outline" className="h-11 px-5" onClick={state.reset}>
+                  Clear
                 </Button>
-                {state.hasFilters && (
-                  <Button type="button" size="lg" variant="outline" className="h-11 px-5" onClick={state.reset}>
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </form>
+              )}
+            </div>
           </div>
         </>
       )}

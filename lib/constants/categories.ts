@@ -16,7 +16,6 @@ export const PRODUCT_CATEGORIES = [
   'Non food',
   'Snack',
   'Spices',
-  'Sample',
 ] as const
 
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number]

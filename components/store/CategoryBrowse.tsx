@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { CategoryIcon } from '@/components/store/CategoryIcon'
 import { getCategoryImage } from '@/lib/constants/category-images'
+import { PRODUCT_CATEGORIES } from '@/lib/constants/categories'
 
 type CategoryBrowseProps = {
   displayCategories: readonly string[]
@@ -17,7 +18,7 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
           <div>
             <h2 className="section-title">Shop by category</h2>
             <p className="section-subtitle">
-              14 departments. {Object.values(categoryCount).reduce((a, b) => a + b, 0)} products in stock.
+              {PRODUCT_CATEGORIES.length} departments. {Object.values(categoryCount).reduce((a, b) => a + b, 0)} products in stock.
             </p>
           </div>
           <Link
@@ -44,7 +45,7 @@ export function CategoryBrowse({ displayCategories, categoryCount }: CategoryBro
                     {imageUrl ? (
                       <Image
                         src={imageUrl}
-                        alt=""
+                        alt={cat}
                         fill
                         quality={90}
                         unoptimized={imageUrl.startsWith('/images/categories/')}

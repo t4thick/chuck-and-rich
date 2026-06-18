@@ -28,7 +28,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'Non food': Box,
   Snack: ShoppingBasket,
   Spices: Flame,
-  Sample: Package,
 }
 
 type CategoryIconProps = {
