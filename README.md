@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lovely Queen African Market
 
-## Getting Started
+Production e-commerce platform for **Lovely Queen African Market** — African and Caribbean groceries with online ordering, Stripe payments, and store operations tooling.
 
-First, run the development server:
+**Live site:** [lovely-queen-market.vercel.app](https://lovely-queen-market.vercel.app)
+
+**Store location:** 1668 E Dublin Granville Rd, Columbus, OH 43229 · (614) 446-0893
+
+---
+
+## Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16 (App Router), React 19, Tailwind CSS 4 |
+| Database & auth | Supabase (PostgreSQL, RLS, Auth) |
+| Payments | Stripe (Payment Element, webhooks) |
+| Email | Gmail SMTP, Postmark, or generic SMTP |
+| Hosting | Vercel |
+| Shipping | USPS Labels API (optional) + printable packing slips |
+
+---
+
+## Quick start (local)
 
 ```bash
+git clone https://github.com/t4thick/chuck-and-rich.git
+cd lovely-queen-market
+cp .env.example .env.local
+# Fill in Supabase + Stripe keys (see docs/PROJECT.md)
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Admin: `/admin/login`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Validate configuration:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run check:env
+npm run ci          # lint + typecheck + build
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Documentation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Document | Contents |
+|----------|----------|
+| [docs/PROJECT.md](docs/PROJECT.md) | Architecture, features, env vars, deployment, operations |
+| [docs/ADMIN.md](docs/ADMIN.md) | Admin dashboard, orders, shipping, reports |
+| [.env.example](.env.example) | Full environment variable reference |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Local development server |
+| `npm run build` | Production build |
+| `npm run ci` | Lint, typecheck, and build (CI parity) |
+| `npm run check:env` | Validate required env vars |
+| `npm run test:e2e` | Playwright end-to-end tests |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Repository
+
+Maintained by Lovely Queen African Market. Private operational credentials belong in Vercel and `.env.local` only — never commit secrets.
