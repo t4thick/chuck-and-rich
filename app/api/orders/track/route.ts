@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeOrderStatus } from '@/lib/order-status'
 import { parseOrderRef } from '@/lib/orders/order-number'
+import { normalizeGuestEmail } from '@/lib/orders/guest-checkout'
 
 export async function GET(req: NextRequest) {
   const idRaw = req.nextUrl.searchParams.get('id')?.trim()
@@ -13,14 +14,26 @@ export async function GET(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
-    return NextResponse.json({ error: 'Please sign in to track your orders.' }, { status: 401 })
-  }
-
   let order: Record<string, unknown> | null = null
 
-  // Email search — find most recent order matching that email for this user
-  if (emailRaw && !idRaw) {
+  if (!user) {
+    const email = normalizeGuestEmail(emailRaw)
+    const ref = parseOrderRef(idRaw)
+    if (!ref || !email) {
+      return NextResponse.json(
+        { error: 'Enter your order number and the email used at checkout.' },
+        { status: 400 }
+      )
+    }
+
+    let query = supabaseAdmin.from('orders').select('*').ilike('customer_email', email)
+    query = ref.type === 'uuid' ? query.eq('id', ref.value) : query.eq('order_number', ref.value)
+    const { data, error: orderError } = await query.maybeSingle()
+    if (orderError || !data) {
+      return NextResponse.json({ error: 'Order not found. Check your order number and email.' }, { status: 404 })
+    }
+    order = data
+  } else if (emailRaw && !idRaw) {
     const { data } = await supabaseAdmin
       .from('orders')
       .select('*')

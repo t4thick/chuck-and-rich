@@ -10,6 +10,10 @@ import {
 import { normalizeShippingCountry, normalizeShippingRegion } from '@/lib/shipping'
 import { getStripe } from '@/lib/stripe'
 import type { CheckoutSnapshotPayload } from '@/lib/orders/checkout-snapshot'
+import {
+  isGuestCheckoutMode,
+  isGuestCheckoutUserId,
+} from '@/lib/orders/guest-checkout'
 
 const SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
@@ -39,11 +43,15 @@ export async function fulfillOrderFromPaymentIntent(
     return { orderId: '', created: false }
   }
 
-  const userId = pi.metadata?.user_id?.trim()
+  const rawUserId = pi.metadata?.user_id?.trim()
   const snapshotId = pi.metadata?.checkout_snapshot_id?.trim()
-  if (!userId || !snapshotId) {
+  if (!rawUserId || !snapshotId) {
     throw new Error('Missing user_id or checkout_snapshot_id on PaymentIntent')
   }
+
+  const guestCheckout =
+    isGuestCheckoutMode(pi.metadata?.checkout_mode) || isGuestCheckoutUserId(rawUserId)
+  const userId = guestCheckout ? null : rawUserId
 
   const { data: snap, error: snapErr } = await supabaseAdmin
     .from('checkout_snapshots')
@@ -55,7 +63,7 @@ export async function fulfillOrderFromPaymentIntent(
     throw new Error(snapErr?.message ?? 'Checkout snapshot not found')
   }
 
-  if (snap.user_id !== userId) {
+  if (snap.user_id !== rawUserId) {
     throw new Error('Snapshot user mismatch')
   }
 

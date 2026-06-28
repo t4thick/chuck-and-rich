@@ -3,25 +3,25 @@ import { test, expect } from '@playwright/test'
 test.describe.configure({ timeout: 120_000 })
 
 test.describe('Checkout', () => {
-  test('redirects unauthenticated users away from checkout', async ({ page }) => {
+  test('allows guest checkout without signing in', async ({ page }) => {
     await page.goto('/checkout')
 
-    await expect(page).toHaveURL(/\/login\?next=%2Fcheckout/)
-    await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible()
+    await expect(page).toHaveURL(/\/checkout/)
+    await expect(page).not.toHaveURL(/\/login/)
   })
 
-  test('redirects unauthenticated users away from order confirmation', async ({ page }) => {
-    await page.goto('/order-confirmation?id=test-order')
+  test('order confirmation loads without login when no order id', async ({ page }) => {
+    await page.goto('/order-confirmation')
 
-    await expect(page).toHaveURL(/\/login\?next=.*order-confirmation/i)
-    await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible()
+    await expect(page).toHaveURL(/\/order-confirmation/)
+    await expect(page.getByRole('heading', { name: 'Thank you for your order' })).toBeVisible()
   })
 
-  test('order tracking API rejects unauthenticated access', async ({ page }) => {
+  test('order tracking API requires order number and email for guests', async ({ page }) => {
     const response = await page.request.get('/api/orders/track?id=test-order')
-    expect(response.status()).toBe(401)
+    expect(response.status()).toBe(400)
     await expect(await response.json()).toMatchObject({
-      error: expect.stringMatching(/sign in/i),
+      error: expect.stringMatching(/order number and email/i),
     })
   })
 

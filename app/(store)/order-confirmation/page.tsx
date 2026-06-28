@@ -25,9 +25,9 @@ export default async function OrderConfirmationPage({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) redirect('/login?next=/order-confirmation')
 
   const { id } = await searchParams
+  const isGuestView = !user
 
   let order: {
     id: string
@@ -42,14 +42,20 @@ export default async function OrderConfirmationPage({
   } | null = null
 
   if (id) {
-    const { data } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('orders')
       .select(
         'id,order_number,status,shipping_method,shipping_fee,total_amount,subtotal_amount,tracking_number,payment_method'
       )
       .eq('id', id)
-      .eq('user_id', user.id)
-      .maybeSingle()
+
+    if (isGuestView) {
+      query = query.is('user_id', null)
+    } else {
+      query = query.eq('user_id', user!.id)
+    }
+
+    const { data } = await query.maybeSingle()
     order = data
   }
 
@@ -92,7 +98,11 @@ export default async function OrderConfirmationPage({
           )}
 
           {!order && id && (
-            <p className="error mt-4">We couldn&apos;t find that order under your account.</p>
+            <p className="error mt-4">
+              {isGuestView
+                ? 'We could not find that order. Use the link from your confirmation email or track with your order number and email.'
+                : "We couldn't find that order under your account."}
+            </p>
           )}
         </div>
 
@@ -164,11 +174,13 @@ export default async function OrderConfirmationPage({
               </Button>
             </Link>
           )}
-          <Link href="/account" className="no-underline">
-            <Button variant="outline" className="h-12 w-full rounded-xl sm:w-auto">
-              My account
-            </Button>
-          </Link>
+          {!isGuestView && (
+            <Link href="/account" className="no-underline">
+              <Button variant="outline" className="h-12 w-full rounded-xl sm:w-auto">
+                My account
+              </Button>
+            </Link>
+          )}
           <Link href="/shop" className="no-underline">
             <Button className="h-12 w-full rounded-xl sm:w-auto">
               Continue shopping

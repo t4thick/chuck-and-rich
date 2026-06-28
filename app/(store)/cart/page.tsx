@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext'
 import { Button } from '@/components/ui/button'
 import { ProductImage } from '@/components/store/ProductImage'
 import { FreeShippingProgress } from '@/components/store/FreeShippingProgress'
+import { PickupPromoBanner } from '@/components/store/PickupPromoBanner'
 import { formatMoney } from '@/lib/utils'
 
 export default function CartPage() {
@@ -46,6 +47,8 @@ export default function CartPage() {
       </div>
 
       <div className="store-container py-6 sm:py-8">
+        <PickupPromoBanner className="mb-6" compact />
+
         <div className="grid gap-8 md:grid-cols-3 md:gap-8 lg:gap-10">
           <div className="space-y-3 lg:col-span-2">
             {items.map(({ product, quantity }) => (

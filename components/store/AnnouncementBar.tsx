@@ -8,9 +8,9 @@ import { FREE_STANDARD_SHIPPING_SUBTOTAL } from '@/lib/shipping'
 const DISMISS_KEY = 'lq_bar_v1'
 
 const MESSAGES = [
+  'Columbus? Free store pickup — send Uber with your order #',
   `Free standard US shipping on orders $${FREE_STANDARD_SHIPPING_SUBTOTAL}+`,
   `Same-day store pickup · ${STORE.address}`,
-  'Send an Uber or pick up yourself · Ships within 24h',
 ] as const
 
 export function AnnouncementBar() {

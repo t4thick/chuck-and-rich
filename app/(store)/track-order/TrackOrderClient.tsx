@@ -94,10 +94,12 @@ export function TrackOrderClient() {
       setLoading(true)
       setError('')
       try {
-        const url = emailVal && !id
-          ? `/api/orders/track?email=${encodeURIComponent(emailVal)}`
-          : `/api/orders/track?id=${encodeURIComponent(id)}`
-        const res = await fetch(url)
+        const params = new URLSearchParams()
+        if (id) params.set('id', id)
+        if (emailVal) params.set('email', emailVal)
+        if (!id && !emailVal) return
+
+        const res = await fetch(`/api/orders/track?${params.toString()}`)
         const payload = await res.json()
         if (!res.ok) {
           setError(payload.error ?? 'Could not find this order.')
@@ -156,7 +158,7 @@ export function TrackOrderClient() {
       <PageHeader
         eyebrow="Orders"
         title="Track your order"
-        subtitle="Enter your order number (LQ-1042) to see delivery progress and item details."
+        subtitle="Enter your order number and checkout email. Signed-in customers can also search by email only."
       />
 
       <div className="store-container py-8 sm:py-10">
@@ -180,10 +182,10 @@ export function TrackOrderClient() {
           </div>
 
           {searchMode === 'order' ? (
-            <>
-              <label htmlFor="track-order-id" className="form-label">Order number</label>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <div className="relative flex-1">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="track-order-id" className="form-label">Order number</label>
+                <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-earth-400" />
                   <Input
                     id="track-order-id"
@@ -194,14 +196,27 @@ export function TrackOrderClient() {
                     className="pl-9"
                   />
                 </div>
-                <Button type="submit" disabled={loading} className="h-11 rounded-xl sm:min-w-[120px]">
-                  {loading ? 'Checking…' : 'Track'}
-                </Button>
               </div>
-              <p className="mt-3 text-xs text-earth-500">
-                Found on your order confirmation email and in your account.
+              <div>
+                <label htmlFor="track-order-email-guest" className="form-label">
+                  Email used at checkout
+                </label>
+                <Input
+                  id="track-order-email-guest"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="you@example.com"
+                />
+              </div>
+              <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl sm:w-auto sm:min-w-[120px]">
+                {loading ? 'Checking…' : 'Track'}
+              </Button>
+              <p className="text-xs text-earth-500">
+                On your confirmation email. Guest checkout? Use the same email you paid with.
               </p>
-            </>
+            </div>
           ) : (
             <>
               <label htmlFor="track-order-email" className="form-label">Email address</label>
@@ -223,7 +238,7 @@ export function TrackOrderClient() {
                 </Button>
               </div>
               <p className="mt-3 text-xs text-earth-500">
-                Shows your most recent order placed with this email.
+                Signed in? Shows your most recent order for this email on your account.
               </p>
             </>
           )}

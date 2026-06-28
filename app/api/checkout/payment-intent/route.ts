@@ -19,6 +19,12 @@ import type { CartItem } from '@/types'
 import { CHECKOUT_STRIPE_PAYMENT_METHOD_TYPES, getStripe } from '@/lib/stripe'
 import type { CheckoutSnapshotPayload } from '@/lib/orders/checkout-snapshot'
 import { assertSameOrigin } from '@/lib/security/same-origin'
+import {
+  ACCOUNT_CHECKOUT_MODE,
+  GUEST_CHECKOUT_MODE,
+  GUEST_CHECKOUT_USER_ID,
+  normalizeGuestEmail,
+} from '@/lib/orders/guest-checkout'
 
 export const runtime = 'nodejs'
 
@@ -32,17 +38,9 @@ export async function POST(req: NextRequest) {
       data: { user },
     } = await supabaseUser.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Please sign in before checking out.' }, { status: 401 })
-    }
-
-    const accountEmail = user.email?.trim().toLowerCase()
-    if (!accountEmail) {
-      return NextResponse.json({ error: 'Your account is missing an email address.' }, { status: 400 })
-    }
-
     const body = await req.json()
     const {
+      email: rawEmail,
       name,
       phone,
       address,
@@ -56,6 +54,25 @@ export async function POST(req: NextRequest) {
       shippingMethod: rawShippingMethod,
       pickupName,
     } = body
+
+    const guestCheckout = !user
+    const accountEmail = guestCheckout
+      ? normalizeGuestEmail(rawEmail)
+      : (user.email?.trim().toLowerCase() ?? null)
+
+    if (!accountEmail) {
+      return NextResponse.json(
+        {
+          error: guestCheckout
+            ? 'Enter a valid email for your receipt and order updates.'
+            : 'Your account is missing an email address.',
+        },
+        { status: 400 }
+      )
+    }
+
+    const checkoutMode = guestCheckout ? GUEST_CHECKOUT_MODE : ACCOUNT_CHECKOUT_MODE
+    const snapshotUserId = guestCheckout ? GUEST_CHECKOUT_USER_ID : user!.id
 
     const isPickup = normalizeShippingMethod(rawShippingMethod) === 'pickup'
 
@@ -254,7 +271,7 @@ export async function POST(req: NextRequest) {
     const { data: snap, error: snapErr } = await supabaseAdmin
       .from('checkout_snapshots')
       .insert({
-        user_id: user.id,
+        user_id: snapshotUserId,
         payload,
       })
       .select('id')
@@ -277,7 +294,8 @@ export async function POST(req: NextRequest) {
       currency: 'usd',
       payment_method_types: [...CHECKOUT_STRIPE_PAYMENT_METHOD_TYPES],
       metadata: {
-        user_id: user.id,
+        user_id: snapshotUserId,
+        checkout_mode: checkoutMode,
         checkout_snapshot_id: snap.id,
       },
       receipt_email: accountEmail,

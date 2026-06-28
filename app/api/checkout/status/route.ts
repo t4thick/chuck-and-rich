@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { fulfillOrderFromPaymentIntent } from '@/lib/orders/fulfill-payment-intent'
 import { getStripe } from '@/lib/stripe'
+import { resolveCheckoutMode, GUEST_CHECKOUT_MODE } from '@/lib/orders/guest-checkout'
 
 export const runtime = 'nodejs'
 
@@ -14,10 +15,6 @@ export async function GET(req: NextRequest) {
   const {
     data: { user },
   } = await supabaseUser.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Please sign in.' }, { status: 401 })
-  }
 
   const sessionId = req.nextUrl.searchParams.get('session_id')?.trim()
   const paymentIntentId = req.nextUrl.searchParams.get('payment_intent')?.trim()
@@ -31,9 +28,16 @@ export async function GET(req: NextRequest) {
 
     if (paymentIntentId) {
       const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+      const checkoutMode = resolveCheckoutMode(pi.metadata ?? {})
+      const isGuest = checkoutMode === GUEST_CHECKOUT_MODE
 
-      if (pi.metadata?.user_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (!isGuest) {
+        if (!user) {
+          return NextResponse.json({ error: 'Please sign in.' }, { status: 401 })
+        }
+        if (pi.metadata?.user_id !== user.id) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
       }
 
       if (pi.status !== 'succeeded') {
@@ -43,24 +47,30 @@ export async function GET(req: NextRequest) {
         })
       }
 
-      let { data: order } = await supabaseAdmin
+      let orderQuery = supabaseAdmin
         .from('orders')
         .select('id')
         .eq('stripe_payment_intent_id', paymentIntentId)
-        .eq('user_id', user.id)
-        .maybeSingle()
+
+      orderQuery = isGuest ? orderQuery.is('user_id', null) : orderQuery.eq('user_id', user!.id)
+
+      let { data: order } = await orderQuery.maybeSingle()
 
       // Webhook may be missing locally or delayed — fulfill on poll as fallback
       if (!order?.id) {
         try {
           const result = await fulfillOrderFromPaymentIntent(paymentIntentId)
           if (result.orderId) {
-            const { data: created } = await supabaseAdmin
+            let createdQuery = supabaseAdmin
               .from('orders')
               .select('id')
               .eq('id', result.orderId)
-              .eq('user_id', user.id)
-              .maybeSingle()
+
+            createdQuery = isGuest
+              ? createdQuery.is('user_id', null)
+              : createdQuery.eq('user_id', user!.id)
+
+            const { data: created } = await createdQuery.maybeSingle()
             order = created
           }
         } catch (e) {
@@ -79,6 +89,10 @@ export async function GET(req: NextRequest) {
         status: 'processing',
         message: 'Payment received — finalizing your order…',
       })
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: 'Please sign in.' }, { status: 401 })
     }
 
     const session = await stripe.checkout.sessions.retrieve(sessionId!)

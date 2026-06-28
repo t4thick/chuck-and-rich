@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
 import { ArrowLeft, Check, Clock, Lock, MapPin, Phone, Truck } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { PageHeader } from '@/components/store/PageHeader'
@@ -22,6 +21,8 @@ import { calculateSalesTax } from '@/lib/tax/sales-tax'
 import { getAuthSiteOrigin } from '@/lib/site-url-client'
 import { STORE } from '@/lib/constants/store'
 import { cn } from '@/lib/utils'
+import { PickupPromoBanner } from '@/components/store/PickupPromoBanner'
+import { friendlyShippingError } from '@/lib/checkout/shipping-errors'
 
 type CheckoutAccount = {
   email: string
@@ -73,9 +74,13 @@ function loadDraft(): Partial<CheckoutForm> | null {
   }
 }
 
-function saveDraft(form: CheckoutForm) {
+function saveDraft(form: CheckoutForm, persistEmail: boolean) {
   if (typeof window === 'undefined') return
   try {
+    if (persistEmail) {
+      localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(form))
+      return
+    }
     const { email: _email, ...rest } = form
     void _email
     localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(rest))
@@ -127,12 +132,13 @@ function addressToForm(
 export function CheckoutClient({
   initialAccount,
   savedAddresses = [],
+  isGuest = false,
 }: {
   initialAccount: CheckoutAccount
   savedAddresses?: SavedAddress[]
+  isGuest?: boolean
 }) {
   const { items, totalPrice, totalItems } = useCart()
-  const router = useRouter()
   const detailsFormRef = useRef<HTMLFormElement>(null)
 
   const defaultAddress = useMemo(
@@ -150,7 +156,7 @@ export function CheckoutClient({
     const draft = loadDraft()
     return {
       name: draft?.name || initialAccount.fullName,
-      email: initialAccount.email,
+      email: draft?.email || initialAccount.email,
       phone: draft?.phone || initialAccount.phone,
       address1: draft?.address1 ?? '',
       address2: draft?.address2 ?? '',
@@ -164,10 +170,10 @@ export function CheckoutClient({
 
   // Persist form to localStorage on every change so phone/address survive a page reload or login flow.
   useEffect(() => {
-    saveDraft(form)
-  }, [form])
+    saveDraft(form, isGuest)
+  }, [form, isGuest])
 
-  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('standard')
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('pickup')
   const isPickup = shippingMethod === 'pickup'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -299,14 +305,16 @@ export function CheckoutClient({
               setAddressVerifyStatus('correction')
               setSuggestedAddress(data.suggested)
               setAddressVerifyError(
-                data.error ?? 'USPS standardized this address. Use the suggested format.'
+                friendlyShippingError(
+                  data.error ?? 'USPS standardized this address. Use the suggested format.'
+                )
               )
               setAddressVerified(false)
               return
             }
             setAddressVerifyStatus('error')
             setSuggestedAddress(null)
-            setAddressVerifyError(data.error ?? 'Could not verify this address.')
+            setAddressVerifyError(friendlyShippingError(data.error ?? 'Could not verify this address.'))
             setAddressVerified(false)
           }
         )
@@ -469,9 +477,11 @@ export function CheckoutClient({
     ) {
       setError(
         addressVerifyStatus === 'correction'
-          ? 'Use the USPS suggested address to continue.'
-          : addressVerifyError ||
-              'Enter a deliverable US address — verification runs automatically when city, state, and ZIP are filled in.'
+          ? friendlyShippingError('USPS standardized this address. Use the suggested format.')
+          : friendlyShippingError(
+              addressVerifyError ||
+                'Enter a deliverable US address — verification runs when street, city, state, and ZIP are filled in.'
+            )
       )
       return
     }
@@ -484,6 +494,7 @@ export function CheckoutClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          email: form.email.trim(),
           name: form.name,
           phone: form.phone,
           address1: form.address1.trim(),
@@ -502,21 +513,23 @@ export function CheckoutClient({
       const data = await res.json()
 
       if (!res.ok) {
-        if (res.status === 401) {
-          router.push('/login?next=/checkout')
-          return
-        }
         if (data.suggested) {
           setSuggestedAddress(data.suggested as ParsedAddress)
           setAddressVerifyStatus('correction')
           setAddressVerifyError(
-            typeof data.error === 'string'
-              ? data.error
-              : 'USPS standardized this address. Use the suggested format.'
+            friendlyShippingError(
+              typeof data.error === 'string'
+                ? data.error
+                : 'USPS standardized this address. Use the suggested format.'
+            )
           )
           setAddressVerified(false)
         }
-        setError(typeof data.error === 'string' ? data.error : 'Could not start checkout.')
+        setError(
+          friendlyShippingError(
+            typeof data.error === 'string' ? data.error : 'Could not start checkout.'
+          )
+        )
         return
       }
 
@@ -553,7 +566,11 @@ export function CheckoutClient({
       <PageHeader
         eyebrow="Secure checkout"
         title="Complete your order"
-        subtitle={`Signed in as ${initialAccount.email} · ${totalItems} item${totalItems === 1 ? '' : 's'}`}
+        subtitle={
+          isGuest
+            ? `Guest checkout · ${totalItems} item${totalItems === 1 ? '' : 's'}`
+            : `Signed in as ${initialAccount.email} · ${totalItems} item${totalItems === 1 ? '' : 's'}`
+        }
       />
 
       <div className="store-container py-8 sm:py-10">
@@ -564,6 +581,8 @@ export function CheckoutClient({
           <ArrowLeft className="h-4 w-4" />
           Back to cart
         </Link>
+
+        <PickupPromoBanner className="mb-6" />
 
         <div className="grid gap-8 md:grid-cols-5 md:gap-10 lg:gap-12">
           <form
@@ -582,11 +601,26 @@ export function CheckoutClient({
                     id="checkout-email"
                     type="email"
                     name="email"
-                    className="bg-sand"
+                    className={isGuest ? undefined : 'bg-sand'}
                     value={form.email}
-                    readOnly
+                    onChange={isGuest ? handleChange : undefined}
+                    readOnly={!isGuest}
+                    required
+                    autoComplete="email"
                   />
                 </div>
+                {isGuest ? (
+                  <p className="text-xs text-earth-500">
+                    Already have an account?{' '}
+                    <Link
+                      href="/login?next=/checkout"
+                      className="font-semibold text-brand-700 no-underline hover:text-brand-800"
+                    >
+                      Sign in
+                    </Link>{' '}
+                    to use saved addresses.
+                  </p>
+                ) : null}
                 <div>
                   <label htmlFor="checkout-name" className="form-label">
                     Full name
@@ -618,7 +652,57 @@ export function CheckoutClient({
               </div>
             </CheckoutStep>
 
-            <CheckoutStep step={2} title={isPickup ? 'Pickup details' : 'Delivery address'}>
+            <CheckoutStep step={2} title="Shipping method">
+              <div className="space-y-3">
+                {(['pickup', 'standard'] as ShippingMethod[]).map((method) => {
+                  const quote = calculateShipping({
+                    subtotal: totalPrice,
+                    country: form.country,
+                    state: form.state,
+                    method,
+                  })
+                  const selected = shippingMethod === method
+                  const deliveryEta: Record<string, string> = {
+                    local: '3–5 business days',
+                    regional: '4–6 business days',
+                    national: '6–9 business days',
+                    international: '10–14 business days',
+                  }
+                  return (
+                    <label
+                      key={method}
+                      className={cn(
+                        'flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition',
+                        selected
+                          ? 'border-brand-400 bg-brand-50/50'
+                          : 'border-earth-200 bg-white hover:border-earth-300'
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="shippingMethod"
+                        className="mt-1"
+                        checked={selected}
+                        onChange={() => setShippingMethod(method)}
+                      />
+                      <span className="text-sm">
+                        <span className="font-semibold text-earth-950">
+                          {SHIPPING_METHOD_LABEL[method]}
+                        </span>
+                        <span className="block text-earth-600">
+                          {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`}
+                          {method === 'pickup'
+                            ? ' · Ready same day · come in or send Uber with your order #'
+                            : ` · ${deliveryEta[quote.zone] ?? '5–8 business days'}`}
+                        </span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </CheckoutStep>
+
+            <CheckoutStep step={3} title={isPickup ? 'Pickup details' : 'Delivery address'}>
               {isPickup ? (
                 <div className="space-y-5">
                   <div className="rounded-xl border border-earth-200 bg-earth-50 p-4">
@@ -894,56 +978,6 @@ export function CheckoutClient({
               </div>
               </>
               )}
-            </CheckoutStep>
-
-            <CheckoutStep step={3} title="Shipping method">
-              <div className="space-y-3">
-                {(['standard', 'pickup'] as ShippingMethod[]).map((method) => {
-                  const quote = calculateShipping({
-                    subtotal: totalPrice,
-                    country: form.country,
-                    state: form.state,
-                    method,
-                  })
-                  const selected = shippingMethod === method
-                  const deliveryEta: Record<string, string> = {
-                    local: '3–5 business days',
-                    regional: '4–6 business days',
-                    national: '6–9 business days',
-                    international: '10–14 business days',
-                  }
-                  return (
-                    <label
-                      key={method}
-                      className={cn(
-                        'flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition',
-                        selected
-                          ? 'border-brand-400 bg-brand-50/50'
-                          : 'border-earth-200 bg-white hover:border-earth-300'
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="shippingMethod"
-                        className="mt-1"
-                        checked={selected}
-                        onChange={() => setShippingMethod(method)}
-                      />
-                      <span className="text-sm">
-                        <span className="font-semibold text-earth-950">
-                          {SHIPPING_METHOD_LABEL[method]}
-                        </span>
-                        <span className="block text-earth-600">
-                          {quote.fee === 0 ? 'Free' : `$${quote.fee.toFixed(2)}`}
-                          {method === 'pickup'
-                            ? ' · Ready same day · come in or send a driver'
-                            : ` · ${deliveryEta[quote.zone] ?? '5–8 business days'}`}
-                        </span>
-                      </span>
-                    </label>
-                  )
-                })}
-              </div>
             </CheckoutStep>
           </form>
 

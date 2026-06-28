@@ -14,7 +14,13 @@ export default async function CheckoutPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login?next=/checkout')
+    return (
+      <CheckoutClient
+        isGuest
+        initialAccount={{ email: '', fullName: '', phone: '' }}
+        savedAddresses={[]}
+      />
+    )
   }
 
   const [{ data: profile }, { data: addresses }] = await Promise.all([
