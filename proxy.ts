@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/auth/admin-session'
 import { isSupabaseAdminRoleBypassEnabled } from '@/lib/auth/admin-access-mode'
 
-const CUSTOMER_AUTH_PATHS = ['/account', '/checkout', '/order-confirmation', '/track-order']
+const CUSTOMER_AUTH_PATHS = ['/account']
+const CUSTOMER_OPTIONAL_AUTH_PATHS = ['/checkout', '/order-confirmation', '/track-order']
 
 export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -65,6 +66,10 @@ export async function proxy(request: NextRequest) {
         url.searchParams.set('next', nextTarget)
         return NextResponse.redirect(url)
       }
+      return supabaseResponse
+    }
+
+    if (CUSTOMER_OPTIONAL_AUTH_PATHS.some((prefix) => pathname.startsWith(prefix))) {
       return supabaseResponse
     }
 
